@@ -18,6 +18,7 @@ enum CommandRegistry {
         showCompose: @escaping () -> Void,
         showConflicts: @escaping () -> Void,
         showReview: @escaping () -> Void,
+        showWorktrees: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
@@ -235,6 +236,18 @@ enum CommandRegistry {
                     Task { await repository.undo(undoable) }
                 })
         }
+
+        // MARK: 并行工作区
+
+        commands.append(
+            PaletteCommand(
+                id: "worktree.panel",
+                title: "并行工作区",
+                subtitle: "同时签出多个分支，给每个 agent 分一个",
+                equivalentCommand: "git worktree list",
+                systemImage: "square.split.2x1",
+                run: showWorktrees
+            ))
 
         // MARK: 导航
 

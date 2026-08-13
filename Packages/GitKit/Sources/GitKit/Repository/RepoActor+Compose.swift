@@ -46,16 +46,18 @@ extension RepoActor {
     /// - Important: 出错就地停下，已经提交的批次**不回滚**。回滚要动已经生成的
     ///   commit，那本身就是改写历史；而停在半路的状态是干净可续的——用户能看到
     ///   哪几批成了、剩下的还在工作区，接着手动处理即可。时间线上每批都有记录。
-    public func commitInBatches(_ batches: [CommitBatch]) async throws -> BatchCommitResult {
+    /// - Note: 不抛错——每一批的失败都写进 ``BatchCommitResult``，
+    ///   因为「第 3 批失败了、前 2 批已提交」这个信息比一个异常有用得多。
+    public func commitInBatches(_ batches: [CommitBatch]) async -> BatchCommitResult {
         let previous = queueTail
 
         let work = Task { [self] in
             await previous?.value
             return await runBatches(batches)
         }
-        queueTail = Task { _ = try? await work.value }
+        queueTail = Task { _ = await work.value }
 
-        return try await work.value
+        return await work.value
     }
 
     private func runBatches(_ batches: [CommitBatch]) async -> BatchCommitResult {

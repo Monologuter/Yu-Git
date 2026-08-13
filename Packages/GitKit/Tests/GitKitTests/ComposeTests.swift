@@ -40,7 +40,7 @@ struct ComposeTests {
         let diff = try await repo.client.diff(of: "app.swift", in: repo.url)
         #expect(diff.hunks.count == 2, "前提不成立：应当切成两个 hunk")
 
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "feat: 登录相关", selection: ["app.swift": [0]]),
             CommitBatch(message: "docs: 文档相关", selection: ["app.swift": [1]]),
         ])
@@ -68,7 +68,7 @@ struct ComposeTests {
         let repo = try await makeRepositoryWithTwoHunks()
         let actor = try await makeActor(repo)
 
-        _ = try await actor.commitInBatches([
+        _ = await actor.commitInBatches([
             CommitBatch(message: "feat: 第一块", selection: ["app.swift": [0]]),
             CommitBatch(message: "docs: 第二块", selection: ["app.swift": [1]]),
         ])
@@ -82,7 +82,7 @@ struct ComposeTests {
         let repo = try await makeRepositoryWithTwoHunks()
         let actor = try await makeActor(repo)
 
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "feat: 只提交第一块", selection: ["app.swift": [0]])
         ])
         #expect(result.isComplete)
@@ -104,7 +104,7 @@ struct ComposeTests {
         // 先手动把整个文件暂存了——模拟用户在打开分组前已经 add 过
         _ = try await repo.client.run(["add", "app.swift"], in: repo.url)
 
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "feat: 只要第一块", selection: ["app.swift": [0]])
         ])
         #expect(result.isComplete)
@@ -130,7 +130,7 @@ struct ComposeTests {
         try repo.write("改过 c\n", to: "c.md")
 
         let actor = try await makeActor(repo)
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "feat: 代码改动", selection: ["a.swift": [0], "b.swift": [0]]),
             CommitBatch(message: "docs: 文档改动", selection: ["c.md": [0]]),
         ])
@@ -150,7 +150,7 @@ struct ComposeTests {
         let repo = try await makeRepositoryWithTwoHunks()
         let actor = try await makeActor(repo)
 
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "chore: 什么都没有", selection: [:]),
             CommitBatch(message: "feat: 有内容", selection: ["app.swift": [0]]),
         ])
@@ -164,7 +164,7 @@ struct ComposeTests {
         let repo = try await makeRepositoryWithTwoHunks()
         let actor = try await makeActor(repo)
 
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "feat: 这批没问题", selection: ["app.swift": [0]]),
             // 指向一个不存在的文件，必然失败
             CommitBatch(message: "fix: 这批会失败", selection: ["不存在.swift": [0]]),
@@ -184,7 +184,7 @@ struct ComposeTests {
         let repo = try await makeRepositoryWithTwoHunks()
         let actor = try await makeActor(repo)
 
-        _ = try await actor.commitInBatches([
+        _ = await actor.commitInBatches([
             CommitBatch(message: "feat: 第一批", selection: ["app.swift": [0]]),
             CommitBatch(message: "docs: 第二批", selection: ["app.swift": [1]]),
         ])
@@ -203,7 +203,7 @@ struct ComposeTests {
         _ = try await repo.client.run(["add", "app.swift"], in: repo.url)
 
         let actor = try await makeActor(repo)
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "feat: 第一块", selection: ["app.swift": [0]]),
             CommitBatch(message: "docs: 第二块", selection: ["app.swift": [1]]),
         ])
@@ -223,7 +223,7 @@ struct ComposeTests {
         try repo.write("没动过\n", to: "untouched.txt")
         try await repo.commitAll("加个没动过的文件")
 
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "fix: 指向没有改动的文件", selection: ["untouched.txt": [0]])
         ])
 
@@ -243,7 +243,7 @@ struct ComposeTests {
         try Data([0x00, 0xAA, 0xBB, 0xFF, 0x00]).write(to: url)
 
         let actor = try await makeActor(repo)
-        let result = try await actor.commitInBatches([
+        let result = await actor.commitInBatches([
             CommitBatch(message: "chore: 换图标", selection: ["icon.bin": [0]])
         ])
 

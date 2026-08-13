@@ -239,7 +239,8 @@ public actor SnapshotStore {
         guard snapshots.count > limit else { return }
 
         for snapshot in snapshots.dropFirst(limit) {
-            try? await client.run(["update-ref", "-d", snapshot.reference], in: root)
+            // 删不掉某一条不该拖累其余的清理
+            _ = try? await client.run(["update-ref", "-d", snapshot.reference], in: root)
         }
     }
 

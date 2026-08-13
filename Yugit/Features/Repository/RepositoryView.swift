@@ -17,6 +17,7 @@ struct RepositoryView: View {
     @State private var composeModel: ComposeViewModel?
     @State private var conflictModel: ConflictViewModel?
     @State private var reviewModel: ReviewViewModel?
+    @State private var worktreeModel: WorktreeViewModel?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -136,6 +137,7 @@ struct RepositoryView: View {
                     showCompose: { composeModel = ComposeViewModel(repository: repository) },
                     showConflicts: { conflictModel = ConflictViewModel(repository: repository) },
                     showReview: { reviewModel = ReviewViewModel(repository: repository) },
+                    showWorktrees: { worktreeModel = WorktreeViewModel(repository: repository) },
                     closeRepository: { model.closeRepository() }
                 ),
                 onDismiss: { showsCommandPalette = false }
@@ -144,6 +146,9 @@ struct RepositoryView: View {
         .task(id: repository.status?.branch.commit) {
             // 状态一变就复查：终端里跑的 rebase 同样要在界面上现身
             await repository.reloadRebaseProgress()
+        }
+        .sheet(item: $worktreeModel) { model in
+            WorktreeView(model: model) { worktreeModel = nil }
         }
         .sheet(item: $reviewModel) { model in
             ReviewView(model: model) { reviewModel = nil }

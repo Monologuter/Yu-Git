@@ -115,11 +115,7 @@ extension RepositoryViewModel {
 
     /// 按分组逐批提交。
     func commitInBatches(_ batches: [CommitBatch]) async -> BatchCommitResult {
-        do {
-            return try await repository.commitInBatches(batches)
-        } catch {
-            return BatchCommitResult(committed: 0, failedAt: 0, errorMessage: "\(error)")
-        }
+        await repository.commitInBatches(batches)
     }
 }
 
@@ -148,5 +144,29 @@ extension RepositoryViewModel {
         try await repository.client.runReturningResult(
             ["diff", "--cached", "--no-color"], in: repository.root
         ).standardOutputText
+    }
+}
+
+extension RepositoryViewModel {
+
+    // MARK: - Worktree
+
+    var rootURL: URL { repository.root }
+
+    func worktreeStatuses(comparedTo baseline: String) async throws -> [WorktreeStatus] {
+        try await repository.client.worktreeStatuses(in: repository.root, comparedTo: baseline)
+    }
+
+    func addWorktree(at path: URL, branch: String, createBranch: Bool) async throws {
+        try await repository.client.addWorktree(
+            at: path, branch: branch, createBranch: createBranch, in: repository.root)
+    }
+
+    func removeWorktree(at path: String, force: Bool) async throws {
+        try await repository.client.removeWorktree(at: path, force: force, in: repository.root)
+    }
+
+    func pruneWorktrees() async throws {
+        try await repository.client.pruneWorktrees(in: repository.root)
     }
 }
