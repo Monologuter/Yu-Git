@@ -191,3 +191,116 @@ struct FileOperationLogTests {
         #expect(records[1].operation.summary == "暂存 文件4.txt")
     }
 }
+
+@Suite("部分暂存")
+struct PartialStagingTests {
+
+    private func makeActor(on repository: TemporaryRepository) -> RepoActor {
+        RepoActor(root: repository.url, client: repository.client, operationLog: InMemoryOperationLog())
+    }
+
+    private func indexContent(of path: String, in repository: TemporaryRepository) async throws -> String {
+        try await repository.client.run(["show", ":\(path)"], in: repository.url).standardOutputText
+    }
+
+    @Test("按 hunk 暂存，未选中的 hunk 留在工作区")
+    func stagesSelectedHunk() async throws {
+        let repository = try await TemporaryRepository()
+        try repository.write((1...30).map(String.init).joined(separator: "\n") + "\n", to: "f.txt")
+        try await repository.commitAll("base")
+
+        var lines = (1...30).map(String.init)
+        lines[1] = "改了第二行"
+        lines[27] = "改了第二十八行"
+        try repository.write(lines.joined(separator: "\n") + "\n", to: "f.txt")
+
+        let actor = makeActor(on: repository)
+        let staged = try await actor.stagePartial(path: "f.txt", selecting: .hunks([0]))
+
+        #expect(staged)
+        let content = try await indexContent(of: "f.txt", in: repository)
+        #expect(content.contains("改了第二行"))
+        #expect(!content.contains("改了第二十八行"))
+    }
+
+    @Test("部分暂存被记入操作日志，但 patch 内容不入日志")
+    func recordsPartialStagingWithoutContent() async throws {
+        // 工程规范 §7：操作日志不含文件内容。patch 就是用户的代码，必须走单独通道。
+        let repository = try await TemporaryRepository()
+        try repository.write("原来的内容\n", to: "机密.txt")
+        try await repository.commitAll("base")
+        try repository.write("这行是不该出现在日志里的机密内容\n", to: "机密.txt")
+
+        let log = InMemoryOperationLog()
+        let actor = RepoActor(root: repository.url, client: repository.client, operationLog: log)
+        try await actor.stagePartial(path: "机密.txt", selecting: .whole)
+
+        let records = await log.recent(limit: 10)
+        let record = try #require(records.first)
+
+        #expect(record.operation.kind == .stagePartial)
+        #expect(record.operation.summary.contains("机密.txt"))
+
+        let encoded = try JSONEncoder().encode(record)
+        let json = String(decoding: encoded, as: UTF8.self)
+        #expect(!json.contains("不该出现在日志里的机密内容"), "文件内容绝不能进操作日志")
+    }
+
+    @Test("取消部分暂存")
+    func unstagesPartially() async throws {
+        let repository = try await TemporaryRepository()
+        try repository.write("a\nb\n", to: "f.txt")
+        try await repository.commitAll("base")
+        try repository.write("A\nB\n", to: "f.txt")
+        try await repository.git("add", "f.txt")
+
+        let actor = makeActor(on: repository)
+        let unstaged = try await actor.unstagePartial(path: "f.txt", selecting: .whole)
+
+        #expect(unstaged)
+        let content = try await indexContent(of: "f.txt", in: repository)
+        #expect(content == "a\nb\n", "index 应退回 HEAD 的内容")
+    }
+
+    @Test("没有选中任何改动时返回 false 且不产生日志")
+    func skipsEmptySelection() async throws {
+        let repository = try await TemporaryRepository()
+        try repository.write("a\n", to: "f.txt")
+        try await repository.commitAll("base")
+        try repository.write("A\n", to: "f.txt")
+
+        let log = InMemoryOperationLog()
+        let actor = RepoActor(root: repository.url, client: repository.client, operationLog: log)
+        let staged = try await actor.stagePartial(path: "f.txt", selecting: .hunks([]))
+
+        #expect(!staged)
+        let records = await log.recent(limit: 10)
+        #expect(records.isEmpty, "什么都没做就不该留下记录")
+    }
+
+    @Test("丢弃改动被标记为最高危险级别")
+    func flagsDiscardAsDestructive() {
+        let discard = GitOperation.discard(paths: ["f.txt"])
+
+        #expect(discard.hazard == .discardsUncommittedWork)
+        #expect(discard.explanation.contains("无法找回"), "危险性必须在文案里说清楚")
+    }
+
+    @Test("stash 与取回")
+    func stashesAndPops() async throws {
+        let repository = try await TemporaryRepository()
+        try repository.write("原始\n", to: "f.txt")
+        try await repository.commitAll("base")
+        try repository.write("改过的\n", to: "f.txt")
+
+        let actor = makeActor(on: repository)
+        try await actor.perform(.stashPush(message: "临时收起来"))
+
+        let afterStash = try await actor.status()
+        #expect(afterStash.isClean, "stash 之后工作区应当干净")
+
+        try await actor.perform(.stashPop())
+        let afterPop = try await actor.status()
+        #expect(!afterPop.isClean, "取回后改动应当回来")
+    }
+}

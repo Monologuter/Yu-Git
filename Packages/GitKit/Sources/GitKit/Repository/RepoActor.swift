@@ -49,26 +49,35 @@ public actor RepoActor {
     ///
     /// 无论成功还是失败都会留下记录：失败的尝试同样是用户想在时间线上看到的东西
     /// （「我刚才那步为什么没生效」）。
+    /// - Parameter standardInput: 需要经 stdin 交给 git 的数据，目前只有 patch 用到。
+    ///   它**不会**进入操作日志——patch 内容就是用户的代码，工程规范 §7 要求日志不含文件内容。
     @discardableResult
-    public func perform(_ operation: GitOperation) async throws -> ProcessResult {
+    public func perform(
+        _ operation: GitOperation,
+        standardInput: Data? = nil
+    ) async throws -> ProcessResult {
         // 从读取队尾到更新队尾之间没有 await，这一段是 actor 的同步区，
         // 不会有第二个任务插进来，排队顺序因此是确定的。
         let previous = queueTail
 
         let work = Task { [self] in
             await previous?.value
-            return try await execute(operation)
+            return try await execute(operation, standardInput: standardInput)
         }
         queueTail = Task { _ = try? await work.value }
 
         return try await work.value
     }
 
-    private func execute(_ operation: GitOperation) async throws -> ProcessResult {
+    private func execute(_ operation: GitOperation, standardInput: Data?) async throws -> ProcessResult {
         let headBefore = await currentHead()
 
         do {
-            let result = try await client.run(operation.arguments, in: root)
+            let result = try await client.run(
+                operation.arguments,
+                in: root,
+                standardInput: standardInput
+            )
             await log(operation, headBefore: headBefore, headAfter: await currentHead(), outcome: .succeeded)
             return result
         } catch {

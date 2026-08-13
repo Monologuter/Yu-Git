@@ -11,7 +11,7 @@ struct GitOperationTests {
         let single = GitOperation.stage(paths: ["a.txt"])
         #expect(single.summary == "暂存 a.txt")
         #expect(single.equivalentCommand == "git add -- a.txt")
-        #expect(!single.rewritesHistory)
+        #expect(single.hazard == .none)
 
         let multiple = GitOperation.stage(paths: ["a.txt", "b.txt"])
         #expect(multiple.summary == "暂存 2 个文件")
@@ -45,9 +45,9 @@ struct GitOperationTests {
         let plain = GitOperation.commit(message: "x")
 
         #expect(amend.kind == .amend)
-        #expect(amend.rewritesHistory, "时间线要靠这个标记决定执行前是否打快照")
+        #expect(amend.hazard == .rewritesHistory, "时间线要靠这个标记决定执行前是否打快照")
         #expect(plain.kind == .commit)
-        #expect(!plain.rewritesHistory)
+        #expect(plain.hazard == .none)
     }
 
     @Test("每个操作都有非空的中文摘要与注解")

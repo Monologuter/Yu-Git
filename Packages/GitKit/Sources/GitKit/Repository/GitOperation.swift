@@ -2,7 +2,7 @@ import Foundation
 
 /// 一次仓库写操作的完整描述。
 ///
-/// 驭Git 的**所有**写操作都必须先表达成 `GitOperation`，再交给 ``RepoActor/perform(_:)``
+/// 驭Git 的**所有**写操作都必须先表达成 `GitOperation`，再交给 ``RepoActor/perform(_:standardInput:)``
 /// 执行。这条约束换来三件事：
 ///
 /// 1. **时间线 Undo**（支柱 1）要求每个操作可记录、可命名、可逆推——绕过入口直接跑
@@ -10,12 +10,33 @@ import Foundation
 /// 2. **透明命令层**要求随时能展示「这一步等价于哪条 git 命令」。元数据跟操作长在
 ///    一起，而不是事后给每个按钮补文案。
 /// 3. Command Palette 与教学模式消费的是同一份元数据，不会各写一套。
+///
+/// - Note: 需要从 stdin 传入的数据（如 patch）**不放在这里**，而是作为 `perform` 的
+///   单独参数。patch 内容就是用户的代码，工程规范 §7 要求操作日志不含文件内容，
+///   而这个类型是要被序列化进日志的。
 public struct GitOperation: Sendable, Equatable, Codable {
 
     public enum Kind: String, Sendable, Equatable, Codable {
         case stage
+        case unstage
+        case stagePartial
+        case unstagePartial
+        case discard
         case commit
         case amend
+        case stashPush
+        case stashPop
+    }
+
+    /// 操作的危险程度。时间线据此决定执行前是否必须打快照。
+    public enum Hazard: String, Sendable, Equatable, Codable {
+        /// 安全：随时能用 git 自身的命令回退。
+        case none
+        /// 改写已有历史（amend、rebase、reset）。原提交还能靠 reflog 找回，但引用已变。
+        case rewritesHistory
+        /// **丢弃未提交的内容**。这类改动从未进过 git 的对象库，reflog 也救不回来——
+        /// 时间线快照是唯一的退路，因此是最需要兜底的一类。
+        case discardsUncommittedWork
     }
 
     public let kind: Kind
@@ -29,8 +50,7 @@ public struct GitOperation: Sendable, Equatable, Codable {
     /// 中文注解：这条 git 命令到底做了什么。教学模式与透明命令层展示它。
     public let explanation: String
 
-    /// 会改写已有历史。时间线必须在执行这类操作前打快照（v0.5）。
-    public let rewritesHistory: Bool
+    public let hazard: Hazard
 
     /// 等价的 git 命令行，可直接复制到终端执行。
     public var equivalentCommand: String {
@@ -52,21 +72,74 @@ public struct GitOperation: Sendable, Equatable, Codable {
     }
 }
 
-// MARK: - 具体操作
+// MARK: - 暂存与撤销
 
 extension GitOperation {
 
-    /// 把指定文件的当前内容放进 index。
+    /// 把指定文件的当前内容整个放进 index。
     public static func stage(paths: [String]) -> GitOperation {
         GitOperation(
             kind: .stage,
-            // `--` 之后的一律按路径解析，否则以 `-` 开头的文件名会被当成选项。
+            // `--` 之后的一律按路径解析，否则以 `-` 开头的文件名会被当成选项
             arguments: ["add", "--"] + paths,
             summary: paths.count == 1 ? "暂存 \(paths[0])" : "暂存 \(paths.count) 个文件",
             explanation: "把这些文件的当前内容放进 index（暂存区），下次提交时会包含它们。",
-            rewritesHistory: false
+            hazard: .none
         )
     }
+
+    /// 把文件从 index 中撤下，工作区内容保持不变。
+    public static func unstage(paths: [String]) -> GitOperation {
+        GitOperation(
+            kind: .unstage,
+            // restore --staged 用 HEAD 的内容覆盖 index，工作区不受影响。
+            // 仓库还没有任何提交时没有 HEAD 可参照，调用方需改用 `rm --cached`。
+            arguments: ["restore", "--staged", "--"] + paths,
+            summary: paths.count == 1 ? "取消暂存 \(paths[0])" : "取消暂存 \(paths.count) 个文件",
+            explanation: "把这些文件从 index 中撤下，工作区里的改动原样保留。",
+            hazard: .none
+        )
+    }
+
+    /// 暂存文件中选中的部分改动。patch 由 ``PatchBuilder`` 生成，经 stdin 传入。
+    public static func stagePartial(path: String, changeCount: Int) -> GitOperation {
+        GitOperation(
+            kind: .stagePartial,
+            arguments: ["apply", "--cached", "-"],
+            summary: "暂存 \(path) 中的 \(changeCount) 处改动",
+            explanation: "只把选中的那部分改动写入 index，其余改动仍留在工作区。"
+                + "patch 由驭Git 生成并经标准输入交给 git。",
+            hazard: .none
+        )
+    }
+
+    /// 取消暂存文件中选中的部分改动。
+    public static func unstagePartial(path: String, changeCount: Int) -> GitOperation {
+        GitOperation(
+            kind: .unstagePartial,
+            arguments: ["apply", "--cached", "--reverse", "-"],
+            summary: "取消暂存 \(path) 中的 \(changeCount) 处改动",
+            explanation: "把选中的那部分改动从 index 中反向撤销，工作区内容不变。",
+            hazard: .none
+        )
+    }
+
+    /// 丢弃工作区中的改动，恢复成 index 里的内容。
+    public static func discard(paths: [String]) -> GitOperation {
+        GitOperation(
+            kind: .discard,
+            arguments: ["restore", "--"] + paths,
+            summary: paths.count == 1 ? "丢弃 \(paths[0]) 的改动" : "丢弃 \(paths.count) 个文件的改动",
+            explanation: "用 index 中的内容覆盖工作区。**被丢弃的改动没有进过 git 的对象库，"
+                + "git 自身无法找回**，只能靠驭Git 的时间线快照恢复。",
+            hazard: .discardsUncommittedWork
+        )
+    }
+}
+
+// MARK: - 提交
+
+extension GitOperation {
 
     /// 把 index 中的内容记录为一条 commit。
     ///
@@ -85,7 +158,44 @@ extension GitOperation {
                 ? "用当前 index 的内容替换上一条 commit。这会生成新的 commit hash，"
                     + "已推送的提交若被 amend，再推送就需要 force。"
                 : "把 index（暂存区）中的内容记录为一条新的 commit。",
-            rewritesHistory: amend
+            hazard: amend ? .rewritesHistory : .none
+        )
+    }
+}
+
+// MARK: - stash
+
+extension GitOperation {
+
+    /// 把当前改动收进 stash，工作区回到干净状态。
+    public static func stashPush(message: String? = nil, includingUntracked: Bool = false) -> GitOperation {
+        var arguments = ["stash", "push"]
+        if includingUntracked {
+            arguments.append("--include-untracked")
+        }
+        if let message, !message.isEmpty {
+            arguments += ["--message", message]
+        }
+
+        return GitOperation(
+            kind: .stashPush,
+            arguments: arguments,
+            summary: message.map { "暂存改动到 stash：\($0)" } ?? "暂存改动到 stash",
+            explanation: "把工作区与 index 的改动收进 stash 栈，工作区恢复到 HEAD 的状态。"
+                + (includingUntracked ? "未跟踪的文件也一并收入。" : "未跟踪的文件不受影响。"),
+            hazard: .none
+        )
+    }
+
+    /// 取回最近一次 stash 并从栈中移除。
+    public static func stashPop(index: Int = 0) -> GitOperation {
+        GitOperation(
+            kind: .stashPop,
+            arguments: ["stash", "pop", "stash@{\(index)}"],
+            summary: "取回 stash@{\(index)}",
+            explanation: "把这条 stash 的改动应用回工作区，并从 stash 栈中删除它。"
+                + "若与当前改动冲突，stash 会保留在栈中等待处理。",
+            hazard: .none
         )
     }
 }
