@@ -1,0 +1,27 @@
+#!/bin/sh
+# 驭Git pre-commit：检查暂存的 Swift 文件格式
+# 规范见 docs/04-工程规范.md §12.1
+
+staged_swift=$(git diff --cached --name-only --diff-filter=ACM -- '*.swift')
+[ -z "$staged_swift" ] && exit 0
+
+if ! command -v swift >/dev/null 2>&1; then
+    echo "⚠️  找不到 swift，跳过格式检查"
+    exit 0
+fi
+
+failed=""
+for file in $staged_swift; do
+    [ -f "$file" ] || continue
+    if ! swift format lint --strict "$file"; then
+        failed="$failed $file"
+    fi
+done
+
+if [ -n "$failed" ]; then
+    printf '\n❌ 格式检查未通过。修复方式：\n'
+    printf '   swift format --in-place%s\n' "$failed"
+    printf '   git add%s\n\n' "$failed"
+    printf '如确需跳过：git commit --no-verify（跳过后须在下个提交前补齐）\n'
+    exit 1
+fi

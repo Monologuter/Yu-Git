@@ -1,0 +1,45 @@
+#!/bin/sh
+# 驭Git commit-msg：校验提交信息
+# 规范见 docs/04-工程规范.md §3
+
+msg_file="$1"
+
+# 1. 拦截 AI 协作署名（规范 §3.6）
+if grep -qiE '^co-authored-by:|generated with|🤖' "$msg_file"; then
+    printf '❌ 提交信息中不得包含 AI 协作署名\n'
+    printf '   见 docs/04-工程规范.md §3.6\n'
+    exit 1
+fi
+
+# 取第一行有效内容（跳过注释行与空行）
+first_line=$(grep -v '^#' "$msg_file" | grep -v '^[[:space:]]*$' | head -1)
+
+if [ -z "$first_line" ]; then
+    printf '❌ 提交信息为空\n'
+    exit 1
+fi
+
+# 2. merge / revert 的自动生成信息放行
+case "$first_line" in
+    "Merge "* | "Revert "*) exit 0 ;;
+esac
+
+# 3. 校验 Conventional Commits 格式
+types='feat|fix|perf|refactor|test|docs|style|build|chore|revert'
+if ! printf '%s' "$first_line" | grep -qE "^($types)(\([A-Za-z]+\))?!?: .+"; then
+    printf '❌ 提交信息不符合 Conventional Commits 规范\n'
+    printf '   实际：%s\n' "$first_line"
+    printf '   期望：<type>(<scope>): <中文摘要>\n'
+    printf '   type：%s\n' "$types"
+    printf '   见 docs/04-工程规范.md §3\n'
+    exit 1
+fi
+
+# 4. 摘要长度仅提醒，不阻断
+summary=${first_line#*: }
+length=$(printf '%s' "$summary" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')
+if [ "$length" -gt 50 ]; then
+    printf '⚠️  摘要 %s 字，建议压到 50 字以内（不阻断提交）\n' "$length"
+fi
+
+exit 0

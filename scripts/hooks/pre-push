@@ -1,0 +1,26 @@
+#!/bin/sh
+# 驭Git pre-push：推送前跑全量测试
+# 规范见 docs/04-工程规范.md §12.1
+#
+# main 始终测试全绿是不可协商的约束（§1.5），推送是最后一道拦截点。
+
+root=$(git rev-parse --show-toplevel)
+
+if ! command -v swift >/dev/null 2>&1; then
+    echo "⚠️  找不到 swift，跳过测试"
+    exit 0
+fi
+
+for package in "$root"/Packages/*/; do
+    [ -f "$package/Package.swift" ] || continue
+    name=$(basename "$package")
+
+    printf '▶︎ 测试 %s\n' "$name"
+    if ! swift test --package-path "$package"; then
+        printf '\n❌ %s 测试未通过，推送已取消\n' "$name"
+        printf '如确需跳过：git push --no-verify\n'
+        exit 1
+    fi
+done
+
+exit 0
