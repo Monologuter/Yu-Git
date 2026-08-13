@@ -9,13 +9,23 @@ public struct AIConfiguration: Codable, Sendable, Equatable, Identifiable {
     public enum ProtocolKind: String, Codable, Sendable, CaseIterable {
         case anthropic
         case openAICompatible
+        /// 驭Git 自己的云服务（订阅制）。协议上是 OpenAI 兼容的变体，
+        /// 单列一种是因为它的配置方式不同：不填地址、不填模型名，只填订阅凭据。
+        case yugitCloud
 
         public var displayName: String {
             switch self {
             case .anthropic: "Anthropic"
             case .openAICompatible: "OpenAI 兼容"
+            case .yugitCloud: "驭Git 云服务"
             }
         }
+
+        /// 需要用户自己填接口地址。
+        public var needsEndpoint: Bool { self == .openAICompatible }
+
+        /// 需要用户自己填模型名。云服务由服务端决定能用哪些模型。
+        public var needsCustomModel: Bool { self != .yugitCloud }
     }
 
     /// 这份配置的稳定标识，同时用作 Keychain 里的 account 名。
@@ -65,6 +75,13 @@ public struct AIConfiguration: Codable, Sendable, Equatable, Identifiable {
                 baseURL: OpenAICompatibleProvider.defaultBaseURL.absoluteString,
                 model: AIModelPresets.openAIDefault
             )
+        case .yugitCloud:
+            AIConfiguration(
+                kind: .yugitCloud,
+                name: "驭Git 云服务",
+                baseURL: YugitCloudProvider.defaultEndpoint.absoluteString,
+                model: YugitCloudProvider.models[0].id
+            )
         }
     }
 
@@ -85,6 +102,8 @@ public struct AIConfiguration: Codable, Sendable, Equatable, Identifiable {
                 defaultModel: model,
                 session: session
             )
+        case .yugitCloud:
+            return YugitCloudProvider(credential: apiKey, endpoint: url, session: session)
         }
     }
 }

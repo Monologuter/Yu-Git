@@ -76,7 +76,12 @@ struct AISettingsView: View {
     private var addMenu: some View {
         Menu("添加服务商") {
             ForEach(AIConfiguration.ProtocolKind.allCases, id: \.self) { kind in
-                Button(kind.displayName) { isAddingKind = kind }
+                // 云服务尚未上线，菜单里就说清楚，不让人配完才发现连不上
+                if kind == .yugitCloud, !YugitCloudProvider.isServiceAvailable {
+                    Button("\(kind.displayName)（尚未开放）") { isAddingKind = kind }
+                } else {
+                    Button(kind.displayName) { isAddingKind = kind }
+                }
             }
         }
     }
@@ -137,18 +142,30 @@ private struct ConfigurationEditor: View {
     var body: some View {
         VStack(spacing: 0) {
             Form {
+                if configuration.kind == .yugitCloud, !YugitCloudProvider.isServiceAvailable {
+                    Section {
+                        Label(
+                            "驭Git 云服务还没有上线。现在填的凭据保存下来没问题，"
+                                + "但请求会连接失败。在此之前请用自带 Key 的方式。",
+                            systemImage: "clock.badge.exclamationmark"
+                        )
+                        .foregroundStyle(.orange)
+                        .font(.callout)
+                    }
+                }
+
                 Section {
                     TextField("名称", text: $configuration.name)
                         .help("给这份配置起个名字，例如「公司的 DeepSeek」")
 
-                    if configuration.kind == .openAICompatible {
+                    if configuration.kind.needsEndpoint {
                         endpointField
                     }
 
                     modelField
                 }
 
-                Section("API Key") {
+                Section(configuration.kind == .yugitCloud ? "订阅凭据" : "API Key") {
                     // SecureField：Key 不该以明文出现在屏幕上，
                     // 录屏、投屏、旁人一眼看见都是真实风险
                     SecureField("sk-...", text: $apiKey)
@@ -214,7 +231,21 @@ private struct ConfigurationEditor: View {
         }
     }
 
+    @ViewBuilder
     private var modelField: some View {
+        if configuration.kind.needsCustomModel {
+            customModelField
+        } else {
+            // 订阅制下能用哪些模型由服务端决定，让用户手填只会白报错
+            Picker("模型", selection: $configuration.model) {
+                ForEach(YugitCloudProvider.models) { suggestion in
+                    Text("\(suggestion.displayName) — \(suggestion.note)").tag(suggestion.id)
+                }
+            }
+        }
+    }
+
+    private var customModelField: some View {
         VStack(alignment: .leading, spacing: 4) {
             TextField("模型", text: $configuration.model)
             // 只给建议不做白名单：模型迭代比客户端发版快，
@@ -235,6 +266,7 @@ private struct ConfigurationEditor: View {
         switch configuration.kind {
         case .anthropic: AIModelPresets.anthropic
         case .openAICompatible: AIModelPresets.openAICompatible
+        case .yugitCloud: YugitCloudProvider.models
         }
     }
 
@@ -273,6 +305,7 @@ private struct PrivacyNotice: View {
             row("只有你主动点击 AI 功能时才会发送内容")
             row(".env、私钥、凭据等敏感文件永不发送")
             row("每次发送前会告诉你哪些文件被排除了")
+            row("本地 Git 全功能永久免费，不配 AI 也能用全部功能")
         }
         .font(.callout)
         .foregroundStyle(.secondary)
