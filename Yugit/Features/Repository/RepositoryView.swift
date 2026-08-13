@@ -19,6 +19,7 @@ struct RepositoryView: View {
     @State private var reviewModel: ReviewViewModel?
     @State private var worktreeModel: WorktreeViewModel?
     @State private var forgeModel: ForgeViewModel?
+    @State private var chatModel: ChatViewModel?
     @State private var showsOnboarding = false
     @AppStorage("com.chenya.yugit.hasSeenTour") private var hasSeenTour = false
 
@@ -143,6 +144,7 @@ struct RepositoryView: View {
                     showWorktrees: { worktreeModel = WorktreeViewModel(repository: repository) },
                     showForge: { forgeModel = ForgeViewModel(repository: repository) },
                     showOnboarding: { showsOnboarding = true },
+                    showChat: { chatModel = ChatViewModel(repository: repository) },
                     closeRepository: { model.closeRepository() }
                 ),
                 onDismiss: { showsCommandPalette = false }
@@ -151,6 +153,9 @@ struct RepositoryView: View {
         .task(id: repository.status?.branch.commit) {
             // 状态一变就复查：终端里跑的 rebase 同样要在界面上现身
             await repository.reloadRebaseProgress()
+        }
+        .sheet(item: $chatModel) { model in
+            ChatView(model: model) { chatModel = nil }
         }
         .sheet(isPresented: $showsOnboarding) {
             OnboardingView { showsOnboarding = false }

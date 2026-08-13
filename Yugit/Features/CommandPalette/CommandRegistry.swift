@@ -21,6 +21,7 @@ enum CommandRegistry {
         showWorktrees: @escaping () -> Void,
         showForge: @escaping () -> Void,
         showOnboarding: @escaping () -> Void,
+        showChat: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
@@ -73,6 +74,17 @@ enum CommandRegistry {
                     systemImage: "checkmark.shield",
                     isEnabled: !repository.stagedEntries.isEmpty,
                     run: showReview
+                ))
+        }
+
+        if aiSettings.isAvailable {
+            commands.append(
+                PaletteCommand(
+                    id: "ai.chat",
+                    title: "用一句话描述要做什么",
+                    subtitle: "AI 给出操作计划，预览确认后执行，每步可撤销",
+                    systemImage: "text.bubble",
+                    run: showChat
                 ))
         }
 
