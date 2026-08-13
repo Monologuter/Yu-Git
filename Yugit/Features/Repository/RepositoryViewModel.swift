@@ -51,6 +51,9 @@ final class RepositoryViewModel {
     var commitMessage = ""
     var isAmending = false
 
+    /// AI 起草提交信息的状态。见 `RepositoryViewModel+AI.swift`。
+    var aiState = AIGenerationState()
+
     /// 时间线条目与可恢复的时间点。
     var timelineEntries: [TimelineEntry] = []
     var timelineSnapshots: [Snapshot] = []

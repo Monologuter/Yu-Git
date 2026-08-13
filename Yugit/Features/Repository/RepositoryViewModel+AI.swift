@@ -1,0 +1,99 @@
+import AIKit
+import Foundation
+import GitKit
+
+extension RepositoryViewModel {
+
+    /// AI 生成提交信息的状态。
+    struct AIGenerationState {
+        var isRunning = false
+        /// 脱敏做了什么，生成结束后仍然显示——用户有权知道 AI 看到了什么、没看到什么。
+        var redactionSummary: String?
+        var errorMessage: String?
+    }
+
+    // MARK: - 生成提交信息
+
+    /// 用 AI 起草提交信息，逐字写进提交框。
+    ///
+    /// 写进去的是**草稿**：可以接着改、可以整段删掉重写。这是 PRD 的 AI 铁律——
+    /// AI 给建议，用户下结论。
+    func generateCommitMessage(using store: AISettingsStore) async {
+        guard let (provider, model) = store.makeProvider() else {
+            aiState.errorMessage = AIError.notConfigured.localizedMessage
+            return
+        }
+
+        aiState = AIGenerationState(isRunning: true)
+        defer { aiState.isRunning = false }
+
+        do {
+            let input = try await makeCommitMessageInput()
+            let generator = CommitMessageGenerator(provider: provider, model: model)
+            let stream = try generator.generate(input)
+
+            aiState.redactionSummary = stream.redaction.summary
+
+            // 从空白开始写：接着已有内容续写只会拼出一段谁也不想要的东西
+            commitMessage = ""
+            for try await delta in stream.text {
+                commitMessage += delta
+            }
+            commitMessage = CommitMessageGenerator.sanitize(commitMessage)
+        } catch let error as AIError {
+            aiState.errorMessage = "\(error.localizedMessage)\n\(error.suggestion)"
+        } catch {
+            aiState.errorMessage = "\(error)"
+        }
+    }
+
+    /// 收集生成所需的上下文。
+    private func makeCommitMessageInput() async throws -> CommitMessageGenerator.Input {
+        let diff = try await repository.client.runReturningResult(
+            ["diff", "--cached"],
+            in: repository.root
+        ).standardOutputText
+
+        // 让 AI 沿用这个仓库既有的书写风格，比让它套一个通用模板贴切得多
+        let recent = (try? await repository.client.recentSubjects(in: repository.root, limit: 5)) ?? []
+
+        return CommitMessageGenerator.Input(
+            stagedDiff: diff,
+            stagedPaths: stagedEntries.map(\.path),
+            branchName: currentBranch?.name,
+            recentSubjects: recent
+        )
+    }
+
+    // MARK: - 中文解释
+
+    /// 组装一次 commit 的解释请求。
+    func explainSubject(for commit: Commit) async throws -> Explainer.Subject {
+        // --no-color 防止 ANSI 转义序列混进上下文白占 token；
+        // 根提交没有父提交，git show 会自然处理这种情况
+        let diff = try await repository.client.runReturningResult(
+            ["show", "--patch", "--no-color", "--format=", commit.hash],
+            in: repository.root
+        ).standardOutputText
+
+        return .commit(
+            subject: commit.subject,
+            author: commit.author.name,
+            date: commit.author.date.formatted(date: .abbreviated, time: .shortened),
+            diff: diff
+        )
+    }
+
+    /// 组装当前选中文件的改动解释请求。
+    func explainSubject(for selection: FileSelection) async throws -> Explainer.Subject {
+        var arguments = ["diff", "--no-color"]
+        if selection.isStaged { arguments.append("--cached") }
+        arguments += ["--", selection.path]
+
+        let diff = try await repository.client.runReturningResult(
+            arguments, in: repository.root
+        ).standardOutputText
+
+        return .diff(diff)
+    }
+}

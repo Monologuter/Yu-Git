@@ -11,11 +11,29 @@ enum CommandRegistry {
 
     static func commands(
         for repository: RepositoryViewModel,
+        aiSettings: AISettingsStore,
         showSearch: @escaping () -> Void,
         showTimeline: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
+
+        // MARK: AI
+
+        // 没配 AI 就不出现在面板里，和界面上其他 AI 入口保持一致
+        if aiSettings.isAvailable {
+            commands.append(
+                PaletteCommand(
+                    id: "ai.commitMessage",
+                    title: "AI 起草提交信息",
+                    subtitle: repository.stagedEntries.isEmpty
+                        ? "先暂存一些改动" : "根据暂存的 \(repository.stagedEntries.count) 个文件起草",
+                    systemImage: "sparkles",
+                    isEnabled: !repository.stagedEntries.isEmpty && !repository.aiState.isRunning
+                ) {
+                    Task { await repository.generateCommitMessage(using: aiSettings) }
+                })
+        }
 
         // MARK: 暂存与提交
 

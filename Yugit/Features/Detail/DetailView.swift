@@ -11,7 +11,7 @@ struct DetailView: View {
             if let selection = repository.selectedFile {
                 fileDetail(for: selection)
             } else if let commit = selectedCommit {
-                CommitDetailView(commit: commit)
+                CommitDetailView(commit: commit, repository: repository)
             } else {
                 ContentUnavailableView(
                     "未选择内容",
@@ -31,6 +31,13 @@ struct DetailView: View {
         VStack(spacing: 0) {
             DiffToolbar(repository: repository, selection: selection)
             Divider()
+
+            ExplanationPanel(title: "用中文讲讲这份改动") {
+                try await repository.explainSubject(for: selection)
+            }
+            .id(selection)
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
 
             if let diff = repository.selectedDiff {
                 DiffView(
@@ -113,6 +120,7 @@ struct DiffToolbar: View {
 struct CommitDetailView: View {
 
     let commit: Commit
+    let repository: RepositoryViewModel
 
     var body: some View {
         ScrollView {
@@ -133,6 +141,14 @@ struct CommitDetailView: View {
                 if !commit.refs.isEmpty {
                     RefBadges(refs: commit.refs)
                 }
+
+                // 放在提交信息下面而不是页面底部：想读懂一次提交的人，
+                // 正是刚看完标题却没看明白的人
+                ExplanationPanel(title: "用中文讲讲这次 commit") {
+                    try await repository.explainSubject(for: commit)
+                }
+                // commit 变了就重置面板，否则会把上一条的解释留在屏幕上
+                .id(commit.hash)
 
                 Divider()
 

@@ -273,3 +273,40 @@ struct TimestampParsingTests {
         #expect(LogParser.parseTimestamp("2026-08-99T10:16:06-07:00") == nil, "99 日无效")
     }
 }
+
+@Suite("最近提交标题")
+struct RecentSubjectsTests {
+
+    @Test("按时间倒序取标题")
+    func returnsSubjectsNewestFirst() async throws {
+        let repo = try await TemporaryRepository()
+        for subject in ["feat: 第一步", "fix: 第二步", "docs: 第三步"] {
+            try repo.write(subject, to: "notes.md")
+            try await repo.commitAll(subject)
+        }
+
+        let subjects = try await repo.client.recentSubjects(in: repo.url, limit: 2)
+        #expect(subjects == ["docs: 第三步", "fix: 第二步"])
+    }
+
+    @Test("标题里有换行也不会被拆成两条")
+    func keepsMultilineSubjectIntact() async throws {
+        // 用 \u{1E} 而不是换行做记录分隔符，就是为了这个 case
+        let repo = try await TemporaryRepository()
+        try repo.write("x", to: "a.txt")
+        try await repo.commitAll("正常标题")
+        try repo.write("y", to: "a.txt")
+        try await repo.commitAll("标题第一行\n标题第二行")
+
+        let subjects = try await repo.client.recentSubjects(in: repo.url, limit: 5)
+        #expect(subjects.count == 2)
+        #expect(subjects.first?.contains("标题第一行") == true)
+    }
+
+    @Test("空仓库返回空数组而不是报错")
+    func emptyRepositoryReturnsEmpty() async throws {
+        let repo = try await TemporaryRepository()
+        let subjects = try await repo.client.recentSubjects(in: repo.url)
+        #expect(subjects.isEmpty)
+    }
+}

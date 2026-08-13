@@ -118,3 +118,26 @@ extension GitClient {
         return Int(text) ?? 0
     }
 }
+
+extension GitClient {
+
+    /// 最近几条提交的标题。
+    ///
+    /// 比走 ``log(in:includingAllRefs:order:maxCount:skip:paths:)`` 轻得多：
+    /// 只要标题就不必解析作者、时间、父提交这些字段，也不必构造完整的 ``Commit``。
+    /// AI 生成提交信息时拿它做风格参考，属于高频小请求。
+    public func recentSubjects(in repository: URL, limit: Int = 5) async throws -> [String] {
+        // %s 是标题（subject），\u{1E} 作记录分隔符——标题里可能有换行，
+        // 直接按行切会把一条标题拆成两条。
+        let result = try await runReturningResult(
+            ["log", "--max-count=\(limit)", "--format=%s%x1e", "--no-color"],
+            in: repository
+        )
+        guard result.isSuccess else { return [] }
+
+        return result.standardOutputText
+            .split(separator: "\u{1E}", omittingEmptySubsequences: true)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+}

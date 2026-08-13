@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		AA00000000000000000000B1 /* GitKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000B0 /* GitKit */; };
+		AA00000000000000000000C1 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000C0 /* AIKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000000000000000000B1 /* GitKit in Frameworks */,
+				AA00000000000000000000C1 /* AIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +86,7 @@
 			name = Yugit;
 			packageProductDependencies = (
 				AA00000000000000000000B0 /* GitKit */,
+				AA00000000000000000000C0 /* AIKit */,
 			);
 			productName = Yugit;
 			productReference = AA00000000000000000000A8 /* 驭Git.app */;
@@ -116,6 +119,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AA00000000000000000000AF /* XCLocalSwiftPackageReference "Packages/GitKit" */,
+				AA00000000000000000000C2 /* XCLocalSwiftPackageReference "Packages/AIKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA00000000000000000000A2 /* Products */;
@@ -282,12 +286,20 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/GitKit;
 		};
+		AA00000000000000000000C2 /* XCLocalSwiftPackageReference "Packages/AIKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/AIKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		AA00000000000000000000B0 /* GitKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GitKit;
+		};
+		AA00000000000000000000C0 /* AIKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AIKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

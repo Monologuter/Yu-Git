@@ -167,7 +167,28 @@ struct ChangesView: View {
 struct CommitPanel: View {
 
     @Bindable var repository: RepositoryViewModel
+    @Environment(AISettingsStore.self) private var aiSettings
     @FocusState private var isMessageFocused: Bool
+
+    /// AI 起草按钮。
+    ///
+    /// 生成的内容直接进提交框且可编辑——这是刻意的：不弹窗、不做「接受/拒绝」的二选一，
+    /// 因为大多数时候用户想做的是「在它的基础上改一句」，而不是整段收下或整段丢掉。
+    private var aiDraftButton: some View {
+        Button {
+            Task { await repository.generateCommitMessage(using: aiSettings) }
+        } label: {
+            if repository.aiState.isRunning {
+                ProgressView().controlSize(.small)
+            } else {
+                Label("AI 起草", systemImage: "sparkles")
+            }
+        }
+        .disabled(repository.aiState.isRunning || repository.stagedEntries.isEmpty)
+        .help(
+            repository.stagedEntries.isEmpty
+                ? "先暂存一些改动，AI 才知道要描述什么" : "根据暂存的改动起草提交信息，生成后可直接编辑")
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -203,11 +224,30 @@ struct CommitPanel: View {
 
                 Spacer()
 
+                // 没配 AI 的用户看不到这个按钮，界面上不留任何 AI 痕迹
+                if aiSettings.isAvailable {
+                    aiDraftButton
+                }
+
                 Button("提交") {
                     Task { await repository.commit() }
                 }
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(!repository.canCommit)
+            }
+
+            if let summary = repository.aiState.redactionSummary {
+                // 脱敏做了什么必须说出来，否则用户以为 AI 看到了全部改动
+                Label(summary, systemImage: "eye.slash")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let error = repository.aiState.errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                    .textSelection(.enabled)
             }
 
             if repository.isAmending {

@@ -7,6 +7,8 @@ struct RepositoryView: View {
     @Bindable var repository: RepositoryViewModel
     let model: AppModel
 
+    @Environment(AISettingsStore.self) private var aiSettings
+
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     @State private var isSearching = false
     @State private var showsTimeline = false
@@ -114,6 +116,7 @@ struct RepositoryView: View {
             CommandPaletteView(
                 commands: CommandRegistry.commands(
                     for: repository,
+                    aiSettings: aiSettings,
                     showSearch: { isSearching = true },
                     showTimeline: { showsTimeline = true },
                     closeRepository: { model.closeRepository() }

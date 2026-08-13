@@ -4,7 +4,7 @@ import Foundation
 ///
 /// 除 API Key 之外的一切都存在这里，可以安全地落 UserDefaults；
 /// Key 单独存 Keychain，靠 ``keychainAccount`` 关联。
-public struct AIConfiguration: Codable, Sendable, Equatable {
+public struct AIConfiguration: Codable, Sendable, Equatable, Identifiable {
 
     public enum ProtocolKind: String, Codable, Sendable, CaseIterable {
         case anthropic
