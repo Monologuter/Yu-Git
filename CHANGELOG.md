@@ -4,6 +4,53 @@
 
 ## [未发布]
 
+## [0.5.0] — 2026-08-13 · 公开 Beta：第一个传播点
+
+时间线、Command Palette、AI 基础能力、可视化 rebase 四块齐了。
+这一版的主张是：**Git 里最让人怕的几件事，现在都有退路**。
+
+### 新增
+
+**仓库时间线与无畏 Undo（支柱 1）**
+
+- 危险操作前自动拍工作区快照，存进 `refs/yugit/timeline/` 私有命名空间——
+  不污染 stash 栈、不进 `git log`、不会被 push，但 ref 存在即免于 gc
+- 全局 ⌘Z 退回上一步之前的工作区状态；撤销本身也留快照，可以再撤销
+- 终端里 `git reset --hard` 造成的破坏同样能从时间线恢复：
+  外部改动经 FSEvents 检测后静默期打点
+
+**Command Palette 与透明命令层**
+
+- ⌘K 唤起，子序列匹配（输入 tj 也能命中「提交」）
+- 每条命令旁显示等价的 git 命令，取自 `GitOperation` 元数据——
+  面板、时间线、教学提示三处的说明天然一致
+
+**AI 基础能力（BYOK）**
+
+- 双协议：Anthropic 原生 + OpenAI 兼容（一份实现覆盖 OpenAI、DeepSeek、
+  Kimi、通义、智谱、本地 Ollama）
+- API Key 只进 Keychain，不参与 iCloud 同步；请求直连用户填的服务商，
+  不经过任何中转服务器
+- AI 起草提交信息，流式进提交框且可编辑；中文解释 commit 与 diff
+- 发出去的内容先过三关：敏感文件整份排除、疑似密钥打码、超预算按文件截断。
+  每一关做了什么都如实显示给用户，并一并写进提示词
+- 没配置 AI 时所有 AI 入口都不出现，不是灰掉是不存在
+
+**可视化 interactive rebase**
+
+- 拖动排序 + 下拉选动作，每个动作旁写清楚会发生什么
+- 全程不弹编辑器：todo 事先生成，经 `GIT_SEQUENCE_EDITOR` 拷入
+- 改写历史前自动打 `refs/tags/yugit-backup/` 下的备份 tag
+- 卡在冲突时顶部挂常驻横幅，把出路直接做成按钮
+- Quick Actions：右键提交一步完成合并进父提交 / 改写信息 / 丢弃
+
+### 修复
+
+- SSE 解析改为字节层面切行：规范允许 `\n`、`\r\n`、`\r` 三种行结束符，
+  而 Swift 把 `"\r\n"` 当作一个 Character，`String.split` 切不开
+- diff 路径解析改用 `+++ b/` 行：`diff --git` 行在路径含空格时真有歧义
+- `git log --grep` 与 `--author` 是 AND 不是 OR，改为分别查询后合并
+
 ## [0.3.0] — 2026-08-13 · 内部 Alpha：daily driver
 
 分支、远程、历史三块补齐，日常工作可以不再回终端。

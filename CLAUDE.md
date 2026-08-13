@@ -4,7 +4,13 @@ AI 原生 + 中文界面的 macOS 原生 Git 客户端。Slogan：「AI 帮你�
 
 ## 现状（2026-08-13）
 
-v0.1 开发中。`Packages/GitKit` 已有 ProcessRunner、GitClient、StatusParser、RepoActor、GitOperation、FileOperationLog，61 条测试全绿。待做：log/branch 解析器、Xcode 工程与三栏窗口壳。
+**v0.5 已完成**（公开 Beta）。296 条测试全绿。
+
+- `Packages/GitKit` — 进程、status/log/diff 解析、暂存（含 hunk/行级）、分支、远程、搜索、时间线快照、interactive rebase 与 Quick Actions
+- `Packages/AIKit` — Anthropic 原生 + OpenAI 兼容双协议、SSE 解析、Keychain、上下文脱敏、提交信息生成、中文解释
+- `Yugit` — 三栏窗口、⌘K 命令面板、时间线侧栏、AI 设置页、可视化 rebase
+
+下一步是 v1.0：AI Commit Composer（按意图拆分提交）、AI 逐 hunk 解冲突、本地 diff AI 评审、内置三方合并编辑器。
 
 远程：私有仓库 `https://github.com/Monologuter/Yu-Git`，默认分支 `main`。
 
