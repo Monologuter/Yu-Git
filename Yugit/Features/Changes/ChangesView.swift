@@ -13,6 +13,7 @@ struct PendingQuickAction: Identifiable {
 struct ChangesView: View {
 
     @Bindable var repository: RepositoryViewModel
+    let onResolveConflicts: () -> Void
     @State private var section = Section.changes
     @State private var pendingDiscard: [String]?
     @State private var pendingQuickAction: PendingQuickAction?
@@ -87,10 +88,19 @@ struct ChangesView: View {
         } else {
             List(selection: $repository.selectedFile) {
                 if !repository.conflictedEntries.isEmpty {
-                    SwiftUI.Section("冲突") {
+                    SwiftUI.Section {
                         ForEach(repository.conflictedEntries, id: \.path) { entry in
                             FileRow(entry: entry)
                                 .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
+                        }
+                    } header: {
+                        HStack {
+                            Text("冲突（\(repository.conflictedEntries.count)）")
+                            Spacer()
+                            // 冲突文件就在眼前时给个直达入口，比让人去翻命令面板顺手
+                            Button("解决…") { onResolveConflicts() }
+                                .buttonStyle(.borderless)
+                                .font(.caption)
                         }
                     }
                 }

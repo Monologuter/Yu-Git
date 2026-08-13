@@ -15,14 +15,17 @@ struct RepositoryView: View {
     @State private var showsCommandPalette = false
     @State private var showsRebase = false
     @State private var composeModel: ComposeViewModel?
+    @State private var conflictModel: ConflictViewModel?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView(repository: repository)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
         } content: {
-            ChangesView(repository: repository)
-                .navigationSplitViewColumnWidth(min: 260, ideal: 320, max: 460)
+            ChangesView(repository: repository) {
+                conflictModel = ConflictViewModel(repository: repository)
+            }
+            .navigationSplitViewColumnWidth(min: 260, ideal: 320, max: 460)
         } detail: {
             DetailView(repository: repository)
         }
@@ -128,6 +131,7 @@ struct RepositoryView: View {
                     showTimeline: { showsTimeline = true },
                     showRebase: { showsRebase = true },
                     showCompose: { composeModel = ComposeViewModel(repository: repository) },
+                    showConflicts: { conflictModel = ConflictViewModel(repository: repository) },
                     closeRepository: { model.closeRepository() }
                 ),
                 onDismiss: { showsCommandPalette = false }
@@ -136,6 +140,9 @@ struct RepositoryView: View {
         .task(id: repository.status?.branch.commit) {
             // 状态一变就复查：终端里跑的 rebase 同样要在界面上现身
             await repository.reloadRebaseProgress()
+        }
+        .sheet(item: $conflictModel) { model in
+            ConflictView(model: model) { conflictModel = nil }
         }
         .sheet(item: $composeModel) { model in
             ComposeView(model: model) { composeModel = nil }

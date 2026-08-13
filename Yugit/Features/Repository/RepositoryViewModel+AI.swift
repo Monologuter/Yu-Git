@@ -122,3 +122,21 @@ extension RepositoryViewModel {
         }
     }
 }
+
+extension RepositoryViewModel {
+
+    // MARK: - 冲突
+
+    func conflictedPaths() async throws -> [String] {
+        try await repository.client.conflictedPaths(in: repository.root)
+    }
+
+    func conflictedFile(at path: String) async throws -> ConflictedFile {
+        try await repository.client.conflictedFile(at: path, in: repository.root)
+    }
+
+    func resolveConflict(at path: String, content: String) async throws {
+        try await repository.client.resolveConflict(
+            at: path, content: content, in: repository.root)
+    }
+}

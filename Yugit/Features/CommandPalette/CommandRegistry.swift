@@ -16,6 +16,7 @@ enum CommandRegistry {
         showTimeline: @escaping () -> Void,
         showRebase: @escaping () -> Void,
         showCompose: @escaping () -> Void,
+        showConflicts: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
@@ -46,6 +47,17 @@ enum CommandRegistry {
                 isEnabled: repository.hasChanges,
                 run: showCompose
             ))
+
+        if !repository.conflictedEntries.isEmpty {
+            commands.append(
+                PaletteCommand(
+                    id: "conflict.resolve",
+                    title: "解决冲突",
+                    subtitle: "\(repository.conflictedEntries.count) 个文件有冲突",
+                    systemImage: "arrow.triangle.merge",
+                    run: showConflicts
+                ))
+        }
 
         // MARK: 暂存与提交
 
