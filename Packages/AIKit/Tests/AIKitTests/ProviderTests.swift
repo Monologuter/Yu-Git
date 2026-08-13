@@ -4,13 +4,13 @@ import Testing
 @testable import AIKit
 
 /// SSE 报文取自两家的接口文档，不是脑补的格式。
-@Suite("Provider 协议解码", .serialized)
+@Suite("Provider 协议解码")
 struct ProviderTests {
 
     // MARK: - Anthropic
 
     /// 一次完整的 Anthropic 流式响应。
-    private static let anthropicStream = """
+    static let anthropicStream = """
         event: message_start
         data: {"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","model":"claude-opus-5","usage":{"input_tokens":25,"output_tokens":1}}}
 
@@ -39,8 +39,8 @@ struct ProviderTests {
 
     @Test("Anthropic 流式文本与用量")
     func anthropicStreamDecoding() async throws {
-        StubURLProtocol.setSSE(Self.anthropicStream)
-        let provider = AnthropicProvider(apiKey: "sk-test", session: StubURLProtocol.makeSession())
+        let session = StubURLProtocol.makeSession(sse: Self.anthropicStream)
+        let provider = AnthropicProvider(apiKey: "sk-test", session: session)
 
         var text = ""
         var usage: AIUsage?
@@ -59,13 +59,13 @@ struct ProviderTests {
 
     @Test("Anthropic 请求头与报文")
     func anthropicRequestShape() async throws {
-        StubURLProtocol.setSSE(Self.anthropicStream)
-        let provider = AnthropicProvider(apiKey: "sk-test", session: StubURLProtocol.makeSession())
+        let session = StubURLProtocol.makeSession(sse: Self.anthropicStream)
+        let provider = AnthropicProvider(apiKey: "sk-test", session: session)
 
         _ = try await provider.complete(
             AIRequest(model: "claude-opus-5", system: "你是中文助手", messages: [.user("嗨")]))
 
-        let (request, body) = StubURLProtocol.recordedRequest()
+        let (request, body) = StubURLProtocol.recordedRequest(for: session)
         let recorded = try #require(request)
 
         #expect(recorded.url?.path == "/v1/messages")
@@ -90,20 +90,20 @@ struct ProviderTests {
     @Test("丢弃 thinking 增量，只保留正文")
     func anthropicIgnoresThinkingDeltas() async throws {
         // 混进来的话，模型的思考过程会被直接写进提交框
-        StubURLProtocol.setSSE(
-            """
-            event: content_block_delta
-            data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"让我想想改了什么"}}
+        let session = StubURLProtocol.makeSession(
+            sse: """
+                event: content_block_delta
+                data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"让我想想改了什么"}}
 
-            event: content_block_delta
-            data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"feat: 新增导出"}}
+                event: content_block_delta
+                data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"feat: 新增导出"}}
 
-            event: message_stop
-            data: {"type":"message_stop"}
+                event: message_stop
+                data: {"type":"message_stop"}
 
-            """)
+                """)
 
-        let provider = AnthropicProvider(apiKey: "sk-test", session: StubURLProtocol.makeSession())
+        let provider = AnthropicProvider(apiKey: "sk-test", session: session)
         let text = try await provider.complete(
             AIRequest(model: "claude-opus-5", messages: [.user("x")]))
 
@@ -112,14 +112,14 @@ struct ProviderTests {
 
     @Test("拒绝回答时报错而不是静默返回空")
     func anthropicSurfacesRefusal() async throws {
-        StubURLProtocol.setSSE(
-            """
-            event: message_delta
-            data: {"type":"message_delta","delta":{"stop_reason":"refusal"},"usage":{"output_tokens":0}}
+        let session = StubURLProtocol.makeSession(
+            sse: """
+                event: message_delta
+                data: {"type":"message_delta","delta":{"stop_reason":"refusal"},"usage":{"output_tokens":0}}
 
-            """)
+                """)
 
-        let provider = AnthropicProvider(apiKey: "sk-test", session: StubURLProtocol.makeSession())
+        let provider = AnthropicProvider(apiKey: "sk-test", session: session)
 
         await #expect(throws: AIError.self) {
             _ = try await provider.complete(AIRequest(model: "claude-opus-5", messages: [.user("x")]))
@@ -128,7 +128,7 @@ struct ProviderTests {
 
     // MARK: - OpenAI 兼容
 
-    private static let openAIStream = """
+    static let openAIStream = """
         data: {"id":"c1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"role":"assistant","content":""}}]}
 
         data: {"id":"c1","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"docs: "}}]}
@@ -143,9 +143,8 @@ struct ProviderTests {
 
     @Test("OpenAI 兼容流式文本")
     func openAIStreamDecoding() async throws {
-        StubURLProtocol.setSSE(Self.openAIStream)
-        let provider = OpenAICompatibleProvider(
-            apiKey: "sk-test", session: StubURLProtocol.makeSession())
+        let session = StubURLProtocol.makeSession(sse: Self.openAIStream)
+        let provider = OpenAICompatibleProvider(apiKey: "sk-test", session: session)
 
         let text = try await provider.complete(
             AIRequest(model: "gpt-5", messages: [.user("写个提交信息")]))
@@ -155,17 +154,17 @@ struct ProviderTests {
 
     @Test("OpenAI 兼容请求头与报文")
     func openAIRequestShape() async throws {
-        StubURLProtocol.setSSE(Self.openAIStream)
+        let session = StubURLProtocol.makeSession(sse: Self.openAIStream)
         let provider = OpenAICompatibleProvider(
             apiKey: "sk-test",
-            baseURL: URL(string: "https://api.deepseek.com/v1")!,
-            session: StubURLProtocol.makeSession()
+            baseURL: .literal("https://api.deepseek.com/v1"),
+            session: session
         )
 
         _ = try await provider.complete(
             AIRequest(model: "deepseek-chat", system: "你是中文助手", messages: [.user("嗨")]))
 
-        let (request, body) = StubURLProtocol.recordedRequest()
+        let (request, body) = StubURLProtocol.recordedRequest(for: session)
         let recorded = try #require(request)
 
         #expect(recorded.url?.absoluteString == "https://api.deepseek.com/v1/chat/completions")
@@ -186,18 +185,17 @@ struct ProviderTests {
 
     @Test("带 usage 的最终块")
     func openAIReportsUsageWhenPresent() async throws {
-        StubURLProtocol.setSSE(
-            """
-            data: {"choices":[{"delta":{"content":"ok"}}]}
+        let session = StubURLProtocol.makeSession(
+            sse: """
+                data: {"choices":[{"delta":{"content":"ok"}}]}
 
-            data: {"choices":[],"usage":{"prompt_tokens":30,"completion_tokens":5}}
+                data: {"choices":[],"usage":{"prompt_tokens":30,"completion_tokens":5}}
 
-            data: [DONE]
+                data: [DONE]
 
-            """)
+                """)
 
-        let provider = OpenAICompatibleProvider(
-            apiKey: "sk-test", session: StubURLProtocol.makeSession())
+        let provider = OpenAICompatibleProvider(apiKey: "sk-test", session: session)
 
         var usage: AIUsage?
         for try await event in provider.stream(AIRequest(model: "gpt-5", messages: [.user("x")])) {
@@ -219,8 +217,8 @@ struct ProviderTests {
             (500, #"{"error":{"message":"boom"}}"#, AIError.serverError(status: 500, message: "boom")),
         ])
     func mapsStatusCodes(status: Int, body: String, expected: AIError) async throws {
-        StubURLProtocol.setJSON(body, statusCode: status)
-        let provider = AnthropicProvider(apiKey: "bad", session: StubURLProtocol.makeSession())
+        let session = StubURLProtocol.makeSession(json: body, statusCode: status)
+        let provider = AnthropicProvider(apiKey: "bad", session: session)
 
         var caught: AIError?
         do {
@@ -236,11 +234,11 @@ struct ProviderTests {
     func detectsContextOverflow() async throws {
         // 两家都用 400 表示这个，只能靠报文关键词区分——归错类的话
         // 用户会看到「服务端错误，稍后重试」，然而重试一万次也没用
-        StubURLProtocol.setJSON(
-            #"{"error":{"message":"prompt is too long: 250000 tokens > 200000 maximum"}}"#,
+        let session = StubURLProtocol.makeSession(
+            json: #"{"error":{"message":"prompt is too long: 250000 tokens > 200000 maximum"}}"#,
             statusCode: 400
         )
-        let provider = AnthropicProvider(apiKey: "sk-test", session: StubURLProtocol.makeSession())
+        let provider = AnthropicProvider(apiKey: "sk-test", session: session)
 
         var caught: AIError?
         do {
@@ -249,17 +247,18 @@ struct ProviderTests {
             caught = error
         }
 
-        guard case .contextTooLong = try #require(caught) else {
-            Issue.record("应归为 contextTooLong，实际是 \(String(describing: caught))")
+        let error = try #require(caught)
+        guard case .contextTooLong = error else {
+            Issue.record("应归为 contextTooLong，实际是 \(error)")
             return
         }
-        #expect(caught?.isTransient == false)
+        #expect(error.isTransient == false)
     }
 
     @Test("错误信息挖不出来时不至于丢失原文")
     func fallsBackToRawBody() async throws {
-        StubURLProtocol.setJSON("Bad Gateway", statusCode: 502)
-        let provider = AnthropicProvider(apiKey: "sk-test", session: StubURLProtocol.makeSession())
+        let session = StubURLProtocol.makeSession(json: "Bad Gateway", statusCode: 502)
+        let provider = AnthropicProvider(apiKey: "sk-test", session: session)
 
         var caught: AIError?
         do {

@@ -5,57 +5,67 @@ import Foundation
 /// 这里的 SSE 报文取自 Anthropic 与 OpenAI 的接口文档——和 GitKit 里
 /// 「先采集真实 git 输出再写解析器」是同一条规矩：解析器要对着真实格式写，
 /// 不能对着脑补的格式写。
+///
+/// **状态按 session 隔离**，不是全局一份。`.serialized` 只在单个 suite 内串行，
+/// 不同 suite 之间仍然并行——共用一份静态桩会让两个 suite 互相覆盖对方的响应。
+/// 每个 session 带一个 token 走 `httpAdditionalHeaders`，各查各的。
 final class StubURLProtocol: URLProtocol, @unchecked Sendable {
 
-    struct Response {
+    struct Stub {
         var statusCode: Int = 200
         var headers: [String: String] = [:]
         var body: Data = Data()
     }
 
-    /// 下一个请求的响应。测试串行跑，用静态变量够用。
-    nonisolated(unsafe) private static var stub: Response?
-    /// 最近一次请求的报文，供断言检查请求组装是否正确。
-    nonisolated(unsafe) private(set) static var lastRequest: URLRequest?
-    nonisolated(unsafe) private(set) static var lastBody: Data?
+    private struct Record {
+        var request: URLRequest?
+        var body: Data?
+    }
+
+    static let tokenHeader = "X-Yugit-Stub-Token"
 
     private static let lock = NSLock()
+    nonisolated(unsafe) private static var stubs: [String: Stub] = [:]
+    nonisolated(unsafe) private static var records: [String: Record] = [:]
 
-    static func setStub(_ response: Response) {
-        lock.withLock {
-            stub = response
-            lastRequest = nil
-            lastBody = nil
-        }
-    }
+    // MARK: - 造 session
 
-    static func setSSE(_ text: String, statusCode: Int = 200) {
-        setStub(
-            Response(
-                statusCode: statusCode,
-                headers: ["Content-Type": "text/event-stream"],
-                body: Data(text.utf8)
-            ))
-    }
+    /// 造一个只走桩的 session，桩内容与它一一绑定。
+    static func makeSession(stub: Stub) -> URLSession {
+        let token = UUID().uuidString
+        lock.withLock { stubs[token] = stub }
 
-    static func setJSON(_ text: String, statusCode: Int = 200) {
-        setStub(
-            Response(
-                statusCode: statusCode,
-                headers: ["Content-Type": "application/json"],
-                body: Data(text.utf8)
-            ))
-    }
-
-    static func recordedRequest() -> (request: URLRequest?, body: Data?) {
-        lock.withLock { (lastRequest, lastBody) }
-    }
-
-    /// 造一个只走桩的 session。
-    static func makeSession() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubURLProtocol.self]
+        configuration.httpAdditionalHeaders = [tokenHeader: token]
         return URLSession(configuration: configuration)
+    }
+
+    static func makeSession(sse: String, statusCode: Int = 200) -> URLSession {
+        makeSession(
+            stub: Stub(
+                statusCode: statusCode,
+                headers: ["Content-Type": "text/event-stream"],
+                body: Data(sse.utf8)
+            ))
+    }
+
+    static func makeSession(json: String, statusCode: Int = 200) -> URLSession {
+        makeSession(
+            stub: Stub(
+                statusCode: statusCode,
+                headers: ["Content-Type": "application/json"],
+                body: Data(json.utf8)
+            ))
+    }
+
+    /// 取这个 session 上最近一次请求，供断言检查请求组装是否正确。
+    static func recordedRequest(for session: URLSession) -> (request: URLRequest?, body: Data?) {
+        guard let token = session.configuration.httpAdditionalHeaders?[tokenHeader] as? String
+        else { return (nil, nil) }
+
+        let record = lock.withLock { records[token] }
+        return (record?.request, record?.body)
     }
 
     // MARK: - URLProtocol
@@ -65,16 +75,23 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        // httpBody 在进到 URLProtocol 时可能已经变成 stream，两种都取一下
+        // httpBody 进到 URLProtocol 时可能已经变成 stream，两种都取一下
         let body = request.httpBody ?? request.httpBodyStream.map(Self.drain)
 
-        let stub = Self.lock.withLock {
-            Self.lastRequest = request
-            Self.lastBody = body
-            return Self.stub
+        guard
+            let token = request.value(forHTTPHeaderField: Self.tokenHeader),
+            let url = request.url
+        else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badURL))
+            return
         }
 
-        guard let stub, let url = request.url else {
+        let stub = Self.lock.withLock {
+            Self.records[token] = Record(request: request, body: body)
+            return Self.stubs[token]
+        }
+
+        guard let stub else {
             client?.urlProtocol(self, didFailWithError: URLError(.resourceUnavailable))
             return
         }
