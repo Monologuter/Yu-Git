@@ -106,7 +106,8 @@ public actor FileOperationLog: OperationLogging {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
 
-        return try data
+        return
+            try data
             .split(separator: 0x0A, omittingEmptySubsequences: true)
             .suffix(limit)
             .map { try decoder.decode(OperationRecord.self, from: Data($0)) }

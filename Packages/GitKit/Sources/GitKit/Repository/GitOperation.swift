@@ -42,9 +42,11 @@ public struct GitOperation: Sendable, Equatable, Codable {
     /// 实际执行时参数是按数组传给 `posix_spawn` 的，不经过 shell，因此**不需要**
     /// 也**不能**带这层引号。
     private static func shellQuoted(_ argument: String) -> String {
-        let needsQuoting = argument.isEmpty || argument.contains { character in
-            " \t\n'\"$`\\*?[]{}()<>|&;#~!".contains(character)
-        }
+        let needsQuoting =
+            argument.isEmpty
+            || argument.contains { character in
+                " \t\n'\"$`\\*?[]{}()<>|&;#~!".contains(character)
+            }
         guard needsQuoting else { return argument }
         return "'" + argument.replacingOccurrences(of: "'", with: #"'\''"#) + "'"
     }
