@@ -1,30 +1,106 @@
 import GitKit
 import SwiftUI
 
-/// 右栏：选中对象的详情。
-///
-/// v0.1 只做只读展示，diff 查看器是 v0.2 的内容。
+/// 右栏：选中对象的详情。选中文件时显示 diff，选中提交时显示提交信息。
 struct DetailView: View {
 
-    let repository: RepositoryViewModel
+    @Bindable var repository: RepositoryViewModel
 
     var body: some View {
-        if let commit = selectedCommit {
-            CommitDetailView(commit: commit)
-        } else if let path = repository.selectedFile {
-            FileDetailPlaceholder(path: path)
-        } else {
-            ContentUnavailableView(
-                "未选择内容",
-                systemImage: "sidebar.right",
-                description: Text("在左侧选择一个文件或提交")
-            )
+        Group {
+            if let selection = repository.selectedFile {
+                fileDetail(for: selection)
+            } else if let commit = selectedCommit {
+                CommitDetailView(commit: commit)
+            } else {
+                ContentUnavailableView(
+                    "未选择内容",
+                    systemImage: "sidebar.right",
+                    description: Text("在左侧选择一个文件或提交")
+                )
+            }
+        }
+        // 选中项变了就重新取 diff
+        .task(id: repository.selectedFile) {
+            await repository.reloadSelectedDiff()
+        }
+    }
+
+    @ViewBuilder
+    private func fileDetail(for selection: RepositoryViewModel.FileSelection) -> some View {
+        VStack(spacing: 0) {
+            DiffToolbar(repository: repository, selection: selection)
+            Divider()
+
+            if let diff = repository.selectedDiff {
+                DiffView(
+                    diff: diff,
+                    isStaged: selection.isStaged,
+                    onStageHunk: { index in
+                        Task { await repository.stageHunk(at: index, in: selection.path) }
+                    },
+                    onUnstageHunk: { index in
+                        Task { await repository.unstageHunk(at: index, in: selection.path) }
+                    }
+                )
+            } else if repository.isLoadingDiff {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ContentUnavailableView(
+                    "无法读取 diff",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text("这个文件的差异暂时取不到")
+                )
+            }
         }
     }
 
     private var selectedCommit: Commit? {
         guard let id = repository.selectedCommit else { return nil }
         return repository.commits.first { $0.id == id }
+    }
+}
+
+/// diff 上方的工具条：文件名、增删统计、整文件暂存入口。
+struct DiffToolbar: View {
+
+    let repository: RepositoryViewModel
+    let selection: RepositoryViewModel.FileSelection
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "doc.text")
+                .foregroundStyle(.secondary)
+
+            Text(selection.path)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .textSelection(.enabled)
+
+            if let diff = repository.selectedDiff, !diff.isBinary {
+                HStack(spacing: 4) {
+                    Text("+\(diff.addedLineCount)").foregroundStyle(.green)
+                    Text("−\(diff.deletedLineCount)").foregroundStyle(.red)
+                }
+                .font(.system(.caption, design: .monospaced))
+            }
+
+            Spacer(minLength: 8)
+
+            if selection.isStaged {
+                Button("取消暂存整个文件") {
+                    Task { await repository.unstage([selection.path]) }
+                }
+            } else {
+                Button("暂存整个文件") {
+                    Task { await repository.stage([selection.path]) }
+                }
+            }
+        }
+        .buttonStyle(.borderless)
+        .font(.callout)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 }
 
@@ -116,20 +192,6 @@ struct CommitDetailView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-        }
-    }
-}
-
-/// 文件详情占位。真正的 diff 查看器在 v0.2。
-struct FileDetailPlaceholder: View {
-
-    let path: String
-
-    var body: some View {
-        ContentUnavailableView {
-            Label(path, systemImage: "doc.text")
-        } description: {
-            Text("diff 查看器将在 v0.2 提供")
         }
     }
 }

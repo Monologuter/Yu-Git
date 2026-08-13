@@ -6,6 +6,7 @@ struct ChangesView: View {
 
     @Bindable var repository: RepositoryViewModel
     @State private var section = Section.changes
+    @State private var pendingDiscard: [String]?
 
     enum Section: String, CaseIterable, Identifiable {
         case changes = "变更"
@@ -28,9 +29,30 @@ struct ChangesView: View {
             Divider()
 
             switch section {
-            case .changes: changeList
-            case .history: historyList
+            case .changes:
+                changeList
+                Divider()
+                CommitPanel(repository: repository)
+            case .history:
+                historyList
             }
+        }
+        .confirmationDialog(
+            "确定丢弃这些改动？",
+            isPresented: Binding(
+                get: { pendingDiscard != nil },
+                set: { if !$0 { pendingDiscard = nil } }
+            ),
+            presenting: pendingDiscard
+        ) { paths in
+            Button("丢弃 \(paths.count) 个文件的改动", role: .destructive) {
+                Task { await repository.discard(paths) }
+                pendingDiscard = nil
+            }
+            Button("取消", role: .cancel) { pendingDiscard = nil }
+        } message: { _ in
+            // 这类改动从未进过 git 的对象库，reflog 也找不回来
+            Text("这些改动没有提交过，丢弃后 git 无法找回。")
         }
     }
 
@@ -44,32 +66,77 @@ struct ChangesView: View {
                 systemImage: "checkmark.circle",
                 description: Text("没有待处理的改动")
             )
+            .frame(maxHeight: .infinity)
         } else {
             List(selection: $repository.selectedFile) {
                 if !repository.conflictedEntries.isEmpty {
                     SwiftUI.Section("冲突") {
                         ForEach(repository.conflictedEntries, id: \.path) { entry in
-                            FileRow(entry: entry).tag(entry.path)
+                            FileRow(entry: entry)
+                                .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
                         }
                     }
                 }
 
                 if !repository.stagedEntries.isEmpty {
-                    SwiftUI.Section("已暂存") {
+                    SwiftUI.Section {
                         ForEach(repository.stagedEntries, id: \.path) { entry in
-                            FileRow(entry: entry, showsIndexStatus: true).tag(entry.path)
+                            FileRow(entry: entry, showsIndexStatus: true)
+                                .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: true))
+                                .contextMenu {
+                                    Button("取消暂存") {
+                                        Task { await repository.unstage([entry.path]) }
+                                    }
+                                }
+                        }
+                    } header: {
+                        sectionHeader("已暂存", count: repository.stagedEntries.count) {
+                            Button("全部取消") {
+                                Task { await repository.unstage(repository.stagedEntries.map(\.path)) }
+                            }
                         }
                     }
                 }
 
                 if !repository.unstagedEntries.isEmpty {
-                    SwiftUI.Section("未暂存") {
+                    SwiftUI.Section {
                         ForEach(repository.unstagedEntries, id: \.path) { entry in
-                            FileRow(entry: entry).tag(entry.path)
+                            FileRow(entry: entry)
+                                .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
+                                .contextMenu {
+                                    Button("暂存") {
+                                        Task { await repository.stage([entry.path]) }
+                                    }
+                                    if entry.kind != .untracked {
+                                        Button("丢弃改动…", role: .destructive) {
+                                            pendingDiscard = [entry.path]
+                                        }
+                                    }
+                                }
+                        }
+                    } header: {
+                        sectionHeader("未暂存", count: repository.unstagedEntries.count) {
+                            Button("全部暂存") {
+                                Task { await repository.stage(repository.unstagedEntries.map(\.path)) }
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+
+    private func sectionHeader(
+        _ title: String,
+        count: Int,
+        @ViewBuilder action: () -> some View
+    ) -> some View {
+        HStack {
+            Text("\(title)（\(count)）")
+            Spacer()
+            action()
+                .buttonStyle(.borderless)
+                .font(.caption)
         }
     }
 
@@ -91,180 +158,60 @@ struct ChangesView: View {
     }
 }
 
-/// 变更列表中的一行。
-struct FileRow: View {
+/// 提交面板。
+struct CommitPanel: View {
 
-    let entry: StatusEntry
-    var showsIndexStatus = false
+    @Bindable var repository: RepositoryViewModel
+    @FocusState private var isMessageFocused: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(statusLetter)
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(statusColor)
-                .frame(width: 14)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(fileName)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-
-                if let directory {
-                    Text(directory)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.head)
+        VStack(alignment: .leading, spacing: 6) {
+            TextEditor(text: $repository.commitMessage)
+                .font(.body)
+                .frame(height: 72)
+                .scrollContentBackground(.hidden)
+                .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 6))
+                .overlay(alignment: .topLeading) {
+                    if repository.commitMessage.isEmpty {
+                        Text("提交说明")
+                            .foregroundStyle(.tertiary)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 8)
+                            .allowsHitTesting(false)
+                    }
                 }
-            }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 6).strokeBorder(.separator)
+                }
+                .focused($isMessageFocused)
 
-            Spacer(minLength: 0)
-        }
-        .help(helpText)
-    }
-
-    private var fileName: String {
-        (entry.path as NSString).lastPathComponent
-    }
-
-    private var directory: String? {
-        let parent = (entry.path as NSString).deletingLastPathComponent
-        return parent.isEmpty ? nil : parent
-    }
-
-    private var status: FileStatus {
-        showsIndexStatus ? entry.indexStatus : entry.workTreeStatus
-    }
-
-    private var statusLetter: String {
-        switch entry.kind {
-        case .untracked: "?"
-        case .unmerged: "!"
-        case .ignored: "·"
-        case .renamed: "R"
-        case .copied: "C"
-        case .ordinary: String(status.rawValue)
-        }
-    }
-
-    private var statusColor: Color {
-        switch entry.kind {
-        case .untracked: .secondary
-        case .unmerged: .orange
-        case .ignored: Color(nsColor: .tertiaryLabelColor)
-        case .renamed, .copied: .purple
-        case .ordinary:
-            switch status {
-            case .added: .green
-            case .deleted: .red
-            case .modified, .fileTypeChanged: .blue
-            default: .secondary
-            }
-        }
-    }
-
-    private var helpText: String {
-        var lines = [entry.path]
-        if let original = entry.originalPath {
-            lines.append("原路径：\(original)")
-        }
-        if let similarity = entry.similarity {
-            lines.append("相似度：\(similarity)%")
-        }
-        if entry.kind == .unmerged {
-            lines.append("存在冲突，需要先解决")
-        }
-        if let submodule = entry.submodule {
-            var states: [String] = []
-            if submodule.commitChanged { states.append("指向的 commit 有变化") }
-            if submodule.hasModifiedContent { states.append("内部有改动") }
-            if submodule.hasUntrackedContent { states.append("内部有未跟踪文件") }
-            if !states.isEmpty {
-                lines.append("submodule：" + states.joined(separator: "、"))
-            }
-        }
-        return lines.joined(separator: "\n")
-    }
-}
-
-/// 历史列表中的一行。
-///
-/// 这里先用 SwiftUI 实现，v0.3 会换成 AppKit 的 NSTableView + 自绘分支图——
-/// 5 万 commit 的滚动性能 SwiftUI List 撑不住。
-struct CommitRow: View {
-
-    let commit: Commit
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    if commit.isMerge {
-                        Image(systemName: "arrow.triangle.merge")
-                            .font(.caption2)
-                            .foregroundStyle(.purple)
-                            .help("合并提交")
+            HStack {
+                Toggle("修改上一条提交", isOn: $repository.isAmending)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+                    .onChange(of: repository.isAmending) { _, isOn in
+                        // 勾上就把上一条的说明带出来，省得用户重打一遍
+                        if isOn && repository.commitMessage.isEmpty {
+                            Task { await repository.prepareAmend() }
+                        }
                     }
 
-                    Text(commit.subject)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                Spacer()
+
+                Button("提交") {
+                    Task { await repository.commit() }
                 }
-
-                HStack(spacing: 6) {
-                    Text(commit.abbreviatedHash)
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(.secondary)
-
-                    Text(commit.author.name)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-
-                    Text(commit.author.date, format: .relative(presentation: .named))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-
-                if !commit.refs.isEmpty {
-                    RefBadges(refs: commit.refs)
-                }
+                .keyboardShortcut(.return, modifiers: .command)
+                .disabled(!repository.canCommit)
             }
 
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 2)
-    }
-}
-
-/// commit 上的分支/tag 徽章。
-struct RefBadges: View {
-
-    let refs: [CommitRef]
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in
-                if let label = label(for: ref) {
-                    Text(label.text)
-                        .font(.caption2)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(label.color.opacity(0.15), in: .capsule)
-                        .foregroundStyle(label.color)
-                }
+            if repository.isAmending {
+                // amend 会生成新的 commit hash，已推送的提交再推就需要 force
+                Label("修改后 commit hash 会变，若已推送则需要 force push", systemImage: "exclamationmark.triangle")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
             }
         }
-    }
-
-    private func label(for ref: CommitRef) -> (text: String, color: Color)? {
-        switch ref {
-        // HEAD 总是和它指向的分支一起出现，单独画一个徽章只是噪音
-        case .head: nil
-        case let .localBranch(name): (name, .accentColor)
-        case let .remoteBranch(name): (name, .gray)
-        case let .tag(name): (name, .orange)
-        case .other: nil
-        }
+        .padding(10)
     }
 }

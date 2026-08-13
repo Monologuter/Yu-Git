@@ -43,6 +43,11 @@ struct RepositoryView: View {
         }
         .task {
             await repository.refresh()
+            // 监听外部改动：终端里的 git、编辑器保存、agent 写的代码都要能立刻看到
+            repository.startWatching()
+        }
+        .onDisappear {
+            repository.stopWatching()
         }
         .overlay(alignment: .top) {
             if let message = repository.errorMessage {
