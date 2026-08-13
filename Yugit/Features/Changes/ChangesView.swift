@@ -1,6 +1,12 @@
 import GitKit
 import SwiftUI
 
+/// 待确认的丢弃请求。sheet(item:) 需要 Identifiable。
+struct DiscardRequest: Identifiable {
+    let paths: [String]
+    var id: String { paths.joined(separator: "\u{1F}") }
+}
+
 /// 一个待确认的 Quick Action。sheet(item:) 需要 Identifiable，
 /// 而动作和提交要成对传过去，所以打个包。
 struct PendingQuickAction: Identifiable {
@@ -56,22 +62,24 @@ struct ChangesView: View {
                 onDismiss: { pendingQuickAction = nil }
             )
         }
-        .confirmationDialog(
-            "确定丢弃这些改动？",
-            isPresented: Binding(
-                get: { pendingDiscard != nil },
-                set: { if !$0 { pendingDiscard = nil } }
-            ),
-            presenting: pendingDiscard
-        ) { paths in
-            Button("丢弃 \(paths.count) 个文件的改动", role: .destructive) {
-                Task { await repository.discard(paths) }
-                pendingDiscard = nil
+        // 危险操作走统一的预警对话框：会发生什么、能不能撤销、怎么撤销，
+        // 三个问题一次答完，并附上等价的 git 命令（教学模式）
+        .sheet(
+            item: Binding(
+                get: { pendingDiscard.map { DiscardRequest(paths: $0) } },
+                set: { if $0 == nil { pendingDiscard = nil } }
+            )
+        ) { request in
+            if let warning = GitOperation.discard(paths: request.paths)
+                .warning(hasSnapshot: true)
+            {
+                HazardDialog(warning: warning) {
+                    Task { await repository.discard(request.paths) }
+                    pendingDiscard = nil
+                } onCancel: {
+                    pendingDiscard = nil
+                }
             }
-            Button("取消", role: .cancel) { pendingDiscard = nil }
-        } message: { _ in
-            // 这类改动从未进过 git 的对象库，reflog 也找不回来
-            Text("这些改动没有提交过，丢弃后 git 无法找回。")
         }
     }
 

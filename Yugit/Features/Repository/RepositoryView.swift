@@ -19,6 +19,8 @@ struct RepositoryView: View {
     @State private var reviewModel: ReviewViewModel?
     @State private var worktreeModel: WorktreeViewModel?
     @State private var forgeModel: ForgeViewModel?
+    @State private var showsOnboarding = false
+    @AppStorage("com.chenya.yugit.hasSeenTour") private var hasSeenTour = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -140,6 +142,7 @@ struct RepositoryView: View {
                     showReview: { reviewModel = ReviewViewModel(repository: repository) },
                     showWorktrees: { worktreeModel = WorktreeViewModel(repository: repository) },
                     showForge: { forgeModel = ForgeViewModel(repository: repository) },
+                    showOnboarding: { showsOnboarding = true },
                     closeRepository: { model.closeRepository() }
                 ),
                 onDismiss: { showsCommandPalette = false }
@@ -148,6 +151,13 @@ struct RepositoryView: View {
         .task(id: repository.status?.branch.commit) {
             // 状态一变就复查：终端里跑的 rebase 同样要在界面上现身
             await repository.reloadRebaseProgress()
+        }
+        .sheet(isPresented: $showsOnboarding) {
+            OnboardingView { showsOnboarding = false }
+        }
+        .task {
+            // 第一次打开仓库时自动引导一次，之后不再打扰
+            if !hasSeenTour { showsOnboarding = true }
         }
         .sheet(item: $forgeModel) { model in
             ForgeView(model: model) { forgeModel = nil }

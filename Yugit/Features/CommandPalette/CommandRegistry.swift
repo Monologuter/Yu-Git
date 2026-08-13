@@ -20,6 +20,7 @@ enum CommandRegistry {
         showReview: @escaping () -> Void,
         showWorktrees: @escaping () -> Void,
         showForge: @escaping () -> Void,
+        showOnboarding: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
@@ -287,6 +288,15 @@ enum CommandRegistry {
             ) {
                 Task { await repository.refresh() }
             })
+
+        commands.append(
+            PaletteCommand(
+                id: "view.tour",
+                title: "重看新手引导",
+                subtitle: "界面上哪里能做什么",
+                systemImage: "lightbulb",
+                run: showOnboarding
+            ))
 
         commands.append(
             PaletteCommand(
