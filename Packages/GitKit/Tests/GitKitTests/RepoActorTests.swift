@@ -6,9 +6,9 @@ import Testing
 @Suite("RepoActor")
 struct RepoActorTests {
 
-    private func makeActor(on repository: TemporaryRepository) -> (RepoActor, InMemoryOperationLog) {
+    private func makeActor(on repository: TemporaryRepository) async throws -> (RepoActor, InMemoryOperationLog) {
         let log = InMemoryOperationLog()
-        let actor = RepoActor(root: repository.url, client: repository.client, operationLog: log)
+        let actor = try await RepoActor(root: repository.url, client: repository.client, operationLog: log)
         return (actor, log)
     }
 
@@ -18,7 +18,7 @@ struct RepoActorTests {
     func recordsSuccessfulOperation() async throws {
         let repository = try await TemporaryRepository()
         try repository.write("hello", to: "a.txt")
-        let (actor, log) = makeActor(on: repository)
+        let (actor, log) = try await makeActor(on: repository)
 
         try await actor.perform(.stage(paths: ["a.txt"]))
 
@@ -35,7 +35,7 @@ struct RepoActorTests {
     func recordsFailedOperation() async throws {
         // 「我刚才那步为什么没生效」也是用户要在时间线上看到的东西。
         let repository = try await TemporaryRepository()
-        let (actor, log) = makeActor(on: repository)
+        let (actor, log) = try await makeActor(on: repository)
 
         await #expect(throws: GitError.self) {
             try await actor.perform(.stage(paths: ["根本不存在.txt"]))
@@ -57,7 +57,7 @@ struct RepoActorTests {
     func recordsHeadTransition() async throws {
         let repository = try await TemporaryRepository()
         try repository.write("hello", to: "a.txt")
-        let (actor, log) = makeActor(on: repository)
+        let (actor, log) = try await makeActor(on: repository)
 
         try await actor.perform(.stage(paths: ["a.txt"]))
         try await actor.perform(.commit(message: "首次提交"))
@@ -75,7 +75,7 @@ struct RepoActorTests {
     @Test("只读查询不进操作日志")
     func doesNotLogReads() async throws {
         let repository = try await TemporaryRepository()
-        let (actor, log) = makeActor(on: repository)
+        let (actor, log) = try await makeActor(on: repository)
 
         _ = try await actor.status()
 
@@ -94,7 +94,7 @@ struct RepoActorTests {
         for index in 0..<fileCount {
             try repository.write("内容 \(index)", to: "文件\(index).txt")
         }
-        let (actor, log) = makeActor(on: repository)
+        let (actor, log) = try await makeActor(on: repository)
 
         try await withThrowingTaskGroup(of: Void.self) { group in
             for index in 0..<fileCount {
@@ -195,8 +195,8 @@ struct FileOperationLogTests {
 @Suite("部分暂存")
 struct PartialStagingTests {
 
-    private func makeActor(on repository: TemporaryRepository) -> RepoActor {
-        RepoActor(root: repository.url, client: repository.client, operationLog: InMemoryOperationLog())
+    private func makeActor(on repository: TemporaryRepository) async throws -> RepoActor {
+        try await RepoActor(root: repository.url, client: repository.client, operationLog: InMemoryOperationLog())
     }
 
     private func indexContent(of path: String, in repository: TemporaryRepository) async throws -> String {
@@ -214,7 +214,7 @@ struct PartialStagingTests {
         lines[27] = "改了第二十八行"
         try repository.write(lines.joined(separator: "\n") + "\n", to: "f.txt")
 
-        let actor = makeActor(on: repository)
+        let actor = try await makeActor(on: repository)
         let staged = try await actor.stagePartial(path: "f.txt", selecting: .hunks([0]))
 
         #expect(staged)
@@ -232,7 +232,7 @@ struct PartialStagingTests {
         try repository.write("这行是不该出现在日志里的机密内容\n", to: "机密.txt")
 
         let log = InMemoryOperationLog()
-        let actor = RepoActor(root: repository.url, client: repository.client, operationLog: log)
+        let actor = try await RepoActor(root: repository.url, client: repository.client, operationLog: log)
         try await actor.stagePartial(path: "机密.txt", selecting: .whole)
 
         let records = await log.recent(limit: 10)
@@ -254,7 +254,7 @@ struct PartialStagingTests {
         try repository.write("A\nB\n", to: "f.txt")
         try await repository.git("add", "f.txt")
 
-        let actor = makeActor(on: repository)
+        let actor = try await makeActor(on: repository)
         let unstaged = try await actor.unstagePartial(path: "f.txt", selecting: .whole)
 
         #expect(unstaged)
@@ -270,7 +270,7 @@ struct PartialStagingTests {
         try repository.write("A\n", to: "f.txt")
 
         let log = InMemoryOperationLog()
-        let actor = RepoActor(root: repository.url, client: repository.client, operationLog: log)
+        let actor = try await RepoActor(root: repository.url, client: repository.client, operationLog: log)
         let staged = try await actor.stagePartial(path: "f.txt", selecting: .hunks([]))
 
         #expect(!staged)
@@ -293,7 +293,7 @@ struct PartialStagingTests {
         try await repository.commitAll("base")
         try repository.write("改过的\n", to: "f.txt")
 
-        let actor = makeActor(on: repository)
+        let actor = try await makeActor(on: repository)
         try await actor.perform(.stashPush(message: "临时收起来"))
 
         let afterStash = try await actor.status()

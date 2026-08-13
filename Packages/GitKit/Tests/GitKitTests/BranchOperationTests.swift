@@ -6,15 +6,15 @@ import Testing
 @Suite("分支操作")
 struct BranchOperationTests {
 
-    private func makeActor(on repository: TemporaryRepository) -> RepoActor {
-        RepoActor(root: repository.url, client: repository.client, operationLog: InMemoryOperationLog())
+    private func makeActor(on repository: TemporaryRepository) async throws -> RepoActor {
+        try await RepoActor(root: repository.url, client: repository.client, operationLog: InMemoryOperationLog())
     }
 
     private func seeded() async throws -> (TemporaryRepository, RepoActor) {
         let repository = try await TemporaryRepository()
         try repository.write("初始\n", to: "a.txt")
         try await repository.commitAll("base")
-        return (repository, makeActor(on: repository))
+        return (repository, try await makeActor(on: repository))
     }
 
     @Test("新建并切换分支")
@@ -162,7 +162,7 @@ struct BranchOperationTests {
         try await repository.commitAll("base")
 
         let log = InMemoryOperationLog()
-        let actor = RepoActor(root: repository.url, client: repository.client, operationLog: log)
+        let actor = try await RepoActor(root: repository.url, client: repository.client, operationLog: log)
 
         try await actor.perform(.createBranch(name: "分支A"))
         try repository.write("来自 A\n", to: "f.txt")
@@ -199,7 +199,7 @@ struct BranchOperationTests {
         try await origin.client.run(["config", "user.email", "t@yugit.local"], in: clonePath)
         try await origin.client.run(["config", "user.name", "测试"], in: clonePath)
 
-        let actor = RepoActor(root: clonePath, client: origin.client, operationLog: InMemoryOperationLog())
+        let actor = try await RepoActor(root: clonePath, client: origin.client, operationLog: InMemoryOperationLog())
         try await actor.perform(.createBranch(name: "本地分支"))
         try await actor.perform(.setUpstream(branch: "本地分支", to: "origin/main"))
 

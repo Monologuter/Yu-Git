@@ -13,6 +13,10 @@ public protocol OperationLogging: Sendable {
 /// 一条操作记录。
 public struct OperationRecord: Sendable, Equatable, Codable, Identifiable {
 
+    private enum CodingKeys: String, CodingKey {
+        case id, timestamp, operation, headBefore, headAfter, outcome, snapshotReference
+    }
+
     public enum Outcome: Sendable, Equatable, Codable {
         case succeeded
         case failed(exitCode: Int32, message: String)
@@ -36,13 +40,20 @@ public struct OperationRecord: Sendable, Equatable, Codable, Identifiable {
 
     public let outcome: Outcome
 
+    /// 执行前拍下的快照引用；没打快照时为 nil。
+    ///
+    /// 只存引用不存内容：快照本身是 git 对象，放在 refs/yugit/ 下，
+    /// 日志里只需要一个指针。
+    public let snapshotReference: String?
+
     public init(
         id: UUID = UUID(),
         timestamp: Date = Date(),
         operation: GitOperation,
         headBefore: String?,
         headAfter: String?,
-        outcome: Outcome
+        outcome: Outcome,
+        snapshotReference: String? = nil
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -50,6 +61,7 @@ public struct OperationRecord: Sendable, Equatable, Codable, Identifiable {
         self.headBefore = headBefore
         self.headAfter = headAfter
         self.outcome = outcome
+        self.snapshotReference = snapshotReference
     }
 
     /// 这次操作确实让 HEAD 动了。

@@ -19,7 +19,7 @@ public actor RepoActor {
 
     public nonisolated let client: GitClient
 
-    private let operationLog: OperationLogging
+    private let timeline: Timeline
 
     /// 写操作串行队列的队尾。
     ///
@@ -29,18 +29,24 @@ public actor RepoActor {
     /// 靠 Task 链拿到真正的互斥。
     private var queueTail: Task<Void, Never>?
 
-    public init(root: URL, client: GitClient, operationLog: OperationLogging) {
+    public init(root: URL, client: GitClient, timeline: Timeline) {
         self.root = root
         self.client = client
-        self.operationLog = operationLog
+        self.timeline = timeline
+    }
+
+    /// 便于测试与预览：用内存日志加真实快照存储组一条时间线。
+    public init(root: URL, client: GitClient, operationLog: OperationLogging) async throws {
+        let snapshots = try await SnapshotStore.open(root: root, client: client)
+        self.init(root: root, client: client, timeline: Timeline(log: operationLog, snapshots: snapshots))
     }
 
     /// 打开指定路径所在的仓库，日志落在仓库自己的 git 目录里。
     public static func open(at path: URL, client: GitClient? = nil) async throws -> RepoActor {
         let client = try client ?? GitClient()
         let root = try await client.repositoryRoot(containing: path)
-        let log = try await FileOperationLog(repository: root, client: client)
-        return RepoActor(root: root, client: client, operationLog: log)
+        let timeline = try await Timeline.open(root: root, client: client)
+        return RepoActor(root: root, client: client, timeline: timeline)
     }
 
     // MARK: - 写
@@ -71,6 +77,8 @@ public actor RepoActor {
 
     private func execute(_ operation: GitOperation, standardInput: Data?) async throws -> ProcessResult {
         let headBefore = await currentHead()
+        // 危险操作先留退路。安全操作不拍——拍快照要遍历工作区，高频操作上会明显拖慢。
+        let snapshot = await timeline.snapshotIfNeeded(before: operation)
 
         do {
             let result = try await client.run(
@@ -78,14 +86,26 @@ public actor RepoActor {
                 in: root,
                 standardInput: standardInput
             )
-            await log(operation, headBefore: headBefore, headAfter: await currentHead(), outcome: .succeeded)
+            await log(
+                operation,
+                headBefore: headBefore,
+                headAfter: await currentHead(),
+                outcome: .succeeded,
+                snapshot: snapshot
+            )
             return result
         } catch {
             let outcome = OperationRecord.Outcome.failed(
                 exitCode: (error as? GitError).flatMap(Self.exitCode) ?? -1,
                 message: String(describing: error)
             )
-            await log(operation, headBefore: headBefore, headAfter: headBefore, outcome: outcome)
+            await log(
+                operation,
+                headBefore: headBefore,
+                headAfter: headBefore,
+                outcome: outcome,
+                snapshot: snapshot
+            )
             throw error
         }
     }
@@ -104,9 +124,30 @@ public actor RepoActor {
         )
     }
 
-    /// 最近的操作记录，按时间正序。
-    public func operationHistory(limit: Int = 100) async throws -> [OperationRecord] {
-        try await operationLog.recent(limit: limit)
+    /// 时间线条目，按时间正序。
+    public func timelineEntries(limit: Int = 100) async throws -> [TimelineEntry] {
+        try await timeline.entries(limit: limit)
+    }
+
+    /// 撤销某一项操作，退回它执行之前的工作区状态。
+    public func undo(_ entry: TimelineEntry) async throws {
+        try await timeline.undo(entry)
+    }
+
+    /// 为外部改动打一个时间点。
+    @discardableResult
+    public func captureExternalChange(summary: String) async -> Snapshot? {
+        await timeline.captureExternalChange(summary: summary)
+    }
+
+    /// 全部快照，按时间倒序。
+    public func timelineSnapshots() async throws -> [Snapshot] {
+        try await timeline.allSnapshots()
+    }
+
+    /// 直接恢复到某张快照。
+    public func restoreSnapshot(_ snapshot: Snapshot) async throws {
+        try await timeline.restore(snapshot)
     }
 
     // MARK: - 内部
@@ -117,15 +158,17 @@ public actor RepoActor {
         _ operation: GitOperation,
         headBefore: String?,
         headAfter: String?,
-        outcome: OperationRecord.Outcome
+        outcome: OperationRecord.Outcome,
+        snapshot: Snapshot?
     ) async {
         let record = OperationRecord(
             operation: operation,
             headBefore: headBefore,
             headAfter: headAfter,
-            outcome: outcome
+            outcome: outcome,
+            snapshotReference: snapshot?.reference
         )
-        try? await operationLog.record(record)
+        await timeline.record(record)
     }
 
     /// 当前 HEAD 指向的 commit；仓库尚无提交（unborn）时为 nil。
