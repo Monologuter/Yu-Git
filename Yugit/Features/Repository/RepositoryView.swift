@@ -9,6 +9,7 @@ struct RepositoryView: View {
 
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     @State private var isSearching = false
+    @State private var showsTimeline = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -78,6 +79,13 @@ struct RepositoryView: View {
                 }
                 .disabled(repository.isRefreshing)
                 .help("重新读取仓库状态（⌘R）")
+
+                Button {
+                    showsTimeline.toggle()
+                } label: {
+                    Label("时间线", systemImage: "clock.arrow.circlepath")
+                }
+                .help("查看操作记录与可恢复的时间点")
             }
         }
         .task {
@@ -88,6 +96,10 @@ struct RepositoryView: View {
         }
         .onDisappear {
             repository.stopWatching()
+        }
+        .inspector(isPresented: $showsTimeline) {
+            TimelineView(repository: repository)
+                .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
         }
         .sheet(isPresented: $isSearching) {
             SearchView(

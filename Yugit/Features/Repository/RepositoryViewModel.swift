@@ -51,6 +51,15 @@ final class RepositoryViewModel {
     var commitMessage = ""
     var isAmending = false
 
+    /// 时间线条目与可恢复的时间点。
+    var timelineEntries: [TimelineEntry] = []
+    var timelineSnapshots: [Snapshot] = []
+
+    /// 上次为外部改动打点的时刻，用于限流。
+    var lastExternalCapture: Date?
+    /// 两次外部打点之间的最小间隔。编辑器每次保存都拍会让仓库迅速膨胀。
+    static let externalCaptureInterval: TimeInterval = 30
+
     let repository: RepoActor
     private var watcher: RepositoryWatcher?
 
@@ -90,7 +99,12 @@ final class RepositoryViewModel {
     func startWatching() {
         guard watcher == nil else { return }
         let watcher = RepositoryWatcher(root: root) { [weak self] in
-            Task { @MainActor in await self?.refresh() }
+            Task { @MainActor in
+                guard let self else { return }
+                await self.refresh()
+                // 外部改动同样要留退路，这是 Claude Code 的 checkpoint 管不到的部分
+                await self.captureExternalChangeIfNeeded()
+            }
         }
         watcher.start()
         self.watcher = watcher

@@ -55,6 +55,12 @@ final class AppModel {
         repository = nil
     }
 
+    /// 全局撤销：退回最近一次留有快照的操作之前。
+    func undoMostRecent() {
+        guard let repository else { return }
+        Task { await repository.undoMostRecent() }
+    }
+
     func refreshCurrentRepository() {
         guard let repository else { return }
         Task { await repository.refresh() }

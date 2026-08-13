@@ -27,6 +27,14 @@ struct YugitApp: App {
                 .keyboardShortcut("o", modifiers: .command)
             }
 
+            CommandGroup(replacing: .undoRedo) {
+                Button("撤销上一步操作") {
+                    model.undoMostRecent()
+                }
+                .keyboardShortcut("z", modifiers: .command)
+                .disabled(model.repository?.mostRecentUndoableEntry == nil)
+            }
+
             CommandGroup(after: .toolbar) {
                 Button("刷新") {
                     model.refreshCurrentRepository()
