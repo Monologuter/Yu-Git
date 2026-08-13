@@ -4,12 +4,35 @@
 
 ## [未发布]
 
+## [0.1.0] — 内部 Alpha：只读浏览
+
+第一个能跑起来的版本。可以打开仓库，看到分支、标签、工作区变更与提交历史。
+
 ### 新增
 
-- **GitKit · ProcessRunner**：子进程执行器，并发排空 stdout/stderr 防管道死锁，支持超时与取消
-- **GitKit · GitClient**：git CLI 调用层，隔离继承环境、禁止交互挂起、避免 index.lock 竞争
-- **GitKit · StatusParser**：porcelain v2 解析器，覆盖重命名跨段、中文与含空格路径、冲突、submodule
-- **GitKit · RepoActor**：仓库写操作的单一入口，显式串行化并记录操作日志
-- **GitKit · GitOperation**：操作描述类型，自带中文摘要、注解与等价 git 命令
-- **GitKit · FileOperationLog**：JSONL 操作日志，为 v0.5 的时间线 Undo 打底
+**Git 引擎（GitKit）**
+
+- **ProcessRunner**：子进程执行器，并发排空 stdout/stderr 防管道死锁，支持超时与取消
+- **GitClient**：git CLI 调用层，隔离继承环境、禁止交互挂起、避免 index.lock 竞争
+- **StatusParser**：porcelain v2 解析器，覆盖重命名跨段、中文与含空格路径、冲突、submodule
+- **LogParser**：提交历史解析，自行解析 ISO 8601 时间戳以满足首屏性能预算
+- **RefParser**：分支与 tag 解析，区分附注/轻量 tag，识别 upstream 的 gone 与分叉状态
+- **RepoActor**：仓库写操作的单一入口，显式串行化并记录操作日志
+- **GitOperation**：操作描述类型，自带中文摘要、注解与等价 git 命令
+- **FileOperationLog**：JSONL 操作日志，为 v0.5 的时间线 Undo 打底
+
+**界面**
+
+- 三栏工作区：分支/标签侧栏 ｜ 变更与历史 ｜ 详情
+- 欢迎页与最近打开列表
+- 支持从 Finder 拖拽或 `open` 命令打开仓库
+
+**工程**
+
 - 工程规范（`docs/04-工程规范.md`）与本地质量门禁（swift-format 配置、git hooks）
+
+### 已知限制
+
+- 只读。暂存、提交、分支操作在 v0.2
+- diff 查看器在 v0.2
+- 历史列表用 SwiftUI 实现，大仓库滚动性能待 v0.3 换 AppKit 虚拟化列表

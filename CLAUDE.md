@@ -19,7 +19,7 @@ v0.1 开发中。`Packages/GitKit` 已有 ProcessRunner、GitClient、StatusPars
 
 - 提交信息：Conventional Commits + 中文摘要；**绝不加任何 AI 协作署名**（commit-msg hook 会拦截）
 - 分支：轻量流。文档与小修直接提 main；新模块、多 commit 的功能、危险重构走 `feat/*` 分支，rebase 后 `--ff-only` 合入
-- 提交前跑 `swift format --recursive --in-place Packages/`；推送前 `swift test` 必须全绿
+- 提交前跑 `swift format --recursive --in-place Packages/ Yugit/`；推送前 `swift test` 必须全绿
 - 新克隆后执行一次 `./scripts/install-hooks.sh` 装上门禁
 - 默认零第三方依赖，引入需书面论证
 
