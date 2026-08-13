@@ -151,9 +151,14 @@ struct ChangesView: View {
                 description: Text("这个仓库还没有任何 commit")
             )
         } else {
-            List(repository.commits, selection: $repository.selectedCommit) { commit in
-                CommitRow(commit: commit).tag(commit.id)
-            }
+            CommitHistoryView(
+                commits: repository.commits,
+                graph: repository.graph,
+                selection: $repository.selectedCommit,
+                onReachEnd: {
+                    Task { await repository.loadMoreCommits() }
+                }
+            )
         }
     }
 }

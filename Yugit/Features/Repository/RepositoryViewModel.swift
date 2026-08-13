@@ -25,6 +25,12 @@ final class RepositoryViewModel {
     private(set) var tags: [Tag] = []
     private(set) var commits: [Commit] = []
 
+    /// 提交历史的分支图布局。
+    private(set) var graph = CommitGraph(commits: [])
+    /// 还有更早的提交没加载。
+    private(set) var hasMoreCommits = true
+    private var isLoadingMoreCommits = false
+
     private(set) var isRefreshing = false
 
     /// 需要弹给用户的失败信息，含中文说明与下一步建议。
@@ -57,6 +63,8 @@ final class RepositoryViewModel {
     /// 首屏加载的提交数。PRD 要求 5 万 commit 仓库首屏 500ms 内出来，
     /// 先取够填满一屏的量，滚动时再增量加载（v0.3 做）。
     private let initialCommitCount = 200
+    /// 每次增量加载的条数。
+    private let pageSize = 500
 
     init(url: URL) async throws {
         repository = try await RepoActor.open(at: url)
@@ -65,6 +73,18 @@ final class RepositoryViewModel {
     }
 
     // MARK: - 生命周期
+
+    /// 后台准备 commit-graph 缓存。
+    ///
+    /// 分支图必须用拓扑序才不会画错，而拓扑序要求 git 遍历完整提交图——
+    /// 5 万 commit 上取首屏要 370ms，有缓存则降到 40ms。放在后台做，
+    /// 首屏不等它，写完之后的每次刷新都会受益。
+    func prepareCommitGraphCache() {
+        Task.detached(priority: .background) { [client = repository.client, root] in
+            guard await !client.hasCommitGraph(in: root) else { return }
+            try? await client.writeCommitGraph(in: root)
+        }
+    }
 
     /// 开始监听外部改动。PRD 要求终端、编辑器、agent 的改动 500ms 内反映到界面。
     func startWatching() {
@@ -96,6 +116,8 @@ final class RepositoryViewModel {
             async let commitResult = repository.client.log(
                 in: repository.root,
                 includingAllRefs: true,
+                // 画分支图必须用拓扑序，按时间排会让线出现视觉上的交叉错乱
+                order: .topological,
                 maxCount: initialCommitCount
             )
 
@@ -103,6 +125,8 @@ final class RepositoryViewModel {
             branches = try await branchResult
             tags = try await tagResult
             commits = try await commitResult
+            graph = CommitGraph(commits: commits)
+            hasMoreCommits = commits.count >= initialCommitCount
             failure = nil
         } catch {
             failure = FailurePresentation(from: error)
@@ -244,6 +268,35 @@ final class RepositoryViewModel {
         isTransferring = false
         transferProgress = nil
         await refresh()
+    }
+
+    /// 滚动接近底部时加载更早的提交。
+    func loadMoreCommits() async {
+        guard hasMoreCommits, !isLoadingMoreCommits, !commits.isEmpty else { return }
+        isLoadingMoreCommits = true
+        defer { isLoadingMoreCommits = false }
+
+        do {
+            let more = try await repository.client.log(
+                in: root,
+                includingAllRefs: true,
+                order: .topological,
+                maxCount: pageSize,
+                skip: commits.count
+            )
+            guard !more.isEmpty else {
+                hasMoreCommits = false
+                return
+            }
+
+            commits += more
+            // 图必须整体重算：新加载的提交可能是前面某条分支线的父，
+            // 只算增量会漏掉那些跨页的连线
+            graph = CommitGraph(commits: commits)
+            hasMoreCommits = more.count >= pageSize
+        } catch {
+            hasMoreCommits = false
+        }
     }
 
     /// 从搜索结果跳到某个文件：选中它并切到变更列表。
