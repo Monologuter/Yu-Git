@@ -178,3 +178,16 @@ extension RepositoryViewModel {
         try await repository.client.blame(path: path, in: repository.root)
     }
 }
+
+extension RepositoryViewModel {
+
+    /// origin 远程的 URL。认平台用。
+    func originURL() async -> String? {
+        let result = try? await repository.client.runReturningResult(
+            ["remote", "get-url", "origin"], in: repository.root)
+        guard let result, result.isSuccess else { return nil }
+
+        let url = result.standardOutputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return url.isEmpty ? nil : url
+    }
+}

@@ -19,6 +19,7 @@ enum CommandRegistry {
         showConflicts: @escaping () -> Void,
         showReview: @escaping () -> Void,
         showWorktrees: @escaping () -> Void,
+        showForge: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
@@ -236,6 +237,15 @@ enum CommandRegistry {
                     Task { await repository.undo(undoable) }
                 })
         }
+
+        commands.append(
+            PaletteCommand(
+                id: "forge.panel",
+                title: "Pull Request / Merge Request",
+                subtitle: "查看和新建，支持 GitHub、GitLab（含自建）、Gitee",
+                systemImage: "arrow.triangle.pull",
+                run: showForge
+            ))
 
         // MARK: 并行工作区
 

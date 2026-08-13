@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		AA00000000000000000000B1 /* GitKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000B0 /* GitKit */; };
 		AA00000000000000000000C1 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000C0 /* AIKit */; };
+		AA00000000000000000000C4 /* ForgeKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000C3 /* ForgeKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 			files = (
 				AA00000000000000000000B1 /* GitKit in Frameworks */,
 				AA00000000000000000000C1 /* AIKit in Frameworks */,
+				AA00000000000000000000C4 /* ForgeKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +89,7 @@
 			packageProductDependencies = (
 				AA00000000000000000000B0 /* GitKit */,
 				AA00000000000000000000C0 /* AIKit */,
+				AA00000000000000000000C3 /* ForgeKit */,
 			);
 			productName = Yugit;
 			productReference = AA00000000000000000000A8 /* 驭Git.app */;
@@ -120,6 +123,7 @@
 			packageReferences = (
 				AA00000000000000000000AF /* XCLocalSwiftPackageReference "Packages/GitKit" */,
 				AA00000000000000000000C2 /* XCLocalSwiftPackageReference "Packages/AIKit" */,
+				AA00000000000000000000C5 /* XCLocalSwiftPackageReference "Packages/ForgeKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AA00000000000000000000A2 /* Products */;
@@ -290,6 +294,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/AIKit;
 		};
+		AA00000000000000000000C5 /* XCLocalSwiftPackageReference "Packages/ForgeKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ForgeKit;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -300,6 +308,10 @@
 		AA00000000000000000000C0 /* AIKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AIKit;
+		};
+		AA00000000000000000000C3 /* ForgeKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ForgeKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
