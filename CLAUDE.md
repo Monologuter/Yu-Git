@@ -2,14 +2,21 @@
 
 AI 原生 + 中文界面的 macOS 原生 Git 客户端。Slogan：「AI 帮你写代码，驭Git 帮你驾驭它」。Bundle ID `com.chenya.yugit`。
 
-## 现状（2026-08-12）
+## 现状（2026-08-13）
 
-需求阶段完成，**尚未开始编码**。实现计划在 `~/.claude/plans/macos-app-mighty-kahn.md`，其中 M0–M4 里程碑需按 PRD 的版本节奏（v0.1→v0.5→v1.0→v2.0）更新后再开工。
+需求与计划阶段完成，**尚未开始编码**。开工前置：`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` 切到完整版 Xcode。
 
 ## 必读文档
 
 - `docs/01-竞品调研与功能设计.md` — 13 款竞品的精华/糟粕分析、8 个差异化设计的依据
 - `docs/02-产品需求文档.md` — PRD：定位、目标用户、分版本功能需求、AI 设计铁律、非功能指标、商业模式
+- `docs/03-实现计划.md` — 架构、里程碑（v0.1→v0.3→v0.5→v1.0→v2.0）、风险清单、验收标准
+
+## 架构铁律（早埋，晚补要返工）
+
+- 所有仓库写操作走 `RepoActor.perform(_ op: GitOperation)` 单一入口——时间线 Undo 的前提，绕过入口直接写视为 bug
+- 每个 `GitOperation` 自带「等价 git 命令 + 中文注解」元数据——透明命令层和 Command Palette 直接消费
+- DiffParser 与 PatchBuilder 同构，往返测试锁死——hunk/行级暂存不损坏工作区的根本保证
 
 ## 关键决策（已与用户确认，勿擅自推翻）
 
