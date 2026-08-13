@@ -4,13 +4,18 @@ AI 原生 + 中文界面的 macOS 原生 Git 客户端。Slogan：「AI 帮你�
 
 ## 现状（2026-08-13）
 
-**v0.5 已完成**（公开 Beta）。296 条测试全绿。
+**v1.0 已完成**（正式发布）。378 条测试全绿。四根支柱都已立起：无畏 Undo、
+按意图拆分提交、AI 解冲突、本地 AI 评审。
 
-- `Packages/GitKit` — 进程、status/log/diff 解析、暂存（含 hunk/行级）、分支、远程、搜索、时间线快照、interactive rebase 与 Quick Actions
-- `Packages/AIKit` — Anthropic 原生 + OpenAI 兼容双协议、SSE 解析、Keychain、上下文脱敏、提交信息生成、中文解释
-- `Yugit` — 三栏窗口、⌘K 命令面板、时间线侧栏、AI 设置页、可视化 rebase
+- `Packages/GitKit` — 进程、status/log/diff 解析、暂存（含 hunk/行级）、分支、远程、
+  搜索、时间线快照、interactive rebase、Quick Actions、分批提交、冲突解析
+- `Packages/AIKit` — Anthropic 原生 + OpenAI 兼容双协议、SSE、Keychain、上下文脱敏、
+  提交信息生成、中文解释、Commit Composer、解冲突建议、diff 评审
+- `Yugit` — 三栏窗口、⌘K 命令面板、时间线侧栏、AI 设置页、可视化 rebase、
+  拆分提交面板、三方合并编辑器、评审面板
 
-下一步是 v1.0：AI Commit Composer（按意图拆分提交）、AI 逐 hunk 解冲突、本地 diff AI 评审、内置三方合并编辑器。
+下一步是 v1.5–2.0：Worktree/并行 agent 面板、AI 归因 blame、平台集成
+（GitHub/GitLab/Gitee）、教学模式完善。
 
 远程：私有仓库 `https://github.com/Monologuter/Yu-Git`，默认分支 `main`。
 
