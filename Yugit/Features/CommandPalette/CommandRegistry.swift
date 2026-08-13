@@ -17,6 +17,7 @@ enum CommandRegistry {
         showRebase: @escaping () -> Void,
         showCompose: @escaping () -> Void,
         showConflicts: @escaping () -> Void,
+        showReview: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
@@ -56,6 +57,19 @@ enum CommandRegistry {
                     subtitle: "\(repository.conflictedEntries.count) 个文件有冲突",
                     systemImage: "arrow.triangle.merge",
                     run: showConflicts
+                ))
+        }
+
+        if aiSettings.isAvailable {
+            commands.append(
+                PaletteCommand(
+                    id: "ai.review",
+                    title: "提交前自查",
+                    subtitle: repository.stagedEntries.isEmpty
+                        ? "先暂存一些改动" : "让 AI 通读暂存的 \(repository.stagedEntries.count) 个文件",
+                    systemImage: "checkmark.shield",
+                    isEnabled: !repository.stagedEntries.isEmpty,
+                    run: showReview
                 ))
         }
 

@@ -14,6 +14,7 @@ struct ChangesView: View {
 
     @Bindable var repository: RepositoryViewModel
     let onResolveConflicts: () -> Void
+    let onReview: () -> Void
     @State private var section = Section.changes
     @State private var pendingDiscard: [String]?
     @State private var pendingQuickAction: PendingQuickAction?
@@ -42,7 +43,7 @@ struct ChangesView: View {
             case .changes:
                 changeList
                 Divider()
-                CommitPanel(repository: repository)
+                CommitPanel(repository: repository, onReview: onReview)
             case .history:
                 historyList
             }
@@ -197,6 +198,7 @@ struct ChangesView: View {
 struct CommitPanel: View {
 
     @Bindable var repository: RepositoryViewModel
+    let onReview: () -> Void
     @Environment(AISettingsStore.self) private var aiSettings
     @FocusState private var isMessageFocused: Bool
 
@@ -254,8 +256,16 @@ struct CommitPanel: View {
 
                 Spacer()
 
-                // 没配 AI 的用户看不到这个按钮，界面上不留任何 AI 痕迹
+                // 没配 AI 的用户看不到这些按钮，界面上不留任何 AI 痕迹
                 if aiSettings.isAvailable {
+                    Button {
+                        onReview()
+                    } label: {
+                        Label("自查", systemImage: "checkmark.shield")
+                    }
+                    .disabled(repository.stagedEntries.isEmpty)
+                    .help("提交前让 AI 通读暂存的改动，按风险分级列出值得确认的地方")
+
                     aiDraftButton
                 }
 

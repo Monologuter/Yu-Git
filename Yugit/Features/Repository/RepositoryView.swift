@@ -16,15 +16,18 @@ struct RepositoryView: View {
     @State private var showsRebase = false
     @State private var composeModel: ComposeViewModel?
     @State private var conflictModel: ConflictViewModel?
+    @State private var reviewModel: ReviewViewModel?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView(repository: repository)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
         } content: {
-            ChangesView(repository: repository) {
-                conflictModel = ConflictViewModel(repository: repository)
-            }
+            ChangesView(
+                repository: repository,
+                onResolveConflicts: { conflictModel = ConflictViewModel(repository: repository) },
+                onReview: { reviewModel = ReviewViewModel(repository: repository) }
+            )
             .navigationSplitViewColumnWidth(min: 260, ideal: 320, max: 460)
         } detail: {
             DetailView(repository: repository)
@@ -132,6 +135,7 @@ struct RepositoryView: View {
                     showRebase: { showsRebase = true },
                     showCompose: { composeModel = ComposeViewModel(repository: repository) },
                     showConflicts: { conflictModel = ConflictViewModel(repository: repository) },
+                    showReview: { reviewModel = ReviewViewModel(repository: repository) },
                     closeRepository: { model.closeRepository() }
                 ),
                 onDismiss: { showsCommandPalette = false }
@@ -140,6 +144,9 @@ struct RepositoryView: View {
         .task(id: repository.status?.branch.commit) {
             // 状态一变就复查：终端里跑的 rebase 同样要在界面上现身
             await repository.reloadRebaseProgress()
+        }
+        .sheet(item: $reviewModel) { model in
+            ReviewView(model: model) { reviewModel = nil }
         }
         .sheet(item: $conflictModel) { model in
             ConflictView(model: model) { conflictModel = nil }

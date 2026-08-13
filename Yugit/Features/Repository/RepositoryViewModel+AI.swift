@@ -140,3 +140,13 @@ extension RepositoryViewModel {
             at: path, content: content, in: repository.root)
     }
 }
+
+extension RepositoryViewModel {
+
+    /// 暂存区的完整 diff。评审看的是**将要提交的内容**，不是工作区里的一切。
+    func stagedDiff() async throws -> String {
+        try await repository.client.runReturningResult(
+            ["diff", "--cached", "--no-color"], in: repository.root
+        ).standardOutputText
+    }
+}
