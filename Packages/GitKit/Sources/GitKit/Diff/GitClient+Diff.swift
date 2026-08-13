@@ -23,6 +23,28 @@ extension GitClient {
         return try DiffParser.parse(result.standardOutput, path: path)
     }
 
+    /// 取某个文件相对 HEAD 的全部改动（已暂存的 + 未暂存的）。
+    ///
+    /// 分批提交必须用这个而不是 `git diff`：用户完全可能在打开分组面板之前
+    /// 就 `git add` 过一部分，那些改动在 `git diff` 里看不见，会被当成「没有改动」
+    /// 而整批漏掉。用户心里的「我这个文件的未提交改动」就是相对 HEAD 的那份。
+    public func diffAgainstHead(
+        of path: String,
+        in repository: URL,
+        contextLines: Int = 3
+    ) async throws -> FileDiff {
+        let result = try await runReturningResult(
+            ["diff", "HEAD", "--unified=\(contextLines)", "--", path],
+            in: repository,
+            allowsOptionalLocks: false
+        )
+        // 仓库还没有任何提交时 HEAD 不存在，退回跟空树比
+        guard result.isSuccess else {
+            return try await diff(of: path, in: repository, contextLines: contextLines)
+        }
+        return try DiffParser.parse(result.standardOutput, path: path)
+    }
+
     /// 取未跟踪文件的 diff。
     ///
     /// `git diff` 看不见未跟踪文件，得用 `--no-index` 拿它跟 /dev/null 比。

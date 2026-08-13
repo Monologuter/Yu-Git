@@ -97,3 +97,28 @@ extension RepositoryViewModel {
         return .diff(diff)
     }
 }
+
+extension RepositoryViewModel {
+
+    /// 有未提交改动的文件路径（已暂存的和未暂存的都算）。
+    var changedPaths: [String] {
+        var seen = Set<String>()
+        return (stagedEntries + unstagedEntries)
+            .map(\.path)
+            .filter { seen.insert($0).inserted }
+    }
+
+    /// 某个文件相对 HEAD 的全部改动。
+    func diffAgainstHead(for path: String) async throws -> FileDiff {
+        try await repository.client.diffAgainstHead(of: path, in: repository.root)
+    }
+
+    /// 按分组逐批提交。
+    func commitInBatches(_ batches: [CommitBatch]) async -> BatchCommitResult {
+        do {
+            return try await repository.commitInBatches(batches)
+        } catch {
+            return BatchCommitResult(committed: 0, failedAt: 0, errorMessage: "\(error)")
+        }
+    }
+}

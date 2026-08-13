@@ -15,6 +15,7 @@ enum CommandRegistry {
         showSearch: @escaping () -> Void,
         showTimeline: @escaping () -> Void,
         showRebase: @escaping () -> Void,
+        showCompose: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
@@ -35,6 +36,16 @@ enum CommandRegistry {
                     Task { await repository.generateCommitMessage(using: aiSettings) }
                 })
         }
+
+        commands.append(
+            PaletteCommand(
+                id: "ai.compose",
+                title: "拆分提交",
+                subtitle: "按意图把混在一起的改动分成几次提交",
+                systemImage: "square.stack.3d.up",
+                isEnabled: repository.hasChanges,
+                run: showCompose
+            ))
 
         // MARK: 暂存与提交
 

@@ -14,6 +14,7 @@ struct RepositoryView: View {
     @State private var showsTimeline = false
     @State private var showsCommandPalette = false
     @State private var showsRebase = false
+    @State private var composeModel: ComposeViewModel?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -126,6 +127,7 @@ struct RepositoryView: View {
                     showSearch: { isSearching = true },
                     showTimeline: { showsTimeline = true },
                     showRebase: { showsRebase = true },
+                    showCompose: { composeModel = ComposeViewModel(repository: repository) },
                     closeRepository: { model.closeRepository() }
                 ),
                 onDismiss: { showsCommandPalette = false }
@@ -134,6 +136,9 @@ struct RepositoryView: View {
         .task(id: repository.status?.branch.commit) {
             // 状态一变就复查：终端里跑的 rebase 同样要在界面上现身
             await repository.reloadRebaseProgress()
+        }
+        .sheet(item: $composeModel) { model in
+            ComposeView(model: model) { composeModel = nil }
         }
         .sheet(isPresented: $showsRebase) {
             RebaseView(repository: repository) { showsRebase = false }

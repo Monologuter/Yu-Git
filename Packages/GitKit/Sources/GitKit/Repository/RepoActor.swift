@@ -27,7 +27,9 @@ public actor RepoActor {
     /// 会释放执行权，另一个任务立刻能进来跑到它自己的 `await`。于是两条 `git add` 真的
     /// 会同时在跑，撞上 `index.lock`（退出码 128）。这里把每个操作显式排在前一个之后，
     /// 靠 Task 链拿到真正的互斥。
-    private var queueTail: Task<Void, Never>?
+    /// - Note: 是 internal 而非 private，扩展里的写操作（如分批提交、rebase）
+    ///   要排进同一条队列才谈得上串行化。
+    var queueTail: Task<Void, Never>?
 
     public init(root: URL, client: GitClient, timeline: Timeline) {
         self.root = root
@@ -119,11 +121,21 @@ public actor RepoActor {
         return try await work.value
     }
 
+    /// 执行一条 git 写操作并记入时间线，**不重新排队**。
+    ///
+    /// 给已经在队列里跑的复合操作用（分批提交要连着做好几次 commit）。
+    /// 直接调 ``perform(_:standardInput:)`` 会等自己前面的那个 Task，死锁。
+    func executeRecorded(_ operation: GitOperation) async throws -> ProcessResult {
+        try await recording(operation) { [self] in
+            try await client.run(operation.arguments, in: root)
+        }
+    }
+
     /// 跑一段写操作，前后该拍的快照、该记的日志都补上。
     ///
     /// - Parameter isSuccess: 从返回值判断这次算不算成功。git 命令看抛不抛错就够了，
     ///   但 rebase 会「正常返回一个冲突结果」，那在时间线上应当记成失败。
-    private func recording<Result>(
+    func recording<Result>(
         _ operation: GitOperation,
         resultOf isSuccess: (Result) -> Bool = { _ in true },
         work: () async throws -> Result

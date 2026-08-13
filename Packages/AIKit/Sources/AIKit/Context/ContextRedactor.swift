@@ -207,7 +207,7 @@ public struct ContextRedactor: Sendable {
 
     // MARK: - 敏感判定
 
-    static func isSensitive(path: String) -> Bool {
+    public static func isSensitive(path: String) -> Bool {
         let name = (path as NSString).lastPathComponent
         let lowered = name.lowercased()
 
@@ -244,7 +244,7 @@ public struct ContextRedactor: Sendable {
     }()
 
     /// 把疑似密钥换成占位符，保留行结构。
-    static func maskSecrets(in text: String) -> (String, Int) {
+    public static func maskSecrets(in text: String) -> (String, Int) {
         guard let regex = secretRegex else { return (text, 0) }
 
         let range = NSRange(text.startIndex..., in: text)
