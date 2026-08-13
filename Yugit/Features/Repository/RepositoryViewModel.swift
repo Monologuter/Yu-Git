@@ -142,9 +142,17 @@ final class RepositoryViewModel {
         await mutate { _ = try await self.repo.unstagePartial(path: path, selecting: .hunks([index])) }
     }
 
-    func stageLines(_ lines: Set<Int>, inHunk hunkIndex: Int, of path: String) async {
+    /// 暂存或取消暂存选中的行。
+    ///
+    /// - Parameter lines: 键是 hunk 下标，值是该 hunk 内选中的行下标。
+    func applyLines(_ lines: [Int: Set<Int>], of path: String, isStaged: Bool) async {
+        guard !lines.isEmpty else { return }
         await mutate {
-            _ = try await self.repo.stagePartial(path: path, selecting: .lines([hunkIndex: lines]))
+            if isStaged {
+                _ = try await self.repo.unstagePartial(path: path, selecting: .lines(lines))
+            } else {
+                _ = try await self.repo.stagePartial(path: path, selecting: .lines(lines))
+            }
         }
     }
 

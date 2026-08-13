@@ -41,6 +41,12 @@ struct DetailView: View {
                     },
                     onUnstageHunk: { index in
                         Task { await repository.unstageHunk(at: index, in: selection.path) }
+                    },
+                    onApplyLines: { lines in
+                        Task {
+                            await repository.applyLines(
+                                lines, of: selection.path, isStaged: selection.isStaged)
+                        }
                     }
                 )
             } else if repository.isLoadingDiff {
