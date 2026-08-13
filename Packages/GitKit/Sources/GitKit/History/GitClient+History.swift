@@ -66,6 +66,9 @@ extension GitClient {
             arguments.append(orderArgument)
         }
         if includingAllRefs {
+            // 排除自有命名空间：时间线快照也是 commit，落在 refs/yugit/ 下，
+            // 不加这条它们会混进用户看到的历史里
+            arguments.append("--exclude=\(GitNamespace.refPrefix)*")
             arguments.append("--all")
         }
         if let maxCount {
@@ -101,7 +104,12 @@ extension GitClient {
     /// 统计提交总数，用于分页与进度显示。
     public func commitCount(in repository: URL, includingAllRefs: Bool = false) async throws -> Int {
         var arguments = ["rev-list", "--count"]
-        arguments.append(includingAllRefs ? "--all" : "HEAD")
+        if includingAllRefs {
+            arguments.append("--exclude=\(GitNamespace.refPrefix)*")
+            arguments.append("--all")
+        } else {
+            arguments.append("HEAD")
+        }
 
         let result = try await runReturningResult(arguments, in: repository, allowsOptionalLocks: false)
         guard result.isSuccess else { return 0 }
