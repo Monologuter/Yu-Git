@@ -54,6 +54,11 @@ final class RepositoryViewModel {
     /// AI 起草提交信息的状态。见 `RepositoryViewModel+AI.swift`。
     var aiState = AIGenerationState()
 
+    /// 正卡在一次 rebase 中间时的进度，没有则为 nil。见 `RepositoryViewModel+Rebase.swift`。
+    var rebaseProgress: RebaseProgress?
+    /// 最近一次改写历史前打的备份 tag，界面上据此提示「可以退回去」。
+    var lastBackupTag: String?
+
     /// 时间线条目与可恢复的时间点。
     var timelineEntries: [TimelineEntry] = []
     var timelineSnapshots: [Snapshot] = []

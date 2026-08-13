@@ -76,21 +76,71 @@ public actor RepoActor {
     }
 
     private func execute(_ operation: GitOperation, standardInput: Data?) async throws -> ProcessResult {
+        try await recording(operation) { [self] in
+            try await client.run(operation.arguments, in: root, standardInput: standardInput)
+        }
+    }
+
+    /// 执行一次 interactive rebase 并记入时间线。
+    ///
+    /// 不走 ``perform(_:standardInput:)`` 是因为 rebase 不是一条 git 命令：它要先写
+    /// todo 文件、设环境变量，中途还可能停在冲突上。但**时间线该记的一样不少**——
+    /// 同样排在写队列里、同样先拍快照、同样留下记录。架构铁律 1 要的是
+    /// 「每个写操作可记录可逆推」，而不是「每个写操作只能有一条 git 命令」。
+    ///
+    /// 另外单独打一个备份 tag：快照保的是工作区，而 rebase 改的是历史，
+    /// 要退回去得有个指向原 HEAD 的引用。
+    /// - Returns: rebase 结果和备份 tag 名。
+    public func performRebase(
+        _ todo: RebaseTodo,
+        summary: String
+    ) async throws -> (outcome: RebaseOutcome, backupTag: String?) {
+        let previous = queueTail
+
+        let work = Task { [self] in
+            await previous?.value
+
+            let backupTag = try? await client.createBackupTag(in: root, label: summary)
+
+            let operation = GitOperation.interactiveRebase(
+                base: todo.base,
+                summary: summary,
+                backupTag: backupTag
+            )
+
+            let outcome = try await recording(operation, resultOf: { $0 == .completed }) {
+                [self] in
+                try await client.performInteractiveRebase(todo, in: root)
+            }
+            return (outcome, backupTag)
+        }
+        queueTail = Task { _ = try? await work.value }
+
+        return try await work.value
+    }
+
+    /// 跑一段写操作，前后该拍的快照、该记的日志都补上。
+    ///
+    /// - Parameter isSuccess: 从返回值判断这次算不算成功。git 命令看抛不抛错就够了，
+    ///   但 rebase 会「正常返回一个冲突结果」，那在时间线上应当记成失败。
+    private func recording<Result>(
+        _ operation: GitOperation,
+        resultOf isSuccess: (Result) -> Bool = { _ in true },
+        work: () async throws -> Result
+    ) async throws -> Result {
         let headBefore = await currentHead()
         // 危险操作先留退路。安全操作不拍——拍快照要遍历工作区，高频操作上会明显拖慢。
         let snapshot = await timeline.snapshotIfNeeded(before: operation)
 
         do {
-            let result = try await client.run(
-                operation.arguments,
-                in: root,
-                standardInput: standardInput
-            )
+            let result = try await work()
             await log(
                 operation,
                 headBefore: headBefore,
                 headAfter: await currentHead(),
-                outcome: .succeeded,
+                outcome: isSuccess(result)
+                    ? .succeeded
+                    : .failed(exitCode: 1, message: "操作未能完成"),
                 snapshot: snapshot
             )
             return result

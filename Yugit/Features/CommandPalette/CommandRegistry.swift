@@ -14,6 +14,7 @@ enum CommandRegistry {
         aiSettings: AISettingsStore,
         showSearch: @escaping () -> Void,
         showTimeline: @escaping () -> Void,
+        showRebase: @escaping () -> Void,
         closeRepository: @escaping () -> Void
     ) -> [PaletteCommand] {
         var commands: [PaletteCommand] = []
@@ -170,6 +171,19 @@ enum CommandRegistry {
                     Task { await repository.merge(branch.name) }
                 })
         }
+
+        // MARK: 历史整理
+
+        commands.append(
+            PaletteCommand(
+                id: "history.rebase",
+                title: "整理提交历史",
+                subtitle: "重排、合并、丢弃、改写最近的提交",
+                equivalentCommand: "git rebase --interactive",
+                systemImage: "checklist",
+                isEnabled: !repository.hasChanges,
+                run: showRebase
+            ))
 
         // MARK: 时间线
 

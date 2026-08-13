@@ -13,6 +13,7 @@ struct RepositoryView: View {
     @State private var isSearching = false
     @State private var showsTimeline = false
     @State private var showsCommandPalette = false
+    @State private var showsRebase = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -23,6 +24,11 @@ struct RepositoryView: View {
                 .navigationSplitViewColumnWidth(min: 260, ideal: 320, max: 460)
         } detail: {
             DetailView(repository: repository)
+        }
+        // 卡在 rebase 里是最需要指路的状态，横幅横跨三栏，切到哪一栏都看得见。
+        // 用 safeAreaInset 而不是 VStack 包裹，免得打乱下面整条 modifier 链。
+        .safeAreaInset(edge: .top, spacing: 0) {
+            RebaseBanner(repository: repository)
         }
         .navigationTitle(repository.displayName)
         .navigationSubtitle(subtitle)
@@ -119,10 +125,18 @@ struct RepositoryView: View {
                     aiSettings: aiSettings,
                     showSearch: { isSearching = true },
                     showTimeline: { showsTimeline = true },
+                    showRebase: { showsRebase = true },
                     closeRepository: { model.closeRepository() }
                 ),
                 onDismiss: { showsCommandPalette = false }
             )
+        }
+        .task(id: repository.status?.branch.commit) {
+            // 状态一变就复查：终端里跑的 rebase 同样要在界面上现身
+            await repository.reloadRebaseProgress()
+        }
+        .sheet(isPresented: $showsRebase) {
+            RebaseView(repository: repository) { showsRebase = false }
         }
         .sheet(isPresented: $isSearching) {
             SearchView(

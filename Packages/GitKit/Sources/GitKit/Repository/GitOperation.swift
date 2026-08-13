@@ -32,6 +32,7 @@ public struct GitOperation: Sendable, Equatable, Codable {
         case renameBranch
         case merge
         case setUpstream
+        case interactiveRebase
     }
 
     /// 操作的危险程度。时间线据此决定执行前是否必须打快照。
