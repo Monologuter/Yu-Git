@@ -69,13 +69,16 @@ public struct GitClient: Sendable {
     /// - Parameter additionalEnvironment: 只对这一条命令生效的环境变量，会覆盖同名的默认值。
     ///   典型用途是 `GIT_INDEX_FILE`——时间线快照要用独立 index 把工作区写成 tree，
     ///   绝不能污染仓库真正的 index。
+    /// - Parameter onStandardErrorChunk: stderr 每来一段就回调一次。fetch / push 的进度
+    ///   写在 stderr 且用 `\r` 原地刷新，等到命令结束再读就只剩最后一行了。
     public func runReturningResult(
         _ arguments: [String],
         in repository: URL,
         allowsOptionalLocks: Bool = true,
         additionalEnvironment: [String: String] = [:],
         standardInput: Data? = nil,
-        timeout: Duration? = .seconds(60)
+        timeout: Duration? = .seconds(60),
+        onStandardErrorChunk: (@Sendable (Data) -> Void)? = nil
     ) async throws -> ProcessResult {
         var full = ["-C", repository.path]
         if !allowsOptionalLocks {
@@ -93,7 +96,8 @@ public struct GitClient: Sendable {
             workingDirectory: repository,
             environment: effectiveEnvironment,
             standardInput: standardInput,
-            timeout: timeout
+            timeout: timeout,
+            onStandardErrorChunk: onStandardErrorChunk
         )
     }
 

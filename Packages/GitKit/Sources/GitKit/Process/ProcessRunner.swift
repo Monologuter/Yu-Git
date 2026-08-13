@@ -40,6 +40,8 @@ public struct ProcessRunner: Sendable {
     ///   - standardInput: 传 `nil` 时 stdin 接到 `/dev/null`——绝不能让子进程继承父进程的
     ///     stdin，否则 git 一旦尝试交互式读取（凭据、编辑器）就会永久挂起。
     ///   - timeout: 传 `nil` 表示不限时。超时会终止进程并抛出 ``ProcessRunnerError/timedOut(_:)``。
+    ///   - onStandardErrorChunk: stderr 每来一段就回调一次，用于 fetch / push 的实时进度。
+    ///     回调可能来自任意线程。
     /// - Note: 非零退出码不算错误。git 用退出码表达业务语义（如 `diff --quiet` 返回 1
     ///   表示「有改动」），判断权交给调用方。
     public func run(
@@ -48,7 +50,8 @@ public struct ProcessRunner: Sendable {
         workingDirectory: URL? = nil,
         environment: [String: String]? = nil,
         standardInput: Data? = nil,
-        timeout: Duration? = nil
+        timeout: Duration? = nil,
+        onStandardErrorChunk: (@Sendable (Data) -> Void)? = nil
     ) async throws -> ProcessResult {
         let process = Process()
         process.executableURL = executable
@@ -99,7 +102,7 @@ public struct ProcessRunner: Sendable {
         let (out, err) = await withTaskCancellationHandler {
             // async let 让两路读取立刻并发跑起来，谁也不等谁——这就是防死锁的关键。
             async let stdoutData = Self.readToEnd(outHandle)
-            async let stderrData = Self.readToEnd(errHandle)
+            async let stderrData = Self.readToEnd(errHandle, onChunk: onStandardErrorChunk)
 
             // 写 stdin 同样不能等：输入超过管道缓冲区时，要边写边让子进程读。
             if let inputHandle, let standardInput {
@@ -131,15 +134,27 @@ public struct ProcessRunner: Sendable {
 
     /// 在专用后台线程上把句柄读到 EOF。
     ///
+    /// - Parameter onChunk: 每读到一段就回调一次，用于实时进度。git 的 fetch / push
+    ///   把进度写在 stderr 并用 `\r` 原地刷新，等到 EOF 再读就只剩最后一行了。
     /// - Note: 已知边界——若子进程 fork 出的孙进程继承了管道写端并长期存活，
     ///   即使父进程已退出也读不到 EOF，此时只能靠 `timeout` 兜底。git 的常见子进程
-    ///   （credential helper、hook）都是短命的，ssh ControlMaster 等常驻情形留到 v0.3 处理。
-    private static func readToEnd(_ handle: UncheckedSendable<FileHandle>) async -> Data {
+    ///   （credential helper、hook）都是短命的。
+    private static func readToEnd(
+        _ handle: UncheckedSendable<FileHandle>,
+        onChunk: (@Sendable (Data) -> Void)? = nil
+    ) async -> Data {
         await withCheckedContinuation { (continuation: CheckedContinuation<Data, Never>) in
             DispatchQueue.global(qos: .userInitiated).async {
-                let data = (try? handle.value.readToEnd()) ?? Data()
+                var accumulated = Data()
+                while true {
+                    // availableData 会阻塞到有数据可读；返回空即 EOF
+                    let chunk = handle.value.availableData
+                    guard !chunk.isEmpty else { break }
+                    accumulated.append(chunk)
+                    onChunk?(chunk)
+                }
                 try? handle.value.close()
-                continuation.resume(returning: data)
+                continuation.resume(returning: accumulated)
             }
         }
     }
