@@ -17,10 +17,23 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA00000000000000000000A4 /* Yugit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA00000000000000000000B2 /* 排除 Info.plist */,
+			);
 			path = Yugit;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA00000000000000000000B2 /* 排除 Info.plist */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA00000000000000000000A3 /* Yugit */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AA00000000000000000000A6 /* Frameworks */ = {
@@ -197,6 +210,7 @@
 				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Yugit/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "驭Git";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainNibFile = "";
@@ -222,6 +236,7 @@
 				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Yugit/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "驭Git";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainNibFile = "";

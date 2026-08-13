@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  声明可以打开文件夹。没有这段，macOS 不会把「打开」请求投递过来：
+	  从 Finder 把仓库拖到 App 图标上、以及 open -a 驭Git <路径>，都不会触发
+	  application(_:open:)。
+	-->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Git 仓库</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<!--
+			  Alternate 而非 Default：不去抢 Finder 对文件夹的默认处理，
+			  用户仍可通过「打开方式」或拖拽把仓库交给我们。
+			-->
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.folder</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
