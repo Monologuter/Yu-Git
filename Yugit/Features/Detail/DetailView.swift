@@ -5,6 +5,7 @@ import SwiftUI
 struct DetailView: View {
 
     @Bindable var repository: RepositoryViewModel
+    @State private var blameModel: BlameViewModel?
 
     var body: some View {
         Group {
@@ -24,12 +25,17 @@ struct DetailView: View {
         .task(id: repository.selectedFile) {
             await repository.reloadSelectedDiff()
         }
+        .sheet(item: $blameModel) { model in
+            BlameView(model: model) { blameModel = nil }
+        }
     }
 
     @ViewBuilder
     private func fileDetail(for selection: RepositoryViewModel.FileSelection) -> some View {
         VStack(spacing: 0) {
-            DiffToolbar(repository: repository, selection: selection)
+            DiffToolbar(repository: repository, selection: selection) {
+                blameModel = BlameViewModel(repository: repository, path: selection.path)
+            }
             Divider()
 
             ExplanationPanel(title: "用中文讲讲这份改动") {
@@ -79,6 +85,7 @@ struct DiffToolbar: View {
 
     let repository: RepositoryViewModel
     let selection: RepositoryViewModel.FileSelection
+    let onShowBlame: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -99,6 +106,9 @@ struct DiffToolbar: View {
             }
 
             Spacer(minLength: 8)
+
+            Button("查看归因") { onShowBlame() }
+                .help("逐行看这段代码是谁写的：人，还是哪个 AI 工具")
 
             if selection.isStaged {
                 Button("取消暂存整个文件") {

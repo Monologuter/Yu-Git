@@ -170,3 +170,11 @@ extension RepositoryViewModel {
         try await repository.client.pruneWorktrees(in: repository.root)
     }
 }
+
+extension RepositoryViewModel {
+
+    /// 逐行追溯出处，并判定人写还是 AI 参与。
+    func blame(path: String) async throws -> BlameResult {
+        try await repository.client.blame(path: path, in: repository.root)
+    }
+}
