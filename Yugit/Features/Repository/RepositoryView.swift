@@ -8,6 +8,7 @@ struct RepositoryView: View {
     let model: AppModel
 
     @State private var columnVisibility = NavigationSplitViewVisibility.all
+    @State private var isSearching = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -29,6 +30,16 @@ struct RepositoryView: View {
                     Label("关闭仓库", systemImage: "chevron.left")
                 }
                 .help("回到欢迎页")
+            }
+
+            ToolbarItem(placement: .principal) {
+                Button {
+                    isSearching = true
+                } label: {
+                    Label("搜索", systemImage: "magnifyingglass")
+                }
+                .keyboardShortcut("f", modifiers: [.command, .shift])
+                .help("在整个仓库中搜索（⇧⌘F）")
             }
 
             ToolbarItemGroup(placement: .primaryAction) {
@@ -76,6 +87,19 @@ struct RepositoryView: View {
         }
         .onDisappear {
             repository.stopWatching()
+        }
+        .sheet(isPresented: $isSearching) {
+            SearchView(
+                model: repository.search,
+                onSelectFile: { path in
+                    repository.reveal(path: path)
+                    isSearching = false
+                },
+                onSelectCommit: { commit in
+                    repository.reveal(commit: commit)
+                    isSearching = false
+                }
+            )
         }
         .sheet(item: $repository.failure) { failure in
             FailureSheet(failure: failure) { repository.failure = nil }

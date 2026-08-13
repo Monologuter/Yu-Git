@@ -48,6 +48,12 @@ final class RepositoryViewModel {
     let repository: RepoActor
     private var watcher: RepositoryWatcher?
 
+    /// 全仓库即时搜索。
+    ///
+    /// 在 init 里建好而不是延迟创建：@Observable 宏会把存储属性改写成计算属性，
+    /// 与 lazy 不兼容。
+    let search: SearchModel
+
     /// 首屏加载的提交数。PRD 要求 5 万 commit 仓库首屏 500ms 内出来，
     /// 先取够填满一屏的量，滚动时再增量加载（v0.3 做）。
     private let initialCommitCount = 200
@@ -55,6 +61,7 @@ final class RepositoryViewModel {
     init(url: URL) async throws {
         repository = try await RepoActor.open(at: url)
         root = repository.root
+        search = SearchModel(client: repository.client, root: repository.root)
     }
 
     // MARK: - 生命周期
@@ -237,6 +244,23 @@ final class RepositoryViewModel {
         isTransferring = false
         transferProgress = nil
         await refresh()
+    }
+
+    /// 从搜索结果跳到某个文件：选中它并切到变更列表。
+    func reveal(path: String) {
+        let staged = stagedEntries.contains { $0.path == path }
+        selectedFile = FileSelection(path: path, isStaged: staged)
+        selectedCommit = nil
+    }
+
+    /// 从搜索结果跳到某条提交。
+    func reveal(commit: Commit) {
+        selectedCommit = commit.id
+        selectedFile = nil
+        // 搜索能跨分支找到提交，它未必在当前加载的首屏里
+        if !commits.contains(where: { $0.id == commit.id }) {
+            commits.insert(commit, at: 0)
+        }
     }
 
     // MARK: - 派生数据
