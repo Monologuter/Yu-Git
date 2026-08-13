@@ -10,6 +10,7 @@ struct RepositoryView: View {
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     @State private var isSearching = false
     @State private var showsTimeline = false
+    @State private var showsCommandPalette = false
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -33,7 +34,15 @@ struct RepositoryView: View {
                 .help("回到欢迎页")
             }
 
-            ToolbarItem(placement: .principal) {
+            ToolbarItemGroup(placement: .principal) {
+                Button {
+                    showsCommandPalette = true
+                } label: {
+                    Label("命令", systemImage: "command")
+                }
+                .keyboardShortcut("k", modifiers: .command)
+                .help("命令面板（⌘K）——每个操作都会显示等价的 git 命令")
+
                 Button {
                     isSearching = true
                 } label: {
@@ -100,6 +109,17 @@ struct RepositoryView: View {
         .inspector(isPresented: $showsTimeline) {
             TimelineView(repository: repository)
                 .inspectorColumnWidth(min: 260, ideal: 300, max: 420)
+        }
+        .sheet(isPresented: $showsCommandPalette) {
+            CommandPaletteView(
+                commands: CommandRegistry.commands(
+                    for: repository,
+                    showSearch: { isSearching = true },
+                    showTimeline: { showsTimeline = true },
+                    closeRepository: { model.closeRepository() }
+                ),
+                onDismiss: { showsCommandPalette = false }
+            )
         }
         .sheet(isPresented: $isSearching) {
             SearchView(
