@@ -41,6 +41,7 @@ public struct GitClient: Sendable {
         _ arguments: [String],
         in repository: URL,
         allowsOptionalLocks: Bool = true,
+        additionalEnvironment: [String: String] = [:],
         standardInput: Data? = nil,
         timeout: Duration? = .seconds(60)
     ) async throws -> ProcessResult {
@@ -48,6 +49,7 @@ public struct GitClient: Sendable {
             arguments,
             in: repository,
             allowsOptionalLocks: allowsOptionalLocks,
+            additionalEnvironment: additionalEnvironment,
             standardInput: standardInput,
             timeout: timeout
         )
@@ -61,11 +63,17 @@ public struct GitClient: Sendable {
         return result
     }
 
-    /// 同 ``run(_:in:allowsOptionalLocks:standardInput:timeout:)``，但非零退出码原样返回而不抛错。
+    /// 同 ``run(_:in:allowsOptionalLocks:additionalEnvironment:standardInput:timeout:)``，
+    /// 但非零退出码原样返回而不抛错。
+    ///
+    /// - Parameter additionalEnvironment: 只对这一条命令生效的环境变量，会覆盖同名的默认值。
+    ///   典型用途是 `GIT_INDEX_FILE`——时间线快照要用独立 index 把工作区写成 tree，
+    ///   绝不能污染仓库真正的 index。
     public func runReturningResult(
         _ arguments: [String],
         in repository: URL,
         allowsOptionalLocks: Bool = true,
+        additionalEnvironment: [String: String] = [:],
         standardInput: Data? = nil,
         timeout: Duration? = .seconds(60)
     ) async throws -> ProcessResult {
@@ -76,11 +84,14 @@ public struct GitClient: Sendable {
         full += Self.globalConfiguration
         full += arguments
 
+        var effectiveEnvironment = environment
+        effectiveEnvironment.merge(additionalEnvironment) { _, override in override }
+
         return try await runner.run(
             executable: executable,
             arguments: full,
             workingDirectory: repository,
-            environment: environment,
+            environment: effectiveEnvironment,
             standardInput: standardInput,
             timeout: timeout
         )
