@@ -31,7 +31,35 @@ struct RepositoryView: View {
                 .help("回到欢迎页")
             }
 
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                if repository.isTransferring {
+                    TransferIndicator(progress: repository.transferProgress)
+                }
+
+                Button {
+                    Task { await repository.fetch() }
+                } label: {
+                    Label("获取", systemImage: "arrow.down.circle")
+                }
+                .disabled(repository.isTransferring)
+                .help("从远程拉取引用与对象，不改动工作区")
+
+                Button {
+                    Task { await repository.pull() }
+                } label: {
+                    Label("拉取", systemImage: "arrow.down.to.line")
+                }
+                .disabled(repository.isTransferring)
+                .help("拉取并合并到当前分支")
+
+                Button {
+                    Task { await repository.push(setUpstream: repository.needsUpstreamOnPush) }
+                } label: {
+                    Label("推送", systemImage: "arrow.up.to.line")
+                }
+                .disabled(repository.isTransferring)
+                .help(repository.needsUpstreamOnPush ? "首次推送，会同时设置 upstream" : "推送到 upstream")
+
                 Button {
                     Task { await repository.refresh() }
                 } label: {
@@ -49,10 +77,8 @@ struct RepositoryView: View {
         .onDisappear {
             repository.stopWatching()
         }
-        .overlay(alignment: .top) {
-            if let message = repository.errorMessage {
-                ErrorBanner(message: message)
-            }
+        .sheet(item: $repository.failure) { failure in
+            FailureSheet(failure: failure) { repository.failure = nil }
         }
     }
 
@@ -78,26 +104,78 @@ struct RepositoryView: View {
     }
 }
 
-/// 顶部错误提示条。git 的错误往往很长，这里保持可读且不遮挡内容。
-struct ErrorBanner: View {
+/// 失败详情面板。
+///
+/// git 的报错必须给到「下一步做什么」，否则中文用户只能对着英文原文发呆。
+struct FailureSheet: View {
 
-    let message: String
+    let failure: FailurePresentation
+    let onDismiss: () -> Void
+
+    @State private var showsDetails = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.orange)
-            Text(message)
-                .font(.callout)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.orange)
+                Text(failure.title)
+                    .font(.headline)
+            }
+
+            Text(failure.message)
                 .textSelection(.enabled)
-                .lineLimit(4)
+
+            if let suggestion = failure.suggestion {
+                Text(suggestion)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(nsColor: .underPageBackgroundColor), in: .rect(cornerRadius: 6))
+            }
+
+            if let details = failure.details, !details.isEmpty {
+                DisclosureGroup("git 的原始输出", isExpanded: $showsDetails) {
+                    ScrollView {
+                        Text(details)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(maxHeight: 160)
+                }
+                .font(.callout)
+            }
+
+            HStack {
+                Spacer()
+                Button("好", action: onDismiss)
+                    .keyboardShortcut(.defaultAction)
+            }
         }
-        .padding(12)
-        .background(.regularMaterial, in: .rect(cornerRadius: 10))
-        .overlay {
-            RoundedRectangle(cornerRadius: 10).strokeBorder(.separator)
+        .padding(20)
+        .frame(width: 460)
+    }
+}
+
+/// 工具栏上的传输进度。
+struct TransferIndicator: View {
+
+    let progress: TransferProgress?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ProgressView()
+                .controlSize(.small)
+            if let progress {
+                Text(progress.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
         }
-        .padding(12)
-        .frame(maxWidth: 620)
     }
 }

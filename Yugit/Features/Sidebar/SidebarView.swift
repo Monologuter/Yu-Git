@@ -4,17 +4,37 @@ import SwiftUI
 /// 左栏：本地分支、远程分支、tag。
 struct SidebarView: View {
 
-    let repository: RepositoryViewModel
+    @Bindable var repository: RepositoryViewModel
+
+    @State private var newBranchName = ""
+    @State private var isCreatingBranch = false
+    @State private var renaming: Branch?
+    @State private var renamedName = ""
+    @State private var pendingDelete: Branch?
 
     var body: some View {
         List {
-            Section("本地分支") {
+            Section {
                 if repository.localBranches.isEmpty {
                     EmptyHint("尚无分支")
                 } else {
                     ForEach(repository.localBranches) { branch in
                         BranchRow(branch: branch)
+                            .contextMenu { localBranchMenu(for: branch) }
                     }
+                }
+            } header: {
+                HStack {
+                    Text("本地分支")
+                    Spacer()
+                    Button {
+                        newBranchName = ""
+                        isCreatingBranch = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("新建分支")
                 }
             }
 
@@ -22,6 +42,7 @@ struct SidebarView: View {
                 Section("远程分支") {
                     ForEach(repository.remoteBranches) { branch in
                         BranchRow(branch: branch)
+                            .contextMenu { remoteBranchMenu(for: branch) }
                     }
                 }
             }
@@ -35,6 +56,95 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
+        .alert("新建分支", isPresented: $isCreatingBranch) {
+            TextField("分支名", text: $newBranchName)
+            Button("创建并切换") {
+                let name = newBranchName.trimmingCharacters(in: .whitespaces)
+                guard !name.isEmpty else { return }
+                Task { await repository.createBranch(named: name) }
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("从当前 HEAD 新建分支。")
+        }
+        .alert(
+            "重命名分支",
+            isPresented: Binding(
+                get: { renaming != nil },
+                set: { if !$0 { renaming = nil } }
+            )
+        ) {
+            TextField("新名字", text: $renamedName)
+            Button("重命名") {
+                guard let branch = renaming else { return }
+                let name = renamedName.trimmingCharacters(in: .whitespaces)
+                guard !name.isEmpty, name != branch.name else { return }
+                Task { await repository.renameBranch(from: branch.name, to: name) }
+                renaming = nil
+            }
+            Button("取消", role: .cancel) { renaming = nil }
+        } message: {
+            // 远程分支不会跟着改名，这一点必须说清楚
+            Text("只改本地分支名。若它已推送到远程，远程那边的名字不会跟着变。")
+        }
+        .confirmationDialog(
+            "确定删除分支？",
+            isPresented: Binding(
+                get: { pendingDelete != nil },
+                set: { if !$0 { pendingDelete = nil } }
+            ),
+            presenting: pendingDelete
+        ) { branch in
+            Button("删除 \(branch.name)", role: .destructive) {
+                Task { await repository.deleteBranch(named: branch.name) }
+                pendingDelete = nil
+            }
+            Button("强制删除（含未合并的提交）", role: .destructive) {
+                Task { await repository.deleteBranch(named: branch.name, force: true) }
+                pendingDelete = nil
+            }
+            Button("取消", role: .cancel) { pendingDelete = nil }
+        } message: { _ in
+            Text("普通删除会在分支还有未合并提交时被 git 拒绝；强制删除后那些提交只能靠 reflog 找回。")
+        }
+    }
+
+    // MARK: - 菜单
+
+    @ViewBuilder
+    private func localBranchMenu(for branch: Branch) -> some View {
+        if !branch.isCurrent {
+            Button("切换到 \(branch.name)") {
+                Task { await repository.switchBranch(to: branch.name) }
+            }
+            Button("合并 \(branch.name) 到当前分支") {
+                Task { await repository.merge(branch.name) }
+            }
+            Divider()
+        }
+
+        Button("重命名…") {
+            renamedName = branch.name
+            renaming = branch
+        }
+
+        if !branch.isCurrent {
+            Button("删除…", role: .destructive) { pendingDelete = branch }
+        }
+    }
+
+    @ViewBuilder
+    private func remoteBranchMenu(for branch: Branch) -> some View {
+        // origin/main → main
+        let localName = branch.name.split(separator: "/").dropFirst().joined(separator: "/")
+
+        Button("基于它新建本地分支") {
+            guard !localName.isEmpty else { return }
+            Task { await repository.createBranch(named: localName, from: branch.name) }
+        }
+        Button("合并到当前分支") {
+            Task { await repository.merge(branch.name) }
+        }
     }
 }
 

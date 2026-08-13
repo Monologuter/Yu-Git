@@ -26,7 +26,13 @@ final class RepositoryViewModel {
     private(set) var commits: [Commit] = []
 
     private(set) var isRefreshing = false
-    private(set) var errorMessage: String?
+
+    /// 需要弹给用户的失败信息，含中文说明与下一步建议。
+    var failure: FailurePresentation?
+
+    /// 正在进行的网络传输进度。
+    private(set) var transferProgress: TransferProgress?
+    private(set) var isTransferring = false
 
     var selectedCommit: Commit.ID?
     var selectedFile: FileSelection?
@@ -39,7 +45,7 @@ final class RepositoryViewModel {
     var commitMessage = ""
     var isAmending = false
 
-    private let repo: RepoActor
+    let repository: RepoActor
     private var watcher: RepositoryWatcher?
 
     /// 首屏加载的提交数。PRD 要求 5 万 commit 仓库首屏 500ms 内出来，
@@ -47,8 +53,8 @@ final class RepositoryViewModel {
     private let initialCommitCount = 200
 
     init(url: URL) async throws {
-        repo = try await RepoActor.open(at: url)
-        root = repo.root
+        repository = try await RepoActor.open(at: url)
+        root = repository.root
     }
 
     // MARK: - 生命周期
@@ -77,11 +83,11 @@ final class RepositoryViewModel {
 
         do {
             // 四个查询互不依赖，并发发出去；它们都是只读的，不占写队列
-            async let statusResult = repo.status()
-            async let branchResult = repo.client.branches(in: repo.root)
-            async let tagResult = repo.client.tags(in: repo.root)
-            async let commitResult = repo.client.log(
-                in: repo.root,
+            async let statusResult = repository.status()
+            async let branchResult = repository.client.branches(in: repository.root)
+            async let tagResult = repository.client.tags(in: repository.root)
+            async let commitResult = repository.client.log(
+                in: repository.root,
                 includingAllRefs: true,
                 maxCount: initialCommitCount
             )
@@ -90,9 +96,9 @@ final class RepositoryViewModel {
             branches = try await branchResult
             tags = try await tagResult
             commits = try await commitResult
-            errorMessage = nil
+            failure = nil
         } catch {
-            errorMessage = "\(error)"
+            failure = FailurePresentation(from: error)
         }
 
         await reloadSelectedDiff()
@@ -112,34 +118,34 @@ final class RepositoryViewModel {
             let entry = status?.entries.first { $0.path == selection.path }
             if entry?.kind == .untracked {
                 // 未跟踪文件在 git diff 里看不到，得跟 /dev/null 比
-                selectedDiff = try await repo.client.diffForUntrackedFile(
+                selectedDiff = try await repository.client.diffForUntrackedFile(
                     at: selection.path, in: root)
             } else {
-                selectedDiff = try await repo.client.diff(
+                selectedDiff = try await repository.client.diff(
                     of: selection.path, in: root, staged: selection.isStaged)
             }
         } catch {
             selectedDiff = nil
-            errorMessage = "\(error)"
+            failure = FailurePresentation(from: error)
         }
     }
 
     // MARK: - 暂存
 
     func stage(_ paths: [String]) async {
-        await mutate { try await self.repo.perform(.stage(paths: paths)) }
+        await mutate { try await self.repository.perform(.stage(paths: paths)) }
     }
 
     func unstage(_ paths: [String]) async {
-        await mutate { try await self.repo.perform(.unstage(paths: paths)) }
+        await mutate { try await self.repository.perform(.unstage(paths: paths)) }
     }
 
     func stageHunk(at index: Int, in path: String) async {
-        await mutate { _ = try await self.repo.stagePartial(path: path, selecting: .hunks([index])) }
+        await mutate { _ = try await self.repository.stagePartial(path: path, selecting: .hunks([index])) }
     }
 
     func unstageHunk(at index: Int, in path: String) async {
-        await mutate { _ = try await self.repo.unstagePartial(path: path, selecting: .hunks([index])) }
+        await mutate { _ = try await self.repository.unstagePartial(path: path, selecting: .hunks([index])) }
     }
 
     /// 暂存或取消暂存选中的行。
@@ -149,9 +155,9 @@ final class RepositoryViewModel {
         guard !lines.isEmpty else { return }
         await mutate {
             if isStaged {
-                _ = try await self.repo.unstagePartial(path: path, selecting: .lines(lines))
+                _ = try await self.repository.unstagePartial(path: path, selecting: .lines(lines))
             } else {
-                _ = try await self.repo.stagePartial(path: path, selecting: .lines(lines))
+                _ = try await self.repository.stagePartial(path: path, selecting: .lines(lines))
             }
         }
     }
@@ -159,7 +165,7 @@ final class RepositoryViewModel {
     func discard(_ paths: [String]) async {
         // 调用方负责先向用户确认：这些改动没进过 git 对象库，
         // 在时间线快照落地（v0.5）之前丢了就真没了。
-        await mutate { try await self.repo.perform(.discard(paths: paths)) }
+        await mutate { try await self.repository.perform(.discard(paths: paths)) }
     }
 
     // MARK: - 提交
@@ -174,9 +180,9 @@ final class RepositoryViewModel {
         guard !message.isEmpty else { return }
 
         let amend = isAmending
-        await mutate { try await self.repo.perform(.commit(message: message, amend: amend)) }
+        await mutate { try await self.repository.perform(.commit(message: message, amend: amend)) }
 
-        if errorMessage == nil {
+        if failure == nil {
             commitMessage = ""
             isAmending = false
         }
@@ -195,16 +201,41 @@ final class RepositoryViewModel {
     ///
     /// 这里手动 suspend/resume 而不用 `whileSuspended`：闭包是 MainActor 隔离的，
     /// 交给非隔离的 watcher 去调用会跨越隔离边界，Swift 6 会判定有数据竞争风险。
-    private func mutate(_ work: () async throws -> Void) async {
+    func mutate(_ work: () async throws -> Void) async {
         watcher?.suspend()
         do {
             try await work()
-            errorMessage = nil
+            failure = nil
         } catch {
-            errorMessage = "\(error)"
+            failure = FailurePresentation(from: error)
         }
         watcher?.resume()
 
+        await refresh()
+    }
+
+    /// 执行网络操作：进度实时更新，失败转成带建议的中文提示。
+    func transfer(
+        _ work: (GitClient, URL, @escaping @Sendable (TransferProgress) -> Void) async throws -> Void
+    ) async {
+        guard !isTransferring else { return }
+        isTransferring = true
+        transferProgress = nil
+        watcher?.suspend()
+
+        do {
+            try await work(repository.client, root) { progress in
+                // 回调来自读取 stderr 的后台线程
+                Task { @MainActor in self.transferProgress = progress }
+            }
+            failure = nil
+        } catch {
+            failure = FailurePresentation(from: error)
+        }
+
+        watcher?.resume()
+        isTransferring = false
+        transferProgress = nil
         await refresh()
     }
 
