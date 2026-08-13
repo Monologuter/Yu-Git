@@ -1,12 +1,21 @@
 import GitKit
 import SwiftUI
 
+/// 一个待确认的 Quick Action。sheet(item:) 需要 Identifiable，
+/// 而动作和提交要成对传过去，所以打个包。
+struct PendingQuickAction: Identifiable {
+    let action: QuickAction
+    let commit: Commit
+    var id: String { "\(commit.hash)-\(action.hashValue)" }
+}
+
 /// 中栏：工作区变更与提交历史。
 struct ChangesView: View {
 
     @Bindable var repository: RepositoryViewModel
     @State private var section = Section.changes
     @State private var pendingDiscard: [String]?
+    @State private var pendingQuickAction: PendingQuickAction?
 
     enum Section: String, CaseIterable, Identifiable {
         case changes = "变更"
@@ -36,6 +45,14 @@ struct ChangesView: View {
             case .history:
                 historyList
             }
+        }
+        .sheet(item: $pendingQuickAction) { pending in
+            QuickActionSheet(
+                action: pending.action,
+                commit: pending.commit,
+                repository: repository,
+                onDismiss: { pendingQuickAction = nil }
+            )
         }
         .confirmationDialog(
             "确定丢弃这些改动？",
@@ -157,6 +174,9 @@ struct ChangesView: View {
                 selection: $repository.selectedCommit,
                 onReachEnd: {
                     Task { await repository.loadMoreCommits() }
+                },
+                onQuickAction: { action, commit in
+                    pendingQuickAction = PendingQuickAction(action: action, commit: commit)
                 }
             )
         }

@@ -14,6 +14,8 @@ struct CommitHistoryView: NSViewRepresentable {
     @Binding var selection: Commit.ID?
     /// 滚动接近底部时触发，用于增量加载更多历史。
     let onReachEnd: () -> Void
+    /// 右键某一行时选了 Quick Action。
+    let onQuickAction: (QuickAction, Commit) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -36,6 +38,12 @@ struct CommitHistoryView: NSViewRepresentable {
 
         table.dataSource = context.coordinator
         table.delegate = context.coordinator
+
+        // 右键菜单。NSTableView 会把 clickedRow 设成右键那一行，
+        // 所以菜单项不需要自己记住是谁被点了。
+        let menu = NSMenu()
+        menu.delegate = context.coordinator
+        table.menu = menu
 
         let scrollView = NSScrollView()
         scrollView.documentView = table
@@ -63,7 +71,7 @@ struct CommitHistoryView: NSViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
+    final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate {
 
         static let rowHeight: CGFloat = 44
         static let columnID = NSUserInterfaceItemIdentifier("commit")
@@ -122,6 +130,49 @@ struct CommitHistoryView: NSViewRepresentable {
             } else if table.selectedRow != -1 {
                 table.deselectAll(nil)
             }
+        }
+
+        // MARK: - 右键菜单
+
+        /// 每次弹出时重建菜单：可用的动作取决于点的是哪一行
+        /// （最新那条没法并进父提交，最旧那条要留作落脚点），
+        /// 建一次然后一直用会把上一行的可用性带到这一行。
+        func menuNeedsUpdate(_ menu: NSMenu) {
+            menu.removeAllItems()
+
+            let row = table?.clickedRow ?? -1
+            guard parent.commits.indices.contains(row) else { return }
+
+            let header = NSMenuItem(
+                title: parent.commits[row].subject, action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            menu.addItem(header)
+            menu.addItem(.separator())
+
+            for action in QuickAction.allCases {
+                let item = NSMenuItem(
+                    title: action.title,
+                    action: #selector(runQuickAction(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = action
+                item.image = NSImage(
+                    systemSymbolName: action.systemImage, accessibilityDescription: nil)
+                item.isEnabled = action.isAvailable(at: row, loadedCount: parent.commits.count)
+                item.toolTip = action.explanation
+                menu.addItem(item)
+            }
+        }
+
+        @objc private func runQuickAction(_ sender: NSMenuItem) {
+            guard
+                let action = sender.representedObject as? QuickAction,
+                let row = table?.clickedRow,
+                parent.commits.indices.contains(row)
+            else { return }
+
+            parent.onQuickAction(action, parent.commits[row])
         }
 
         // MARK: - 增量加载
