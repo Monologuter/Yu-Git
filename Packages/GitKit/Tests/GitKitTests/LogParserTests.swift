@@ -186,7 +186,8 @@ struct HistoryTests {
     @Test("统计提交总数")
     func countsCommits() async throws {
         let repository = try await TemporaryRepository()
-        #expect(try await repository.client.commitCount(in: repository.url) == 0)
+        let emptyCount = try await repository.client.commitCount(in: repository.url)
+        #expect(emptyCount == 0)
 
         for index in 1...3 {
             try repository.write("v\(index)", to: "a.txt")
