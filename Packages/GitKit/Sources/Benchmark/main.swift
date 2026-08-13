@@ -92,3 +92,15 @@ try await measure("log 首屏 200 条（拓扑序）", threshold: .milliseconds(
     _ = try await client.log(
         in: repository, includingAllRefs: true, order: .topological, maxCount: 200)
 }
+
+// v0.2 的路径：diff 读取与 patch 生成。界面上点一个文件就走这一条链。
+print("")
+let sampleFile = "src/模块001/文件.txt"
+
+try await measure("单文件 diff（无改动）", threshold: .milliseconds(200)) {
+    _ = try await client.diff(of: sampleFile, in: repository)
+}
+
+try await measure("变更文件的增删统计", threshold: .milliseconds(500)) {
+    _ = try await client.changedLineCounts(in: repository)
+}
