@@ -23,6 +23,7 @@ struct ChangesView: View {
     let onReview: () -> Void
     @State private var section = Section.changes
     @State private var pendingDiscard: [String]?
+    @State private var fileFilter = ""
     @State private var pendingQuickAction: PendingQuickAction?
 
     enum Section: String, CaseIterable, Identifiable {
@@ -106,7 +107,36 @@ struct ChangesView: View {
         return paths.isEmpty ? "变更" : "变更 \(paths.count)"
     }
 
-    // MARK: - 变更
+    // MARK: - 变更：过滤
+    //
+    // 一个改到一半的仓库有两三百个变更文件是常事，平铺成一列根本没法用。
+    // 过滤之外还有一层用意：筛出来之后**批量操作只作用于筛选结果**，
+    // 于是「过滤 *.swift → 暂存这 12 个」就成了按模式分批提交的顺手组合，
+    // 不必一个一个右键点过去。
+
+    private func matchesFilter(_ entry: StatusEntry) -> Bool {
+        let query = fileFilter.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return true }
+        return entry.path.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+    }
+
+    private var filteredStaged: [StatusEntry] {
+        repository.stagedEntries.filter(matchesFilter)
+    }
+
+    private var filteredUnstaged: [StatusEntry] {
+        repository.unstagedEntries.filter(matchesFilter)
+    }
+
+    private var filteredConflicted: [StatusEntry] {
+        repository.conflictedEntries.filter(matchesFilter)
+    }
+
+    private var isFiltering: Bool {
+        !fileFilter.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    // MARK: - 变更：列表
 
     @ViewBuilder
     private var changeList: some View {
@@ -118,66 +148,92 @@ struct ChangesView: View {
             )
             .frame(maxHeight: .infinity)
         } else {
-            List(selection: $repository.selectedFile) {
-                if !repository.conflictedEntries.isEmpty {
-                    SwiftUI.Section {
-                        ForEach(repository.conflictedEntries, id: \.path) { entry in
-                            FileRow(entry: entry)
-                                .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
-                        }
-                    } header: {
-                        HStack {
-                            Text("冲突（\(repository.conflictedEntries.count)）")
-                            Spacer()
-                            // 冲突文件就在眼前时给个直达入口，比让人去翻命令面板顺手
-                            Button("解决…") { onResolveConflicts() }
-                                .buttonStyle(.borderless)
-                                .font(.caption)
+            VStack(spacing: 0) {
+                // 文件不多时不显示过滤框，省得白占一行高度
+                if repository.stagedEntries.count + repository.unstagedEntries.count > 8 {
+                    FilterField(text: $fileFilter, placeholder: "过滤文件路径")
+                        .padding(.horizontal, Theme.Spacing.regular)
+                        .padding(.bottom, Theme.Spacing.tight + 2)
+                }
+
+                if isFiltering && filteredStaged.isEmpty && filteredUnstaged.isEmpty
+                    && filteredConflicted.isEmpty
+                {
+                    ContentUnavailableView(
+                        "没有匹配的文件",
+                        systemImage: "line.3.horizontal.decrease",
+                        description: Text("试试别的关键词")
+                    )
+                    .frame(maxHeight: .infinity)
+                } else {
+                    entryList
+                }
+            }
+        }
+    }
+
+    private var entryList: some View {
+        List(selection: $repository.selectedFile) {
+            if !filteredConflicted.isEmpty {
+                SwiftUI.Section {
+                    ForEach(filteredConflicted, id: \.path) { entry in
+                        FileRow(entry: entry)
+                            .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
+                    }
+                } header: {
+                    HStack {
+                        Text("冲突（\(filteredConflicted.count)）")
+                        Spacer()
+                        // 冲突文件就在眼前时给个直达入口，比让人去翻命令面板顺手
+                        Button("解决…") { onResolveConflicts() }
+                            .buttonStyle(.borderless)
+                            .font(.caption)
+                    }
+                }
+            }
+
+            if !filteredStaged.isEmpty {
+                SwiftUI.Section {
+                    ForEach(filteredStaged, id: \.path) { entry in
+                        FileRow(entry: entry, showsIndexStatus: true)
+                            .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: true))
+                            .contextMenu {
+                                Button("取消暂存") {
+                                    Task { await repository.unstage([entry.path]) }
+                                }
+                            }
+                    }
+                } header: {
+                    sectionHeader("已暂存", count: filteredStaged.count) {
+                        // 过滤时只作用于筛选结果，按钮文案也照实说是几个，
+                        // 不能让人以为点下去会动到看不见的那些文件
+                        Button(isFiltering ? "取消这 \(filteredStaged.count) 个" : "全部取消") {
+                            Task { await repository.unstage(filteredStaged.map(\.path)) }
                         }
                     }
                 }
+            }
 
-                if !repository.stagedEntries.isEmpty {
-                    SwiftUI.Section {
-                        ForEach(repository.stagedEntries, id: \.path) { entry in
-                            FileRow(entry: entry, showsIndexStatus: true)
-                                .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: true))
-                                .contextMenu {
-                                    Button("取消暂存") {
-                                        Task { await repository.unstage([entry.path]) }
+            if !filteredUnstaged.isEmpty {
+                SwiftUI.Section {
+                    ForEach(filteredUnstaged, id: \.path) { entry in
+                        FileRow(entry: entry)
+                            .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
+                            .contextMenu {
+                                Button("暂存") {
+                                    Task { await repository.stage([entry.path]) }
+                                }
+                                if entry.kind != .untracked {
+                                    Button("丢弃改动…", role: .destructive) {
+                                        pendingDiscard = [entry.path]
                                     }
                                 }
-                        }
-                    } header: {
-                        sectionHeader("已暂存", count: repository.stagedEntries.count) {
-                            Button("全部取消") {
-                                Task { await repository.unstage(repository.stagedEntries.map(\.path)) }
                             }
-                        }
                     }
-                }
-
-                if !repository.unstagedEntries.isEmpty {
-                    SwiftUI.Section {
-                        ForEach(repository.unstagedEntries, id: \.path) { entry in
-                            FileRow(entry: entry)
-                                .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
-                                .contextMenu {
-                                    Button("暂存") {
-                                        Task { await repository.stage([entry.path]) }
-                                    }
-                                    if entry.kind != .untracked {
-                                        Button("丢弃改动…", role: .destructive) {
-                                            pendingDiscard = [entry.path]
-                                        }
-                                    }
-                                }
-                        }
-                    } header: {
-                        sectionHeader("未暂存", count: repository.unstagedEntries.count) {
-                            Button("全部暂存") {
-                                Task { await repository.stage(repository.unstagedEntries.map(\.path)) }
-                            }
+                } header: {
+                    sectionHeader("未暂存", count: filteredUnstaged.count) {
+                        Button(isFiltering ? "暂存这 \(filteredUnstaged.count) 个" : "全部暂存") {
+                            Task { await repository.stage(filteredUnstaged.map(\.path)) }
                         }
                     }
                 }
