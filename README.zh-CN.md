@@ -201,5 +201,3 @@ credential helper 不工作。解析 porcelain 输出更琐碎，但这意味着
 `docs/01` 的竞品调研研究了 Fork、Tower、GitKraken、Sourcetree、SmartGit、
 GitButler、Lazygit、Sublime Merge、GitHub Desktop、Gitless、Magit、Git Cola、GitUp。
 这里的若干设计是对它们做对了什么——以及做错了什么——的直接回应。
-
-本 README 的结构参考 [cc-haha](https://github.com/NanmiCoder/cc-haha)。
