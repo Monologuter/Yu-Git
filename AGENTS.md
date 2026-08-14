@@ -44,7 +44,9 @@ AI 原生 + 中文界面的 macOS 原生 Git 客户端。Slogan：「AI 帮你�
   代码注释与文档保持中文——提交历史会流传到 GitHub 列表、blame、bisect 输出里，
   读者范围比界面广得多。**绝不加任何 AI 协作署名**（commit-msg hook 会拦截）
 - 分支：轻量流。文档与小修直接提 main；新模块、多 commit 的功能、危险重构走 `feat/*` 分支，rebase 后 `--ff-only` 合入
-- 提交前跑 `swift format --recursive --in-place Packages/ Yugit/`；推送前 `swift test` 必须全绿
+- 提交前跑 `swift format --recursive --in-place Packages/ Yugit/`；推送前全部测试必须全绿。
+  仓库根没有 `Package.swift`，光敲 `swift test` 会直接报错退出——三个包各自独立，要写成
+  `for p in Packages/*/; do swift test --package-path "$p"; done`（pre-push hook 跑的就是这个）
 - 新克隆后执行一次 `./scripts/install-hooks.sh` 装上门禁
 - 默认零第三方依赖，引入需书面论证
 
