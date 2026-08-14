@@ -235,5 +235,3 @@ The competitive analysis in `docs/01` studied Fork, Tower, GitKraken, Sourcetree
 SmartGit, GitButler, Lazygit, Sublime Merge, GitHub Desktop, Gitless, Magit, Git
 Cola, and GitUp. Several designs here are direct responses to what those tools got
 right — and to what they got wrong.
-
-The layout of this README follows [cc-haha](https://github.com/NanmiCoder/cc-haha).
