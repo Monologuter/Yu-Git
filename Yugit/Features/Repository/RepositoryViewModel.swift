@@ -43,6 +43,17 @@ final class RepositoryViewModel {
     var selectedCommit: Commit.ID?
     var selectedFile: FileSelection?
 
+    /// 历史过滤条件。**交给 git 去筛，不在已加载的那几百条里过滤**——
+    /// 客户端过滤搜不到时用户会以为"仓库里没有"，而它可能在第 300 条。
+    var historyFilter = HistoryFilter() {
+        didSet {
+            guard historyFilter != oldValue else { return }
+            scheduleHistoryReload()
+        }
+    }
+    private(set) var isFilteringHistory = false
+    private var historyReloadTask: Task<Void, Never>?
+
     /// 当前选中文件的 diff。
     private(set) var selectedDiff: FileDiff?
     private(set) var isLoadingDiff = false
@@ -144,12 +155,15 @@ final class RepositoryViewModel {
             async let statusResult = repository.status()
             async let branchResult = repository.client.branches(in: repository.root)
             async let tagResult = repository.client.tags(in: repository.root)
+            // 带上过滤条件：外部改动触发的自动刷新如果不带，
+            // 用户正在看的筛选结果会被无声地冲回全量列表
             async let commitResult = repository.client.log(
                 in: repository.root,
                 includingAllRefs: true,
                 // 画分支图必须用拓扑序，按时间排会让线出现视觉上的交叉错乱
                 order: .topological,
-                maxCount: initialCommitCount
+                maxCount: initialCommitCount,
+                filter: historyFilter
             )
 
             status = try await statusResult
@@ -164,6 +178,43 @@ final class RepositoryViewModel {
         }
 
         await reloadSelectedDiff()
+    }
+
+    /// 过滤条件变了，稍后重新查历史。
+    ///
+    /// 防抖 250ms：每按一个键就跑一次 git log，在大仓库上会把 CPU 打满，
+    /// 而且前面几次的结果都还没画出来就作废了。
+    private func scheduleHistoryReload() {
+        historyReloadTask?.cancel()
+        historyReloadTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else { return }
+            await self?.reloadHistory()
+        }
+    }
+
+    /// 按当前过滤条件重新查历史。
+    func reloadHistory() async {
+        isFilteringHistory = !historyFilter.isEmpty
+        do {
+            let found = try await repository.client.log(
+                in: root,
+                includingAllRefs: true,
+                order: .topological,
+                maxCount: initialCommitCount,
+                filter: historyFilter
+            )
+            commits = found
+            graph = CommitGraph(commits: found)
+            hasMoreCommits = found.count >= initialCommitCount
+            // 筛完之后原来选中的提交可能已经不在列表里了
+            if let selected = selectedCommit, !found.contains(where: { $0.id == selected }) {
+                selectedCommit = nil
+            }
+        } catch {
+            guard !error.isCancellation else { return }
+            failure = FailurePresentation(from: error)
+        }
     }
 
     /// 加载当前选中文件的 diff。

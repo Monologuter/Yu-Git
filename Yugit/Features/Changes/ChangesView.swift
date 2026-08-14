@@ -327,12 +327,108 @@ struct ChangesView: View {
 
     @ViewBuilder
     private var historyList: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: Theme.Spacing.tight) {
+                FilterField(text: historyMessageBinding, placeholder: "搜提交信息")
+
+                Menu {
+                    // 作者筛选放菜单里而不是再摆一个输入框：
+                    // 中栏只有三百来 pt 宽，两个并排的输入框谁都填不下东西
+                    TextField("作者名或邮箱", text: historyAuthorBinding)
+                    if !(repository.historyFilter.author ?? "").isEmpty {
+                        Button("清除作者条件") { repository.historyFilter.author = nil }
+                    }
+                    Divider()
+                    Button("最近一天") { setSince(days: 1) }
+                    Button("最近一周") { setSince(days: 7) }
+                    Button("最近一月") { setSince(days: 30) }
+                    if repository.historyFilter.since != nil {
+                        Button("清除时间条件") { repository.historyFilter.since = nil }
+                    }
+                } label: {
+                    Image(systemName: hasExtraFilters ? "person.crop.circle.fill" : "person.crop.circle")
+                        .font(.system(size: 11))
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help("按作者或时间筛选")
+            }
+            .padding(.horizontal, Theme.Spacing.regular)
+            .padding(.vertical, Theme.Spacing.tight + 2)
+
+            if !repository.historyFilter.isEmpty {
+                filterSummary
+            }
+
+            Divider()
+
+            historyContent
+        }
+    }
+
+    /// 当前生效的筛选条件，以及命中了多少条。
+    ///
+    /// 必须显式说明「在整个历史里搜」：客户端过滤只能筛已加载的那几百条，
+    /// 用户搜不到就会以为仓库里没有。这里筛的是全量，得让人知道结果是可信的。
+    private var filterSummary: some View {
+        HStack(spacing: Theme.Spacing.tight) {
+            Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                .font(.system(size: 10))
+                .foregroundStyle(.tint)
+
+            Text("在整个历史中找到 \(repository.commits.count) 条")
+                .font(Theme.Font.secondary)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+
+            Button("清除") { repository.historyFilter = HistoryFilter() }
+                .buttonStyle(.borderless)
+                .font(Theme.Font.secondary)
+        }
+        .padding(.horizontal, Theme.Spacing.regular)
+        .padding(.bottom, Theme.Spacing.tight + 2)
+    }
+
+    private var hasExtraFilters: Bool {
+        !(repository.historyFilter.author ?? "").isEmpty || repository.historyFilter.since != nil
+    }
+
+    private var historyMessageBinding: Binding<String> {
+        Binding(
+            get: { repository.historyFilter.message ?? "" },
+            set: { repository.historyFilter.message = $0.isEmpty ? nil : $0 }
+        )
+    }
+
+    private var historyAuthorBinding: Binding<String> {
+        Binding(
+            get: { repository.historyFilter.author ?? "" },
+            set: { repository.historyFilter.author = $0.isEmpty ? nil : $0 }
+        )
+    }
+
+    private func setSince(days: Int) {
+        repository.historyFilter.since = Calendar.current.date(
+            byAdding: .day, value: -days, to: Date())
+    }
+
+    @ViewBuilder
+    private var historyContent: some View {
         if repository.commits.isEmpty {
-            ContentUnavailableView(
-                "尚无提交",
-                systemImage: "clock",
-                description: Text("这个仓库还没有任何 commit")
-            )
+            if !repository.historyFilter.isEmpty {
+                ContentUnavailableView(
+                    "没有匹配的提交",
+                    systemImage: "magnifyingglass",
+                    description: Text("整个历史里都没有符合这些条件的提交")
+                )
+            } else {
+                ContentUnavailableView(
+                    "尚无提交",
+                    systemImage: "clock",
+                    description: Text("这个仓库还没有任何 commit")
+                )
+            }
         } else {
             CommitHistoryView(
                 commits: repository.commits,

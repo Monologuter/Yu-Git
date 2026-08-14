@@ -54,7 +54,8 @@ extension GitClient {
         order: CommitOrder = .chronological,
         maxCount: Int? = nil,
         skip: Int? = nil,
-        paths: [String] = []
+        paths: [String] = [],
+        filter: HistoryFilter = HistoryFilter()
     ) async throws -> [Commit] {
         var arguments = [
             "log",
@@ -77,9 +78,14 @@ extension GitClient {
         if let skip {
             arguments.append("--skip=\(skip)")
         }
-        if !paths.isEmpty {
+
+        arguments += filter.arguments
+
+        // 路径限定必须放在最后，`--` 之后的一切都被当成路径
+        let allPaths = paths + filter.paths
+        if !allPaths.isEmpty {
             arguments.append("--")
-            arguments += paths
+            arguments += allPaths
         }
 
         let result = try await runReturningResult(arguments, in: repository, allowsOptionalLocks: false)
