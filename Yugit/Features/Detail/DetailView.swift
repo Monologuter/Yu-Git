@@ -161,6 +161,13 @@ struct CommitDetailView: View {
         .task(id: commit.hash) {
             await repository.reloadSelectedCommitFiles()
         }
+        // 同样必须挂在外层。原先挂在 filePane 上，而 filePane 活在 VSplitView 里，
+        // VSplitView 是 NSSplitView 的封装，布局时会增删子视图——里面的 .task
+        // 于是被反复触发又取消，isLoadingCommitFileDiff 永远有一个新任务把它
+        // 置回 true，转圈就停不下来。
+        .task(id: repository.selectedCommitFile) {
+            await repository.reloadCommitFileDiff()
+        }
     }
 
     /// 提交信息 + 改动文件列表。
@@ -333,9 +340,10 @@ struct CommitDetailView: View {
                 Divider()
             }
 
-            if repository.isLoadingCommitFileDiff {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let diff = repository.commitFileDiff {
+            // 先看有没有数据，再看在不在加载。反过来写的话，
+            // loading 标志一旦没被正确复位，明明已经拿到的 diff 也显示不出来，
+            // 用户面对的是一个永远转圈的面板——而数据其实就在手上。
+            if let diff = repository.commitFileDiff {
                 if diff.hunks.isEmpty {
                     // 纯改名走到这里：文件确实变了（路径变了），但内容一个字节没动。
                     // 说清楚是"没有内容变化"，而不是让人对着空白面板猜是不是加载失败。
@@ -355,11 +363,9 @@ struct CommitDetailView: View {
                         onApplyLines: { _ in }
                     )
                 }
+            } else if repository.isLoadingCommitFileDiff {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-        }
-        // 换文件就重新取 diff
-        .task(id: repository.selectedCommitFile) {
-            await repository.reloadCommitFileDiff()
         }
     }
 

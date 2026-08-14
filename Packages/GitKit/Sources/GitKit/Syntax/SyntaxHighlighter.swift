@@ -80,8 +80,11 @@ public enum SyntaxHighlighter {
 
             // 4. 数字。前一个字符是标识符的一部分时不算——
             //    否则 `utf8` 里的 `8`、`sha256` 里的 `256` 都会被单独染色
+            //
+            // 注意 `end` 从 index + 1 起步，不是 index。
+            // 见下面标识符分支的注释：那是防死循环的关键。
             if character.isNumber, !isIdentifierCharacter(characters, at: index - 1) {
-                var end = index
+                var end = index + 1
                 while end < characters.count, isNumberCharacter(characters[end]) {
                     end += 1
                 }
@@ -92,7 +95,20 @@ public enum SyntaxHighlighter {
 
             // 5. 标识符：可能是关键字、类型名，或者什么都不是
             if isIdentifierStart(character) {
-                var end = index
+                // **`end` 必须从 index + 1 起步。**
+                //
+                // 从 index 起步的话，只要「能当开头」的字符集比「能当后续」的大，
+                // 内层循环就会一次都不执行，`end` 停在 index，外层 `index = end`
+                // 原地不动——**死循环，主线程 100% CPU，整个 app 挂起**。
+                //
+                // 这不是假想：`@` 能当开头（ObjC 的 @interface），却不能当后续，
+                // 于是任何含 `@` 的行都会挂死。而 Vue 模板里 `@click`、`@input`
+                // 满地都是，随手点开一个 .vue 文件就中招。
+                //
+                // 起始字符外层已经判定过属于标识符，直接跳过它，
+                // 既正确又让「index 严格递增」成为结构上的保证，
+                // 而不是依赖两个字符集合恰好对齐。
+                var end = index + 1
                 while end < characters.count, isIdentifierCharacter(characters, at: end) {
                     end += 1
                 }

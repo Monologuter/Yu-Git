@@ -147,6 +147,63 @@ struct SyntaxHighlighterTests {
         #expect(SyntaxHighlighter.tokenize("    ", language: .swift).isEmpty)
     }
 
+    // MARK: - 终止性
+    //
+    // 这一组防的是**挂起**，不是染错色。扫描器的外层是
+    // `while index < count`，任何一个分支忘了让 index 前进，
+    // 整个 app 就会卡死在一行文本上——比颜色不对严重得多。
+
+    @Test("@ 开头的标识符不会死循环", .timeLimit(.minutes(1)))
+    func doesNotHangOnAtSign() {
+        // 真实事故：@ 能当标识符开头（ObjC 的 @interface），却不在「能当后续」
+        // 的字符集里，于是内层循环一次都不执行，index 原地踏步。
+        // Vue 模板里 @click 满地都是，随手点开一个 .vue 文件就挂。
+        _ = SyntaxHighlighter.tokenize(#"<div @click="run" @input="x" />"#, language: .javascript)
+        _ = SyntaxHighlighter.tokenize("@interface Foo", language: .cLike)
+        _ = SyntaxHighlighter.tokenize("@", language: .swift)
+        _ = SyntaxHighlighter.tokenize("@@@@", language: .swift)
+    }
+
+    @Test("非 ASCII 数字不会死循环", .timeLimit(.minutes(1)))
+    func doesNotHangOnUnicodeDigits() {
+        // 全角数字、罗马数字、上标的 isNumber 都为真，但 isHexDigit 为假——
+        // 数字分支同样会一次都不前进
+        _ = SyntaxHighlighter.tokenize("步骤１２３", language: .swift)
+        _ = SyntaxHighlighter.tokenize("第Ⅷ章", language: .swift)
+        _ = SyntaxHighlighter.tokenize("x²", language: .swift)
+        _ = SyntaxHighlighter.tokenize("①②③", language: .python)
+    }
+
+    @Test("各种奇怪输入都能跑完并给出合法范围", .timeLimit(.minutes(1)))
+    func terminatesOnHostileInput() {
+        let samples = [
+            "@$_#%^&*()", "\\\\\\", "\"未闭合", "/*", "*/", "//",
+            "🎉🎊", "\u{200B}\u{FEFF}", "a\u{0301}b",
+            "$var @attr #tag", "０xFF", "１_０００",
+            String(repeating: "@", count: 500),
+            String(repeating: "１", count: 500),
+        ]
+
+        for language in [Language.swift, .javascript, .python, .cLike, .shell, .json] {
+            for sample in samples {
+                let tokens = SyntaxHighlighter.tokenize(sample, language: language)
+                let count = Array(sample).count
+                for token in tokens {
+                    #expect(token.range.lowerBound >= 0)
+                    #expect(token.range.upperBound <= count)
+                    #expect(token.range.lowerBound < token.range.upperBound, "空范围说明有分支没前进")
+                }
+            }
+        }
+    }
+
+    @Test("@ 在 Vue 模板里仍然被当作标识符起始")
+    func atSignStillFormsIdentifier() {
+        // 修死循环不能顺手把功能改掉：@interface 之类仍应作为一个整体被认出来
+        let tokens = SyntaxHighlighter.tokenize("@interface Foo", language: .cLike)
+        #expect(tokens.contains { $0.kind == .keyword })
+    }
+
     @Test("token 之间不重叠，且按位置递增")
     func tokensAreOrderedAndDisjoint() {
         // 上层要按顺序拼接文本，重叠或乱序会导致内容重复或丢失
