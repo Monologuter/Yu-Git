@@ -25,12 +25,15 @@ struct CommitHistoryView: NSViewRepresentable {
         let table = CommitTableView()
         table.style = .inset
         table.headerView = nil
-        table.rowHeight = Coordinator.rowHeight
+        table.rowHeight = Coordinator.commitRowHeight
         table.usesAlternatingRowBackgroundColors = false
         table.selectionHighlightStyle = .regular
         table.allowsEmptySelection = true
         table.allowsMultipleSelection = false
         table.intercellSpacing = NSSize(width: 0, height: 0)
+        // 日期分组行滚到顶部时钉住。AppKit 的 group row 自带这个行为，
+        // 自己实现要监听滚动再手动摆一个浮层，没必要。
+        table.floatsGroupRows = true
 
         let column = NSTableColumn(identifier: Coordinator.columnID)
         column.resizingMask = .autoresizingMask
@@ -49,12 +52,11 @@ struct CommitHistoryView: NSViewRepresentable {
         // cherry-pick、revert、粘给同事时最常做的一步，
         // 让人先点开右边的详情面板再找复制按钮实在绕。
         table.onCopySelection = { [weak coordinator = context.coordinator] in
-            guard let coordinator, let table = coordinator.table else { return }
-            let row = table.selectedRow
-            guard coordinator.parent.commits.indices.contains(row) else { return }
+            guard let coordinator, let table = coordinator.table,
+                let commit = coordinator.commit(atRow: table.selectedRow)
+            else { return }
             NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(
-                coordinator.parent.commits[row].hash, forType: .string)
+            NSPasteboard.general.setString(commit.hash, forType: .string)
         }
 
         let scrollView = NSScrollView()
@@ -64,6 +66,9 @@ struct CommitHistoryView: NSViewRepresentable {
         scrollView.drawsBackground = false
 
         context.coordinator.table = table
+        // 先切好行再交出去。`updateNSView` 只在内容变化时 reload，
+        // 而首次进来时内容并没有"变过"——不在这里建好，第一屏会是空的。
+        context.coordinator.rebuildRows()
         context.coordinator.observeScrolling(in: scrollView)
         context.coordinator.observeThemeChanges()
         return scrollView
@@ -71,11 +76,14 @@ struct CommitHistoryView: NSViewRepresentable {
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         let coordinator = context.coordinator
-        let previousCount = coordinator.parent.commits.count
         coordinator.parent = self
 
-        // 只在内容真的变了时才 reload：滚动过程中无谓的 reload 会掉帧
-        if previousCount != commits.count || coordinator.needsReload {
+        // 只在内容真的变了时才 reload：滚动过程中无谓的 reload 会掉帧。
+        //
+        // 判据交给 `rebuildRows()`，它本来就要判断「这是追加了一页
+        // 还是整批换了」。之前这里比的是提交条数，那漏掉一种情况：
+        // 换到一个恰好加载了同样条数的分支时，列表不会刷新。
+        if coordinator.rebuildRows() || coordinator.needsReload {
             coordinator.needsReload = false
             coordinator.table?.reloadData()
         }
@@ -86,12 +94,21 @@ struct CommitHistoryView: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate, NSMenuDelegate {
 
-        static let rowHeight: CGFloat = 44
+        static let commitRowHeight: CGFloat = 44
+        static let dayGroupRowHeight: CGFloat = 24
         static let columnID = NSUserInterfaceItemIdentifier("commit")
+        static let dayGroupID = NSUserInterfaceItemIdentifier("dayGroup")
 
         var parent: CommitHistoryView
         weak var table: NSTableView?
         var needsReload = false
+
+        /// 提交列表原本是清一色 44pt 等高，那是 `NSTableView` 跑满 60fps 最省事的形态。
+        /// 加入日期分组行意味着放弃固定行高——换来的是整列终于有了落点：
+        /// 几百条长得一模一样的提交里，眼睛此前无处停留。
+        ///
+        /// 分组本身（下标算术）在 GitKit 里，那边有测试；这里只管画。
+        private var history = DayGroupedHistory()
 
         /// 避免「程序设置选中」反过来又触发一次选中回调。
         private var isSyncingSelection = false
@@ -100,39 +117,125 @@ struct CommitHistoryView: NSViewRepresentable {
             self.parent = parent
         }
 
+        // MARK: - 行的构建
+
+        /// - Returns: 行有没有变。调用方拿它决定要不要 `reloadData()`。
+        @discardableResult
+        func rebuildRows() -> Bool {
+            history.update(with: parent.commits)
+        }
+
+        /// 分组行上写什么。
+        ///
+        /// 今天和昨天用词说，比「8月14日」认得快。跨年了带上年份，
+        /// 否则「3月11日」会和去年的同一天混淆。
+        private static func dayLabel(for date: Date) -> String {
+            let calendar = Calendar.current
+            if calendar.isDateInToday(date) { return "今天" }
+            if calendar.isDateInYesterday(date) { return "昨天" }
+            let sameYear = calendar.isDate(date, equalTo: Date(), toGranularity: .year)
+            return (sameYear ? CommitCellView.dayFormatter : CommitCellView.fullDateFormatter)
+                .string(from: date)
+        }
+
+        /// 某一行对应哪条提交。分组行返回 nil。
+        func commit(atRow row: Int) -> Commit? {
+            commitIndex(atRow: row).map { parent.commits[$0] }
+        }
+
+        func commitIndex(atRow row: Int) -> Int? {
+            guard let index = history.commitIndex(atRow: row),
+                parent.commits.indices.contains(index)
+            else { return nil }
+            return index
+        }
+
         func numberOfRows(in tableView: NSTableView) -> Int {
-            parent.commits.count
+            history.rows.count
+        }
+
+        func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+            guard history.rows.indices.contains(row) else { return Self.commitRowHeight }
+            switch history.rows[row] {
+            case .dayGroup: return Self.dayGroupRowHeight
+            case .commit: return Self.commitRowHeight
+            }
+        }
+
+        func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool {
+            guard history.rows.indices.contains(row) else { return false }
+            if case .dayGroup = history.rows[row] { return true }
+            return false
+        }
+
+        func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
+            commitIndex(atRow: row) != nil
         }
 
         func tableView(_ tableView: NSTableView, viewFor column: NSTableColumn?, row: Int) -> NSView? {
-            guard parent.commits.indices.contains(row) else { return nil }
+            guard history.rows.indices.contains(row) else { return nil }
 
-            // 复用：NSTableView 只为可见行创建视图，这是 5 万行仍能流畅滚动的关键
-            let cell =
-                tableView.makeView(withIdentifier: Self.columnID, owner: self) as? CommitCellView
-                ?? CommitCellView(identifier: Self.columnID)
+            switch history.rows[row] {
+            case .dayGroup(let blockIndex):
+                guard history.blocks.indices.contains(blockIndex) else { return nil }
+                let cell =
+                    tableView.makeView(withIdentifier: Self.dayGroupID, owner: self)
+                    as? DayGroupCellView ?? DayGroupCellView(identifier: Self.dayGroupID)
+                let block = history.blocks[blockIndex]
+                cell.configure(
+                    label: Self.dayLabel(for: block.date),
+                    count: block.count,
+                    // 轨道要穿过分组行，否则同一条分支在日期边界上看着像断了、
+                    // 像是有个分支尖端——那是分支图里最不能出的误报。
+                    // 穿过去的是上一行「向下走」的那些线。
+                    passages: passages(above: block.firstCommitIndex),
+                    laneCount: parent.graph.maximumLaneCount
+                )
+                return cell
 
-            cell.configure(
-                commit: parent.commits[row],
-                // 上一行是谁，决定这一行要不要把日期显示出来
-                previous: row > 0 ? parent.commits[row - 1] : nil,
-                graphRow: parent.graph.rows.indices.contains(row) ? parent.graph.rows[row] : nil,
-                laneCount: parent.graph.maximumLaneCount
-            )
-            return cell
+            case .commit(let index):
+                guard parent.commits.indices.contains(index) else { return nil }
+                // 复用：NSTableView 只为可见行创建视图，这是 5 万行仍能流畅滚动的关键
+                let cell =
+                    tableView.makeView(withIdentifier: Self.columnID, owner: self) as? CommitCellView
+                    ?? CommitCellView(identifier: Self.columnID)
+
+                cell.configure(
+                    commit: parent.commits[index],
+                    graphRow: parent.graph.rows.indices.contains(index)
+                        ? parent.graph.rows[index] : nil,
+                    laneCount: parent.graph.maximumLaneCount
+                )
+                return cell
+            }
+        }
+
+        /// 第 `index` 条提交上方那道边界上，有哪些轨道在往下走。
+        ///
+        /// 取的是上一行的**出线**（`toLane`）而不是本行的入线：本行新开一条轨道时，
+        /// 它的第一父连线同样是 `fromLane == nodeLane`，照那个画会在分组行里
+        /// 多出一段无中生有的线。
+        private func passages(above index: Int) -> [LanePassage] {
+            guard index > 0, parent.graph.rows.indices.contains(index - 1) else { return [] }
+            var seen = Set<Int>()
+            var result: [LanePassage] = []
+            for link in parent.graph.rows[index - 1].links where seen.insert(link.toLane).inserted {
+                result.append(LanePassage(lane: link.toLane, colorIndex: link.colorIndex))
+            }
+            return result
         }
 
         func tableViewSelectionDidChange(_ notification: Notification) {
             guard !isSyncingSelection, let table else { return }
-            let row = table.selectedRow
-            parent.selection = parent.commits.indices.contains(row) ? parent.commits[row].id : nil
+            parent.selection = commit(atRow: table.selectedRow)?.id
         }
 
         func syncSelection(_ id: Commit.ID?) {
             guard let table else { return }
-            let targetRow = id.flatMap { identifier in
-                parent.commits.firstIndex { $0.id == identifier }
-            }
+            let targetRow =
+                id
+                .flatMap { identifier in parent.commits.firstIndex { $0.id == identifier } }
+                .flatMap { history.row(forCommitIndex: $0) }
 
             isSyncingSelection = true
             defer { isSyncingSelection = false }
@@ -155,11 +258,11 @@ struct CommitHistoryView: NSViewRepresentable {
         func menuNeedsUpdate(_ menu: NSMenu) {
             menu.removeAllItems()
 
-            let row = table?.clickedRow ?? -1
-            guard parent.commits.indices.contains(row) else { return }
+            // 右键点在日期分组行上没有任何动作可给，直接给个空菜单
+            guard let index = commitIndex(atRow: table?.clickedRow ?? -1) else { return }
 
             let header = NSMenuItem(
-                title: parent.commits[row].subject, action: nil, keyEquivalent: "")
+                title: parent.commits[index].subject, action: nil, keyEquivalent: "")
             header.isEnabled = false
             menu.addItem(header)
             menu.addItem(.separator())
@@ -174,7 +277,9 @@ struct CommitHistoryView: NSViewRepresentable {
                 item.representedObject = action
                 item.image = NSImage(
                     systemSymbolName: action.systemImage, accessibilityDescription: nil)
-                item.isEnabled = action.isAvailable(at: row, loadedCount: parent.commits.count)
+                // 传提交下标而不是表格行号：分组行插进来之后两者已经不是一回事，
+                // 而这里判断的是「它是不是最新/最旧的那条提交」
+                item.isEnabled = action.isAvailable(at: index, loadedCount: parent.commits.count)
                 item.toolTip = action.explanation
                 menu.addItem(item)
             }
@@ -190,26 +295,23 @@ struct CommitHistoryView: NSViewRepresentable {
             )
             copyItem.keyEquivalentModifierMask = .command
             copyItem.target = self
-            copyItem.toolTip = parent.commits[row].hash
+            copyItem.toolTip = parent.commits[index].hash
             menu.addItem(copyItem)
         }
 
         @objc private func copyHash(_ sender: NSMenuItem) {
-            guard let row = table?.clickedRow,
-                parent.commits.indices.contains(row)
-            else { return }
+            guard let commit = commit(atRow: table?.clickedRow ?? -1) else { return }
             NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(parent.commits[row].hash, forType: .string)
+            NSPasteboard.general.setString(commit.hash, forType: .string)
         }
 
         @objc private func runQuickAction(_ sender: NSMenuItem) {
             guard
                 let action = sender.representedObject as? QuickAction,
-                let row = table?.clickedRow,
-                parent.commits.indices.contains(row)
+                let commit = commit(atRow: table?.clickedRow ?? -1)
             else { return }
 
-            parent.onQuickAction(action, parent.commits[row])
+            parent.onQuickAction(action, commit)
         }
 
         // MARK: - 主题
@@ -423,33 +525,37 @@ final class CommitCellView: NSTableCellView {
         }
     }
 
+    /// 图形区的两个尺寸：轨道间距与整块的宽度。
+    ///
+    /// 分组行也要按同一套算，否则轨道穿过去时会跟上下两行对不齐。
+    /// 轨道多到放不下时压缩间距，而不是把图形区一路撑宽去挤占标题；
+    /// 间距对所有行必须一致，否则同一条轨道在相邻两行会错位、连不上线。
+    static func graphMetrics(laneCount: Int) -> (laneWidth: CGFloat, width: CGFloat) {
+        let lanes = max(laneCount, 1)
+        let laneWidth = max(
+            minimumLaneWidth,
+            min(Self.laneWidth, maximumGraphWidth / CGFloat(lanes))
+        )
+        let width = min(max(minimumGraphWidth, CGFloat(lanes) * laneWidth), maximumGraphWidth)
+        return (laneWidth, width)
+    }
+
     func configure(
         commit: Commit,
-        previous: Commit?,
         graphRow: CommitGraph.Row?,
         laneCount: Int
     ) {
         graphView.row = graphRow
 
-        // 轨道多到放不下时压缩间距，而不是把图形区一路撑宽去挤占标题。
-        // 间距对所有行必须一致，否则同一条轨道在相邻两行会错位、连不上线。
-        let lanes = max(laneCount, 1)
-        let laneWidth = max(
-            Self.minimumLaneWidth,
-            min(Self.laneWidth, Self.maximumGraphWidth / CGFloat(lanes))
-        )
-        graphView.laneWidth = laneWidth
+        let metrics = Self.graphMetrics(laneCount: laneCount)
+        graphView.laneWidth = metrics.laneWidth
         graphView.needsDisplay = true
-
-        graphWidthConstraint.constant = min(
-            max(Self.minimumGraphWidth, CGFloat(lanes) * laneWidth),
-            Self.maximumGraphWidth
-        )
+        graphWidthConstraint.constant = metrics.width
 
         subjectLabel.stringValue = commit.subject
         hashLabel.stringValue = commit.abbreviatedHash
         authorLabel.stringValue = commit.author.name
-        dateLabel.stringValue = Self.dateText(for: commit, previous: previous)
+        dateLabel.stringValue = Self.timeFormatter.string(from: commit.author.date)
 
         // merge 提交的标题几乎都是 git 自动生成的「Merge branch 'x' into y」，
         // 信息量接近零，却和真正干了活的提交长得一模一样。
@@ -459,48 +565,151 @@ final class CommitCellView: NSTableCellView {
         applyTextColors()
     }
 
-    /// 时间列显示什么。
+    /// 时间列只写时刻。
     ///
-    /// 每行都写「3个月前」是一整列重复的同一句话：既没有信息量，
-    /// 也让列表失去节奏——眼睛找不到任何落点。
-    ///
-    /// 改成：跨到新的一天时显示日期，同一天内显示具体时刻。
-    /// 于是日期出现的位置天然成了分界线，不必额外画分隔行，
-    /// 也就不用为此破坏 NSTableView 的固定行高（那是 5 万行流畅滚动的前提）。
-    private static func dateText(for commit: Commit, previous: Commit?) -> String {
-        let date = commit.author.date
-        let calendar = Calendar.current
-
-        let isNewDay =
-            previous.map { !calendar.isDate($0.author.date, inSameDayAs: date) } ?? true
-        guard isNewDay else { return timeFormatter.string(from: date) }
-
-        // 今天和昨天用词说，比「8月14日」更快认出来
-        if calendar.isDateInToday(date) { return "今天" }
-        if calendar.isDateInYesterday(date) { return "昨天" }
-
-        // 跨年了就带上年份，否则「3月11日」会和去年的同一天混淆
-        let sameYear = calendar.isDate(date, equalTo: Date(), toGranularity: .year)
-        return (sameYear ? dayFormatter : fullDateFormatter).string(from: date)
-    }
-
-    private static let timeFormatter: DateFormatter = {
+    /// 上一版把日期塞进这一列——跨天的那行显示日期、其余显示时刻——是为了
+    /// 在不破坏固定行高的前提下造出分界。有了真正的分组行之后这个折中就没必要了，
+    /// 而且留着反倒有害：同一列里一会儿是「今天」一会儿是「14:32」，
+    /// 右对齐的宽度对不齐，快速扫读时间时眼睛还得辨认这一格装的是哪种东西。
+    static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         return formatter
     }()
 
-    private static let dayFormatter: DateFormatter = {
+    static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate("MMMd")
         return formatter
     }()
 
-    private static let fullDateFormatter: DateFormatter = {
+    static let fullDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate("yMMMd")
         return formatter
     }()
+}
+
+/// 日期分组行。
+///
+/// 24pt 一条，用一行的高度换整列的节奏，比给每一行加装饰便宜得多，
+/// 也不动信息密度——这是设计稿里唯一为「列表没有落点」新加的东西。
+///
+/// 轨道从它中间穿过去。设计稿画的是一整条不透明色带，那样分支线会在
+/// 每个日期边界断一次，看着像一堆分支尖端——分支图里最不该出的误报。
+final class DayGroupCellView: NSTableCellView {
+
+    private let passageView = LanePassageView()
+    private let label = NSTextField(labelWithString: "")
+    private let countLabel = NSTextField(labelWithString: "")
+    private var passageWidthConstraint = NSLayoutConstraint()
+
+    init(identifier: NSUserInterfaceItemIdentifier) {
+        super.init(frame: .zero)
+        self.identifier = identifier
+
+        label.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+
+        countLabel.font = Theme.NSFonts.secondary
+        // 数字等宽，否则同一列的计数在不同位数之间跳
+        countLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+
+        for view in [passageView, label, countLabel] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(view)
+        }
+
+        passageWidthConstraint = passageView.widthAnchor.constraint(
+            equalToConstant: CommitCellView.minimumGraphWidth)
+
+        NSLayoutConstraint.activate([
+            passageView.leadingAnchor.constraint(
+                equalTo: leadingAnchor, constant: Theme.Spacing.tight),
+            passageView.topAnchor.constraint(equalTo: topAnchor),
+            passageView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            passageWidthConstraint,
+
+            label.leadingAnchor.constraint(
+                equalTo: passageView.trailingAnchor, constant: Theme.Spacing.regular),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            countLabel.leadingAnchor.constraint(
+                equalTo: label.trailingAnchor, constant: Theme.Spacing.tight),
+            countLabel.centerYAnchor.constraint(equalTo: label.centerYAnchor),
+            countLabel.trailingAnchor.constraint(
+                lessThanOrEqualTo: trailingAnchor, constant: -Theme.Spacing.regular),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("不支持从 nib 加载")
+    }
+
+    func configure(label text: String, count: Int, passages: [LanePassage], laneCount: Int) {
+        label.stringValue = text
+        label.textColor = NSColor(Theme.Colors.secondaryText)
+        countLabel.stringValue = "\(count)"
+        countLabel.textColor = NSColor(Theme.Colors.decorativeText)
+
+        let metrics = CommitCellView.graphMetrics(laneCount: laneCount)
+        passageView.laneWidth = metrics.laneWidth
+        passageView.passages = passages
+        passageView.needsDisplay = true
+        passageWidthConstraint.constant = metrics.width
+
+        needsDisplay = true
+    }
+
+    /// 自己画底，不用系统的 group row 样式。
+    ///
+    /// AppKit 给 group row 的默认外观是为「来源列表」调的：加粗全大写的标题、
+    /// 跟着侧栏走的背景。这里要的是设计稿那条下沉色带，两者对不上。
+    /// 用 `isGroupRow` 只是为了白拿钉在顶部的行为。
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor(Theme.Colors.sunkenBackground).setFill()
+        bounds.fill()
+
+        NSColor(Theme.Colors.separator).setFill()
+        let hairline = 1 / (window?.backingScaleFactor ?? 2)
+        NSRect(x: 0, y: 0, width: bounds.width, height: hairline).fill()
+        NSRect(x: 0, y: bounds.maxY - hairline, width: bounds.width, height: hairline).fill()
+    }
+}
+
+/// 一条轨道穿过某个位置。
+struct LanePassage {
+    let lane: Int
+    let colorIndex: Int
+}
+
+/// 把若干条轨道竖直画过整个高度。
+///
+/// 和 ``LaneGraphView`` 分开而不是复用：那个要处理节点、分叉曲线、选中态，
+/// 而这里只有「几条竖线穿过去」。把分组行的情况塞进去只会让那段绘制
+/// 多几个分支判断，而它是每帧都在跑的代码。
+final class LanePassageView: NSView {
+
+    var passages: [LanePassage] = []
+    var laneWidth: CGFloat = CommitCellView.laneWidth
+
+    override var isFlipped: Bool { true }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard !passages.isEmpty else { return }
+        NSBezierPath(rect: bounds).setClip()
+
+        let lanes = Theme.Colors.lanes
+        for passage in passages {
+            lanes[passage.colorIndex % lanes.count].setStroke()
+            let path = NSBezierPath()
+            path.lineWidth = Theme.Colors.laneLineWidth
+            let x = CGFloat(passage.lane) * laneWidth + laneWidth / 2
+            path.move(to: CGPoint(x: x, y: 0))
+            path.line(to: CGPoint(x: x, y: bounds.height))
+            path.stroke()
+        }
+    }
 }
 
 /// 画一行的轨道与连线。
@@ -641,20 +850,28 @@ final class CommitTableView: NSTableView {
 
     /// 上下移动选中行。
     ///
-    /// 还没有任何选中时，无论按 j 还是 k 都落到第一行——
+    /// 还没有任何选中时，无论按 j 还是 k 都落到第一条可选的行——
     /// 此时列表顶端就在眼前，从那里开始最符合预期。
+    ///
+    /// 日期分组行要跳过去。不跳的话按一次 j 会「停在」一条选不中的行上，
+    /// 表现成这一下按键没反应——而实际上它已经把选中丢了。
     private func moveSelection(by delta: Int) {
         guard numberOfRows > 0 else { return }
 
-        let target: Int
-        if selectedRow < 0 {
-            target = 0
-        } else {
-            target = selectedRow + delta
-        }
+        var target = selectedRow < 0 ? 0 : selectedRow + delta
+        let step = selectedRow < 0 ? 1 : delta
 
-        guard target >= 0, target < numberOfRows else { return }
-        selectRowIndexes(IndexSet(integer: target), byExtendingSelection: false)
-        scrollRowToVisible(target)
+        while target >= 0, target < numberOfRows {
+            if canSelect(row: target) {
+                selectRowIndexes(IndexSet(integer: target), byExtendingSelection: false)
+                scrollRowToVisible(target)
+                return
+            }
+            target += step
+        }
+    }
+
+    private func canSelect(row: Int) -> Bool {
+        delegate?.tableView?(self, shouldSelectRow: row) ?? true
     }
 }
