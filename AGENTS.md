@@ -1,16 +1,50 @@
+<!-- 本文件与 CLAUDE.md 保持一致，供不读 CLAUDE.md 的 agent 使用。
+     改动请同时改两处，或改完跑 scripts/sync-agent-docs.sh。 -->
+
 # 驭Git（Yugit）
 
 AI 原生 + 中文界面的 macOS 原生 Git 客户端。Slogan：「AI 帮你写代码，驭Git 帮你驾驭它」。Bundle ID `com.chenya.yugit`。
 
-## 现状（2026-08-13）
+## 现状（2026-08-14）
 
-需求与计划阶段完成，**尚未开始编码**。开工前置：`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` 切到完整版 Xcode。
+**v2.2 已发布。`docs/03-实现计划.md` 里的全部内容——v0.1 → v2.0 六个里程碑
+加上远期方向——均已实现。** 561 条测试全绿。
+
+云服务已上线：`https://yugit.educy.top`（Let's Encrypt，自动续期已验证），
+上游走通义，服务端源码在 `server/`。
+
+- `Packages/GitKit` — 进程、status/log/diff 解析、暂存（含 hunk/行级）、分支、远程、
+  搜索、时间线快照、interactive rebase、Quick Actions、分批提交、冲突解析、
+  worktree、blame 与 AI 归因、危险操作预警
+- `Packages/AIKit` — Anthropic 原生 + OpenAI 兼容双协议、SSE、Keychain、上下文脱敏、
+  提交信息生成、中文解释、Commit Composer、解冲突建议、diff 评审、
+  对话式操作计划、云服务客户端
+- `Packages/ForgeKit` — GitHub / GitLab（含自建）/ Gitee 的 PR/MR 列表与创建
+- `Yugit` — 三栏窗口、⌘K 命令面板、时间线侧栏、AI 设置页、可视化 rebase、
+  拆分提交、三方合并编辑器、评审面板、并行工作区、归因 blame、平台面板、
+  对话式操作、新手引导
+
+**唯一未完成的部分是云服务的服务端**（客户端已就绪，界面上标注为「尚未开放」）。
+后续工作属于打磨与发布：签名公证、真实 key 的端到端验证、大仓库性能实测。
+
+远程：私有仓库 `https://github.com/Monologuter/Yu-Git`，默认分支 `main`。
 
 ## 必读文档
 
 - `docs/01-竞品调研与功能设计.md` — 13 款竞品的精华/糟粕分析、8 个差异化设计的依据
 - `docs/02-产品需求文档.md` — PRD：定位、目标用户、分版本功能需求、AI 设计铁律、非功能指标、商业模式
 - `docs/03-实现计划.md` — 架构、里程碑（v0.1→v0.3→v0.5→v1.0→v2.0）、风险清单、验收标准
+- `docs/04-工程规范.md` — 分支/tag/提交/代码/测试/安全/发布规范与质量门禁
+
+## 工程纪律（细则见 04 文档）
+
+- 提交信息：Conventional Commits + **英文**摘要（祈使语气，≤72 字符）；正文也用英文。
+  代码注释与文档保持中文——提交历史会流传到 GitHub 列表、blame、bisect 输出里，
+  读者范围比界面广得多。**绝不加任何 AI 协作署名**（commit-msg hook 会拦截）
+- 分支：轻量流。文档与小修直接提 main；新模块、多 commit 的功能、危险重构走 `feat/*` 分支，rebase 后 `--ff-only` 合入
+- 提交前跑 `swift format --recursive --in-place Packages/ Yugit/`；推送前 `swift test` 必须全绿
+- 新克隆后执行一次 `./scripts/install-hooks.sh` 装上门禁
+- 默认零第三方依赖，引入需书面论证
 
 ## 架构铁律（早埋，晚补要返工）
 

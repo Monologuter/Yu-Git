@@ -29,17 +29,27 @@ types='feat|fix|perf|refactor|test|docs|style|build|chore|revert'
 if ! printf '%s' "$first_line" | grep -qE "^($types)(\([A-Za-z]+\))?!?: .+"; then
     printf '❌ 提交信息不符合 Conventional Commits 规范\n'
     printf '   实际：%s\n' "$first_line"
-    printf '   期望：<type>(<scope>): <中文摘要>\n'
+    printf '   期望：<type>(<scope>): <英文摘要，祈使语气>\n'
     printf '   type：%s\n' "$types"
     printf '   见 docs/04-工程规范.md §3\n'
     exit 1
 fi
 
-# 4. 摘要长度仅提醒，不阻断
+# 4. 摘要长度仅提醒，不阻断。
+#    英文按字符算，72 是 git log --oneline 在常见终端宽度下不折行的上限
 summary=${first_line#*: }
 length=$(printf '%s' "$summary" | LC_ALL=en_US.UTF-8 wc -m | tr -d ' ')
-if [ "$length" -gt 50 ]; then
-    printf '⚠️  摘要 %s 字，建议压到 50 字以内（不阻断提交）\n' "$length"
+if [ "$length" -gt 72 ]; then
+    printf '⚠️  摘要 %s 字符，建议压到 72 以内（不阻断提交）\n' "$length"
+fi
+
+# 5. 摘要应当是英文。只在整条摘要几乎没有 ASCII 字母时提醒——
+#    宽松是刻意的：摘要里出现中文文件名、中文分支名都很正常，
+#    不该为此拦下一次合理的提交。
+ascii_letters=$(printf '%s' "$summary" | tr -cd 'A-Za-z' | wc -c | tr -d ' ')
+if [ "$ascii_letters" -lt 3 ]; then
+    printf '⚠️  提交摘要似乎不是英文（见 docs/04-工程规范.md §3.1）\n'
+    printf '   实际：%s\n' "$summary"
 fi
 
 exit 0

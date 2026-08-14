@@ -1,24 +1,27 @@
 
-# <type>(<scope>): <50 字以内的中文摘要，祈使语气，不加句号>
+# <type>(<scope>): <imperative summary in English, <= 72 chars, no period>
 #
-# 正文：为什么这么改，而不是改了什么。
-#       遇到什么问题、为什么选这个方案、放弃了哪些方案。
-#       涉及 git 边缘 case 的，写清触发条件。
+# Body: why this change, not what changed.
+#       What problem showed up, why this approach, what was ruled out.
+#       For git edge cases: write down how to reproduce it.
 #
-# 脚注：BREAKING CHANGE: <迁移方式>   /   Closes #12
+# Footer: BREAKING CHANGE: <migration>   /   Closes #12
 #
 # ── type ────────────────────────────────────────────
-# feat     新功能              fix      修复缺陷
-# perf     性能优化            refactor 重构，不改外部行为
-# test     只动测试            docs     只动文档或注释
-# style    只动格式            build    构建、依赖、签名配置
-# chore    杂项                revert   回滚
+# feat     new feature          fix      bug fix
+# perf     performance          refactor no behaviour change
+# test     tests only           docs     docs or comments only
+# style    formatting only      build    build, deps, signing
+# chore    chores               revert   revert a commit
 #
 # ── scope ───────────────────────────────────────────
-# GitKit | TimelineKit | AIKit | App | UI   （跨模块可省略）
+# GitKit | AIKit | ForgeKit | App | UI | diff | history | server
+# (omit when the change spans modules)
 #
-# ── 禁止 ────────────────────────────────────────────
-# 任何 AI 协作署名 / 无意义摘要（update、fix bug、wip）
-# 一次提交塞多个不相关改动
+# ── forbidden ───────────────────────────────────────
+# Any AI co-authorship trailer
+# Vacuous summaries: update, fix bug, wip
+# Unrelated changes squashed into one commit
 #
-# 完整规范见 docs/04-工程规范.md §3
+# Language: commit messages are English. Code comments and docs stay Chinese.
+# Full spec: docs/04-工程规范.md §3

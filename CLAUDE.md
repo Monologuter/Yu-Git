@@ -2,10 +2,13 @@
 
 AI 原生 + 中文界面的 macOS 原生 Git 客户端。Slogan：「AI 帮你写代码，驭Git 帮你驾驭它」。Bundle ID `com.chenya.yugit`。
 
-## 现状（2026-08-13）
+## 现状（2026-08-14）
 
-**v2.1 已完成。`docs/03-实现计划.md` 里的全部内容——v0.1 → v2.0 六个里程碑
-加上远期方向——均已实现。** 480 条测试全绿。
+**v2.2 已发布。`docs/03-实现计划.md` 里的全部内容——v0.1 → v2.0 六个里程碑
+加上远期方向——均已实现。** 561 条测试全绿。
+
+云服务已上线：`https://yugit.educy.top`（Let's Encrypt，自动续期已验证），
+上游走通义，服务端源码在 `server/`。
 
 - `Packages/GitKit` — 进程、status/log/diff 解析、暂存（含 hunk/行级）、分支、远程、
   搜索、时间线快照、interactive rebase、Quick Actions、分批提交、冲突解析、
@@ -32,7 +35,9 @@ AI 原生 + 中文界面的 macOS 原生 Git 客户端。Slogan：「AI 帮你�
 
 ## 工程纪律（细则见 04 文档）
 
-- 提交信息：Conventional Commits + 中文摘要；**绝不加任何 AI 协作署名**（commit-msg hook 会拦截）
+- 提交信息：Conventional Commits + **英文**摘要（祈使语气，≤72 字符）；正文也用英文。
+  代码注释与文档保持中文——提交历史会流传到 GitHub 列表、blame、bisect 输出里，
+  读者范围比界面广得多。**绝不加任何 AI 协作署名**（commit-msg hook 会拦截）
 - 分支：轻量流。文档与小修直接提 main；新模块、多 commit 的功能、危险重构走 `feat/*` 分支，rebase 后 `--ff-only` 合入
 - 提交前跑 `swift format --recursive --in-place Packages/ Yugit/`；推送前 `swift test` 必须全绿
 - 新克隆后执行一次 `./scripts/install-hooks.sh` 装上门禁
