@@ -187,6 +187,7 @@ final class RepositoryViewModel {
                     of: selection.path, in: root, staged: selection.isStaged)
             }
         } catch {
+            guard !error.isCancellation else { return }
             selectedDiff = nil
             failure = FailurePresentation(from: error)
         }
@@ -216,6 +217,8 @@ final class RepositoryViewModel {
             selectedCommitFiles = try await repository.client.filesChanged(
                 inCommit: commit.hash, in: root)
         } catch {
+            // 取消时保留旧列表，等新一轮填上，免得切提交时闪一下空白
+            guard !error.isCancellation else { return }
             // 列不出文件不该弹错误打断人——提交信息本身还是有用的，
             // 静默留空即可，界面上会显示「列不出改动的文件」。
             selectedCommitFiles = []
@@ -239,6 +242,10 @@ final class RepositoryViewModel {
             commitFileDiff = try await repository.client.diff(
                 ofFile: change, inCommit: commit.hash, in: root)
         } catch {
+            // 被取消说明用户已经点了别的，新一轮请求正在路上。
+            // 此时清空会让 diff 区先闪一下白再填上新内容——连点几下就是一串闪烁。
+            // 保留旧内容直到新的到达，视觉上是连续的。
+            guard !error.isCancellation else { return }
             commitFileDiff = nil
             failure = FailurePresentation(from: error)
         }
