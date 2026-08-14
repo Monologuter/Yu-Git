@@ -19,7 +19,7 @@ export function DirectoryRow({
       }}
     >
       <Icon
-        name="chevron-right" size={9} color="var(--ink-2)"
+        name="chevron.right" size={9} color="var(--ink-2)"
         style={{ transform: collapsed ? 'none' : 'rotate(90deg)', transition: 'transform var(--dur-fast) var(--ease-standard)' }}
       />
       <Icon name="folder" size={12} color="var(--ink-2)" />

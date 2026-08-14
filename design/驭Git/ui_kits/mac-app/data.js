@@ -126,17 +126,17 @@ window.YUGIT_FIXTURES = (function () {
   // 每条命令都带等价 git 命令：透明命令层，也是教学层
   const commands = [
     { icon: 'sparkles', title: 'AI 起草提交信息', hint: '根据暂存的改动生成，可直接编辑', cmd: '' },
-    { icon: 'layers', title: '分批提交…', hint: '把一大坨改动拆成几次说得清楚的提交', cmd: 'git commit -m … （分多次）' },
-    { icon: 'shield-check', title: '提交前自查', hint: '让 AI 通读暂存的改动，按风险分级', cmd: 'git diff --staged' },
-    { icon: 'git-merge', title: '整理提交历史…', hint: '拖动重排、squash、reword', cmd: 'git rebase -i HEAD~10' },
-    { icon: 'circle-arrow-down', title: '获取', hint: '只更新远程引用，不动工作区', cmd: 'git fetch --all --prune' },
-    { icon: 'arrow-up-to-line', title: '推送', hint: '推送到 upstream', cmd: 'git push origin kino-aigc-chenya' },
-    { icon: 'archive', title: '暂存改动到 stash', hint: '把当前改动收起来，稍后再拿回', cmd: 'git stash push -u' },
-    { icon: 'search', title: '搜索仓库', hint: '提交、信息、文件内容、分支', cmd: 'git log -S … / git grep' },
-    { icon: 'rotate-ccw', title: '时间线', hint: '所有写操作都在这里，可逐步撤销', cmd: 'git reflog / refs/yugit/*' },
-    { icon: 'columns-2', title: '并行工作区…', hint: '同时开两个分支干活', cmd: 'git worktree add ../ai-cloud-fix' },
-    { icon: 'git-pull-request', title: '新建 Pull Request…', hint: 'GitHub / GitLab / Gitee', cmd: '' },
-    { icon: 'undo-2', title: '撤销上一步操作', hint: '退回到那一刻，当前状态会先存下来', cmd: 'git reset --hard refs/yugit/snapshot-…' },
+    { icon: 'square.stack.3d.up', title: '分批提交…', hint: '把一大坨改动拆成几次说得清楚的提交', cmd: 'git commit -m … （分多次）' },
+    { icon: 'checkmark.shield', title: '提交前自查', hint: '让 AI 通读暂存的改动，按风险分级', cmd: 'git diff --staged' },
+    { icon: 'arrow.triangle.merge', title: '整理提交历史…', hint: '拖动重排、squash、reword', cmd: 'git rebase -i HEAD~10' },
+    { icon: 'arrow.down.circle', title: '获取', hint: '只更新远程引用，不动工作区', cmd: 'git fetch --all --prune' },
+    { icon: 'arrow.up.to.line', title: '推送', hint: '推送到 upstream', cmd: 'git push origin kino-aigc-chenya' },
+    { icon: 'tray.and.arrow.down', title: '暂存改动到 stash', hint: '把当前改动收起来，稍后再拿回', cmd: 'git stash push -u' },
+    { icon: 'magnifyingglass', title: '搜索仓库', hint: '提交、信息、文件内容、分支', cmd: 'git log -S … / git grep' },
+    { icon: 'clock.arrow.circlepath', title: '时间线', hint: '所有写操作都在这里，可逐步撤销', cmd: 'git reflog / refs/yugit/*' },
+    { icon: 'square.split.2x1', title: '并行工作区…', hint: '同时开两个分支干活', cmd: 'git worktree add ../ai-cloud-fix' },
+    { icon: 'arrow.triangle.pull', title: '新建 Pull Request…', hint: 'GitHub / GitLab / Gitee', cmd: '' },
+    { icon: 'arrow.uturn.backward', title: '撤销上一步操作', hint: '退回到那一刻，当前状态会先存下来', cmd: 'git reset --hard refs/yugit/snapshot-…' },
   ];
 
   const timeline = {

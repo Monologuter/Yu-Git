@@ -1,6 +1,6 @@
 /**
- * 侧栏分支行。当前分支加粗 + 品牌青图标 + 左侧品牌色标记。
- * 远程分支换云图标，ahead/behind 在右端。
+ * 侧栏分支行。当前分支加粗 + 品牌靛图标 + 左侧品牌色标记。
+ * 远程分支换 `cloud` 符号，ahead/behind 在右端。
  */
 export interface BranchRowProps {
   name: string;

@@ -86,7 +86,7 @@ function CommandPalette({ commands, onClose }) {
             </div>
           )) : (
             <div style={{ height: 240 }}>
-              <EmptyState icon="search" title={'没有匹配「' + query + '」的命令'} description="试试「整理」「暂存」「时间线」" compact />
+              <EmptyState icon="magnifyingglass" title={'没有匹配「' + query + '」的命令'} description="试试「整理」「暂存」「时间线」" compact />
             </div>
           )}
         </div>

@@ -9,7 +9,7 @@ import { Icon } from '../core/Icon.jsx';
  * 图标放进品牌色的圆底（一屏之内唯一的色块，认得出是驭Git）、
  * 标题说清「现在是什么情况」、说明句给出「下一步做什么」。
  */
-export function EmptyState({ icon = 'circle-check', title, description, action, tone = 'brand', compact = false, style }) {
+export function EmptyState({ icon = 'checkmark.circle', title, description, action, tone = 'brand', compact = false, style }) {
   const fg = tone === 'warn' ? 'var(--warn)' : 'var(--brand)';
   const bg = tone === 'warn' ? 'var(--warn-wash)' : 'var(--brand-wash)';
   return (

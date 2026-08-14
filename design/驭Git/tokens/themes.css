@@ -1,0 +1,429 @@
+/* 色彩 · 主题「墨 / 昼 / 谱」× 浅深，共 6 组
+   默认主题的两组在 tokens/colors.css（:root 与 [data-theme="dark"]）。
+
+   深浅与主题正交 —— 和 macOS 的系统级深浅切换保持一致 —— 但每组落成一个单选择器，
+   属性值就是「主题 + 深浅」的组合：
+     默认  :root / [data-theme="dark"]
+     墨    [data-theme="mo"]   / [data-theme="mo-dark"]
+     昼    [data-theme="zhou"] / [data-theme="zhou-dark"]
+     谱    [data-theme="pu"]   / [data-theme="pu-dark"]
+   应用侧把（主题, 深浅）映射成这一个属性值即可。
+
+   六组共同守着默认主题那三条硬约束，改值时不要绕过：
+   1. 红与绿被 diff 独占。分支图 8 轨道与语法色板一律避开这两个色相。
+   2. 纯蓝是系统强调色，主题不改它 —— 改了就等于把系统设置里的选择吃掉。
+   3. 品牌色是靛（okH 287），靠明度而不是色相跟轨道区分：每组的品牌色都比该组
+      所有轨道更深。品牌色不进分支图，HEAD 外环用 --ink-1。
+   语义别名（--text-body 等）只在 :root 声明一次，靠 var() 自动跟随当前主题，这里不重复。
+
+   每组的正文对比、diff 叠底可读性、轨道相邻 ΔE 都在注释里写了实测值。
+   三套主题的取舍不同：墨为了「后退」把轨道色度压到 ×0.82（相邻最小 ΔE 6.9，最松），
+   昼把两档明度拉到 0.155（ΔE 15.4，最严，色盲友好是它的设计目标），谱走满饱和。 */
+
+/* ── 墨 · 浅 ─────────────────────────────────────────────
+   长时间连续使用：低对比暖调，非重点元素明显后退 */
+[data-theme="mo"] {
+  --color-scheme: light;
+
+  --brand: #514A88;   /* 对底 7.3:1 */
+  --brand-hover: #413976;
+  --brand-wash: #F1F1FF;
+  --brand-wash-strong: #E5E4FF;
+  --brand-on: #FFFFFF;
+
+  --accent: #007AFF;   /* 跟随系统强调色，主题不改它 */
+  --accent-selection: #1573E3;
+  --accent-on: #FFFFFF;
+  --accent-wash: #E2EEFF;
+  --focus-ring: #007AFF;
+
+  --ink-1: #3C3730;   /* 10.9:1 */
+  --ink-2: #68625A;   /* 5.6:1 */
+  --ink-3: #766F68;   /* 4.6:1 */
+  --ink-4: #A29C96;   /* 2.5:1 装饰与禁用 */
+
+  --surface-app: #FAF6EF;
+  --surface-sunken: #F2EEE7;
+  --surface-raised: #FEFBF6;
+  --surface-sidebar: rgba(240, 235, 227, 0.72);   /* 配 backdrop-filter */
+  --surface-sidebar-opaque: #F0EBE3;
+  --surface-hover: #E9E4DC;
+  --surface-press: #DFDAD1;
+  --fill-quaternary: #ECE7DF;
+
+  --hairline: #DBD6CF;
+  --hairline-strong: #C0BBB4;
+
+  --warn: #95601E;
+  --warn-wash: #FFEAD3;
+  --danger: #B74744;
+  --danger-wash: #FFE7E5;
+  --ok: #2A7A47;
+  --ok-wash: #D4F9DC;
+  --merge: #8258AF;
+
+  --diff-add-row: #DFFAE5;
+  --diff-add-word: #B6F1C4;   /* 正文压在其上 9.2:1 */
+  --diff-add-fg: #237742;
+  --diff-del-row: #FFEDEB;
+  --diff-del-word: #FFD4CF;   /* 正文压在其上 8.7:1 */
+  --diff-del-fg: #AF4440;
+
+  --syn-keyword: #73479F;
+  --syn-string: #8B4C27;
+  --syn-comment: #817A73;   /* 注释是唯一允许低于 4.5 的一类 */
+  --syn-number: #835107;
+  --syn-type: #00675F;
+  --syn-plain: var(--ink-1);
+
+  /* 8 轨道：两档明度 0.554 / 0.645，色度 ×0.82；相邻 colorIndex 最小 ΔE 6.9（含三种色觉模拟）*/
+  --lane-1: #308279;   /* 靛青 */
+  --lane-2: #AA66EC;   /* 紫 */
+  --lane-3: #936A2A;   /* 琥 */
+  --lane-4: #3B9BB8;   /* 蓝 */
+  --lane-5: #B83396;   /* 玫 */
+  --lane-6: #9A9036;   /* 柘 */
+  --lane-7: #3666E7;   /* 靛 */
+  --lane-8: #DB6635;   /* 赭 */
+  --lane-on-emphasized: #FFFFFF;   /* 选中行：线与节点一律换成它 */
+}
+
+/* ── 墨 · 深 ─────────────────────────────────────────────
+   同一套意图的深色一面：暖近黑，层次压扁但仍过 AA */
+[data-theme="mo-dark"] {
+  --color-scheme: dark;
+
+  --brand: #857FC3;   /* 对底 4.8:1 */
+  --brand-hover: #9A95DA;
+  --brand-wash: #2A2841;
+  --brand-wash-strong: #3C395C;
+  --brand-on: #131221;
+
+  --accent: #0A84FF;   /* 跟随系统强调色，主题不改它 */
+  --accent-selection: #1573E3;
+  --accent-on: #FFFFFF;
+  --accent-wash: #182941;
+  --focus-ring: #0A84FF;
+
+  --ink-1: #CBC3BB;   /* 10.0:1 */
+  --ink-2: #979189;   /* 5.6:1 */
+  --ink-3: #89827A;   /* 4.6:1 */
+  --ink-4: #5A5650;   /* 2.4:1 装饰与禁用 */
+
+  --surface-app: #1E1914;
+  --surface-sunken: #14100B;
+  --surface-raised: #26231F;
+  --surface-sidebar: rgba(35, 30, 23, 0.68);   /* 配 backdrop-filter */
+  --surface-sidebar-opaque: #231E17;
+  --surface-hover: #312B24;
+  --surface-press: #3F3831;
+  --fill-quaternary: #332D26;
+
+  --hairline: #39332D;
+  --hairline-strong: #534D47;
+
+  --warn: #B17C3D;
+  --warn-wash: #3C270F;
+  --danger: #D6635D;
+  --danger-wash: #412220;
+  --ok: #479560;
+  --ok-wash: #183320;
+  --merge: #9E73CC;
+
+  --diff-add-row: #152D1C;
+  --diff-add-word: #044822;   /* 正文压在其上 6.2:1 */
+  --diff-add-fg: #57A76F;
+  --diff-del-row: #3A1E1C;
+  --diff-del-word: #622522;   /* 正文压在其上 6.7:1 */
+  --diff-del-fg: #E3726C;
+
+  --syn-keyword: #A579D4;
+  --syn-string: #BF7D57;
+  --syn-comment: #7D766F;   /* 注释是唯一允许低于 4.5 的一类 */
+  --syn-number: #B78144;
+  --syn-type: #429B90;
+  --syn-plain: var(--ink-1);
+
+  /* 8 轨道：两档明度 0.68 / 0.795，色度 ×0.82；相邻 colorIndex 最小 ΔE 8.9（含三种色觉模拟）*/
+  --lane-1: #42ACA0;   /* 靛青 */
+  --lane-2: #CCABF4;   /* 紫 */
+  --lane-3: #C28D3A;   /* 琥 */
+  --lane-4: #52CDF3;   /* 蓝 */
+  --lane-5: #F049C5;   /* 玫 */
+  --lane-6: #CCBF4A;   /* 柘 */
+  --lane-7: #6E95EE;   /* 靛 */
+  --lane-8: #F5A688;   /* 赭 */
+  --lane-on-emphasized: #FFFFFF;   /* 选中行：线与节点一律换成它 */
+}
+
+/* ── 昼 · 浅 ─────────────────────────────────────────────
+   强光环境与投屏：最高对比、边框明确、轨道两档拉到 0.155 */
+[data-theme="zhou"] {
+  --color-scheme: light;
+
+  --brand: #423384;   /* 对底 10.3:1 */
+  --brand-hover: #332271;
+  --brand-wash: #F1F1FF;
+  --brand-wash-strong: #E5E4FF;
+  --brand-on: #FFFFFF;
+
+  --accent: #007AFF;   /* 跟随系统强调色，主题不改它 */
+  --accent-selection: #1573E3;
+  --accent-on: #FFFFFF;
+  --accent-wash: #E2EEFF;
+  --focus-ring: #007AFF;
+
+  --ink-1: #0F1112;   /* 18.9:1 */
+  --ink-2: #4E5153;   /* 8.0:1 */
+  --ink-3: #5C5E61;   /* 6.5:1 */
+  --ink-4: #8E9093;   /* 3.2:1 装饰与禁用 */
+
+  --surface-app: #FFFFFF;
+  --surface-sunken: #F1F3F5;
+  --surface-raised: #FFFFFF;
+  --surface-sidebar: rgba(233, 235, 237, 0.72);   /* 配 backdrop-filter */
+  --surface-sidebar-opaque: #E9EBED;
+  --surface-hover: #DCDEE0;
+  --surface-press: #CDCFD2;
+  --fill-quaternary: #E0E2E4;
+
+  --hairline: #B6B8BA;
+  --hairline-strong: #858688;
+
+  --warn: #9F630C;
+  --warn-wash: #FFEAD3;
+  --danger: #C54542;
+  --danger-wash: #FFE7E5;
+  --ok: #1E8246;
+  --ok-wash: #D4F9DC;
+  --merge: #8B59BE;
+
+  --diff-add-row: #D1FFDC;
+  --diff-add-word: #94FAB1;   /* 正文压在其上 14.9:1 */
+  --diff-add-fg: #006631;
+  --diff-del-row: #FFEDEB;
+  --diff-del-word: #FFD4CF;   /* 正文压在其上 14.0:1 */
+  --diff-del-fg: #A22629;
+
+  --syn-keyword: #7E45B3;
+  --syn-string: #994C17;
+  --syn-comment: #7F8184;   /* 注释是唯一允许低于 4.5 的一类 */
+  --syn-number: #8B5400;
+  --syn-type: #006D64;
+  --syn-plain: var(--ink-1);
+
+  /* 8 轨道：两档明度 0.5 / 0.68，色度 ×1；相邻 colorIndex 最小 ΔE 13.0（含三种色觉模拟）*/
+  --lane-1: #007268;   /* 靛青 */
+  --lane-2: #B25AFF;   /* 紫 */
+  --lane-3: #845800;   /* 琥 */
+  --lane-4: #009FC3;   /* 蓝 */
+  --lane-5: #A90087;   /* 玫 */
+  --lane-6: #9F9200;   /* 柘 */
+  --lane-7: #1139FF;   /* 靛 */
+  --lane-8: #EC5900;   /* 赭 */
+  --lane-on-emphasized: #FFFFFF;   /* 选中行：线与节点一律换成它 */
+}
+
+/* ── 昼 · 深 ─────────────────────────────────────────────
+   高对比深色：near-black 底，hairline 明显到投屏也看得见 */
+[data-theme="zhou-dark"] {
+  --color-scheme: dark;
+
+  --brand: #8E86D8;   /* 对底 6.2:1 */
+  --brand-hover: #A39BEF;
+  --brand-wash: #1A182F;
+  --brand-wash-strong: #2A2748;
+  --brand-on: #131221;
+
+  --accent: #0A84FF;   /* 跟随系统强调色，主题不改它 */
+  --accent-selection: #1573E3;
+  --accent-on: #FFFFFF;
+  --accent-wash: #08182E;
+  --focus-ring: #0A84FF;
+
+  --ink-1: #E5E7EA;   /* 15.9:1 */
+  --ink-2: #A3A6A8;   /* 8.1:1 */
+  --ink-3: #929497;   /* 6.5:1 */
+  --ink-4: #606164;   /* 3.2:1 装饰与禁用 */
+
+  --surface-app: #090B0C;
+  --surface-sunken: #030405;
+  --surface-raised: #161718;
+  --surface-sidebar: rgba(16, 18, 20, 0.68);   /* 配 backdrop-filter */
+  --surface-sidebar-opaque: #101214;
+  --surface-hover: #202224;
+  --surface-press: #2F3133;
+  --fill-quaternary: #232527;
+
+  --hairline: #3D3F41;
+  --hairline-strong: #636567;
+
+  --warn: #AD7021;
+  --warn-wash: #2A1600;
+  --danger: #D3524E;
+  --danger-wash: #2E1110;
+  --ok: #2F8E52;
+  --ok-wash: #062110;
+  --merge: #9867CC;
+
+  --diff-add-row: #001D09;
+  --diff-add-word: #003416;   /* 正文压在其上 11.3:1 */
+  --diff-add-fg: #49A768;
+  --diff-del-row: #300505;
+  --diff-del-word: #550007;   /* 正文压在其上 12.2:1 */
+  --diff-del-fg: #EC6C65;
+
+  --syn-keyword: #A169D9;
+  --syn-string: #BF6E3E;
+  --syn-comment: #6C6F71;   /* 注释是唯一允许低于 4.5 的一类 */
+  --syn-number: #B5751D;
+  --syn-type: #029388;
+  --syn-plain: var(--ink-1);
+
+  /* 8 轨道：两档明度 0.62 / 0.82，色度 ×1；相邻 colorIndex 最小 ΔE 15.8（含三种色觉模拟）*/
+  --lane-1: #009B8F;   /* 靛青 */
+  --lane-2: #D5B1FF;   /* 紫 */
+  --lane-3: #B37900;   /* 琥 */
+  --lane-4: #4ED6FF;   /* 蓝 */
+  --lane-5: #E400B7;   /* 玫 */
+  --lane-6: #D9C700;   /* 柘 */
+  --lane-7: #487BFF;   /* 靛 */
+  --lane-8: #FFAD8D;   /* 赭 */
+  --lane-on-emphasized: #FFFFFF;   /* 选中行：线与节点一律换成它 */
+}
+
+/* ── 谱 · 浅 ─────────────────────────────────────────────
+   编辑器审美：冷白底 + 最高饱和，语法色是主角 */
+[data-theme="pu"] {
+  --color-scheme: light;
+
+  --brand: #4B3A96;   /* 对底 8.7:1 */
+  --brand-hover: #3C2883;
+  --brand-wash: #F1F1FF;
+  --brand-wash-strong: #E5E4FF;
+  --brand-on: #FFFFFF;
+
+  --accent: #007AFF;   /* 跟随系统强调色，主题不改它 */
+  --accent-selection: #1573E3;
+  --accent-on: #FFFFFF;
+  --accent-wash: #E2EEFF;
+  --focus-ring: #007AFF;
+
+  --ink-1: #1C2027;   /* 15.9:1 */
+  --ink-2: #535861;   /* 7.0:1 */
+  --ink-3: #696D77;   /* 5.0:1 */
+  --ink-4: #90939C;   /* 3.0:1 装饰与禁用 */
+
+  --surface-app: #FBFCFF;
+  --surface-sunken: #F1F2F6;
+  --surface-raised: #FFFFFF;
+  --surface-sidebar: rgba(234, 236, 241, 0.72);   /* 配 backdrop-filter */
+  --surface-sidebar-opaque: #EAECF1;
+  --surface-hover: #E0E2E6;
+  --surface-press: #D2D5D9;
+  --fill-quaternary: #E3E5E9;
+
+  --hairline: #D0D2D5;
+  --hairline-strong: #ADAFB2;
+
+  --warn: #9E6100;
+  --warn-wash: #FFEAD3;
+  --danger: #C93B3B;
+  --danger-wash: #FFE7E5;
+  --ok: #018040;
+  --ok-wash: #D4F9DC;
+  --merge: #8C54C1;
+
+  --diff-add-row: #D5FEDE;
+  --diff-add-word: #9EF8B7;   /* 正文压在其上 12.9:1 */
+  --diff-add-fg: #006F36;
+  --diff-del-row: #FFEDEB;
+  --diff-del-word: #FFD4CF;   /* 正文压在其上 12.1:1 */
+  --diff-del-fg: #B0282B;
+
+  --syn-keyword: #813CBD;
+  --syn-string: #9C4700;
+  --syn-comment: #7B8089;   /* 注释是唯一允许低于 4.5 的一类 */
+  --syn-number: #895300;
+  --syn-type: #006C63;
+  --syn-plain: var(--ink-1);
+
+  /* 8 轨道：两档明度 0.545 / 0.655，色度 ×1；相邻 colorIndex 最小 ΔE 8.4（含三种色觉模拟）*/
+  --lane-1: #008277;   /* 靛青 */
+  --lane-2: #B35EFF;   /* 紫 */
+  --lane-3: #976500;   /* 琥 */
+  --lane-4: #00A0C5;   /* 蓝 */
+  --lane-5: #C0009A;   /* 玫 */
+  --lane-6: #A19300;   /* 柘 */
+  --lane-7: #2558FF;   /* 靛 */
+  --lane-8: #EE5A00;   /* 赭 */
+  --lane-on-emphasized: #FFFFFF;   /* 选中行：线与节点一律换成它 */
+}
+
+/* ── 谱 · 深 ─────────────────────────────────────────────
+   编辑器深色：蓝黑底 + 最高饱和，视觉张力最强 */
+[data-theme="pu-dark"] {
+  --color-scheme: dark;
+
+  --brand: #887ED7;   /* 对底 5.2:1 */
+  --brand-hover: #9C94EE;
+  --brand-wash: #27253D;
+  --brand-wash-strong: #383557;
+  --brand-on: #131221;
+
+  --accent: #0A84FF;   /* 跟随系统强调色，主题不改它 */
+  --accent-selection: #1573E3;
+  --accent-on: #FFFFFF;
+  --accent-wash: #14253C;
+  --focus-ring: #0A84FF;
+
+  --ink-1: #DCE3EF;   /* 14.0:1 */
+  --ink-2: #9CA2AD;   /* 7.1:1 */
+  --ink-3: #848A95;   /* 5.2:1 */
+  --ink-4: #5F636B;   /* 3.0:1 装饰与禁用 */
+
+  --surface-app: #13161D;
+  --surface-sunken: #0A0D13;
+  --surface-raised: #202227;
+  --surface-sidebar: rgba(25, 28, 37, 0.68);   /* 配 backdrop-filter */
+  --surface-sidebar-opaque: #191C25;
+  --surface-hover: #282C34;
+  --surface-press: #363B45;
+  --fill-quaternary: #292D36;
+
+  --hairline: #33373F;
+  --hairline-strong: #525760;
+
+  --warn: #B77419;
+  --warn-wash: #38230B;
+  --danger: #E25350;
+  --danger-wash: #3D1E1C;
+  --ok: #2A9554;
+  --ok-wash: #142F1C;
+  --merge: #A16AD9;
+
+  --diff-add-row: #042B13;
+  --diff-add-word: #00441E;   /* 正文压在其上 8.8:1 */
+  --diff-add-fg: #4AB36E;
+  --diff-del-row: #3C1513;
+  --diff-del-word: #6B070F;   /* 正文压在其上 9.8:1 */
+  --diff-del-fg: #FB6F69;
+
+  --syn-keyword: #AD6AEE;
+  --syn-string: #CE7036;
+  --syn-comment: #6F757F;   /* 注释是唯一允许低于 4.5 的一类 */
+  --syn-number: #C37900;
+  --syn-type: #009B8E;
+  --syn-plain: var(--ink-1);
+
+  /* 8 轨道：两档明度 0.68 / 0.82，色度 ×1；相邻 colorIndex 最小 ΔE 10.0（含三种色觉模拟）*/
+  --lane-1: #00B0A2;   /* 靛青 */
+  --lane-2: #D5B1FF;   /* 紫 */
+  --lane-3: #CB8900;   /* 琥 */
+  --lane-4: #4ED6FF;   /* 蓝 */
+  --lane-5: #FF15CE;   /* 玫 */
+  --lane-6: #D9C700;   /* 柘 */
+  --lane-7: #6492FF;   /* 靛 */
+  --lane-8: #FFAD8D;   /* 赭 */
+  --lane-on-emphasized: #FFFFFF;   /* 选中行：线与节点一律换成它 */
+}

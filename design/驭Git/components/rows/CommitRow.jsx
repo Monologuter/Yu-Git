@@ -36,7 +36,7 @@ export function CommitRow({
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2, minWidth: 0, flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
           {isMerge ? (
-            <Icon name="git-merge" size={11} title="合并提交" color={selected ? 'var(--selection-fg)' : 'var(--merge)'} />
+            <Icon name="arrow.triangle.merge" size={11} title="合并提交" color={selected ? 'var(--selection-fg)' : 'var(--merge)'} />
           ) : null}
           <span style={{
             font: 'var(--type-body)', minWidth: 0, overflow: 'hidden',

@@ -3,9 +3,9 @@
 const { Icon, ToolbarButton, Button, EmptyState } = window.Git_c7d67c;
 
 const HAZARD = {
-  none: { icon: 'circle-check', color: 'var(--ink-2)' },
+  none: { icon: 'checkmark.circle', color: 'var(--ink-2)' },
   rewrite: { icon: 'pencil', color: 'var(--merge)' },
-  discard: { icon: 'trash-2', color: 'var(--danger)' },
+  discard: { icon: 'trash', color: 'var(--danger)' },
 };
 
 function EntryRow({ entry }) {
@@ -32,7 +32,7 @@ function EntryRow({ entry }) {
         {entry.failed ? <span style={{ font: 'var(--type-caption)', color: 'var(--warn)' }}>失败</span> : null}
         {entry.canUndo ? (
           <span style={{ display: 'flex', alignItems: 'center', gap: 1, font: 'var(--type-caption)', color: 'var(--ink-2)' }}>
-            <Icon name="undo-2" size={9} />可撤销
+            <Icon name="arrow.uturn.backward" size={9} />可撤销
           </span>
         ) : null}
       </div>
@@ -58,11 +58,11 @@ function Timeline({ timeline, onClose }) {
       borderLeft: '1px solid var(--hairline)', background: 'var(--surface-app)', minHeight: 0,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: 'var(--space-loose)' }}>
-        <Icon name="rotate-ccw" size={14} color="var(--brand)" />
+        <Icon name="clock.arrow.circlepath" size={14} color="var(--brand)" />
         <span style={{ font: 'var(--type-title)' }}>时间线</span>
         <span style={{ flex: 1 }} />
-        <ToolbarButton icon="refresh-cw" title="刷新时间线" />
-        <ToolbarButton icon="x" title="关闭" onClick={onClose} />
+        <ToolbarButton icon="arrow.clockwise" title="刷新时间线" />
+        <ToolbarButton icon="xmark" title="关闭" onClick={onClose} />
       </div>
       <div style={{ borderTop: '1px solid var(--hairline)', overflowY: 'auto', flex: 1, minHeight: 0 }}>
         <div style={{
@@ -86,7 +86,7 @@ function Timeline({ timeline, onClose }) {
               background: hovering === s.summary ? 'var(--surface-hover)' : 'transparent',
             }}
           >
-            <Icon name="camera" size={12} color="var(--accent)" style={{ width: 14 }} />
+            <Icon name="camera.fill" size={12} color="var(--accent)" style={{ width: 14 }} />
             <span style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
               <span style={{ font: 'var(--type-body)' }}>{s.summary}</span>
               <span style={{ font: 'var(--type-caption)', color: 'var(--ink-3)' }}>{s.time}</span>

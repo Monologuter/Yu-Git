@@ -18,7 +18,7 @@ export function FilterField({ value, onChange, placeholder, autoFocus = false, s
         transition: 'box-shadow var(--dur-fast) var(--ease-standard)', ...style,
       }}
     >
-      <Icon name="list-filter" size={11} color="var(--ink-2)" />
+      <Icon name="line.3.horizontal.decrease" size={11} color="var(--ink-2)" />
       <input
         ref={ref} value={value} placeholder={placeholder} autoFocus={autoFocus}
         onChange={(e) => onChange && onChange(e.target.value)}
@@ -37,7 +37,7 @@ export function FilterField({ value, onChange, placeholder, autoFocus = false, s
             color: 'var(--ink-4)', cursor: 'default',
           }}
         >
-          <Icon name="circle-x" size={11} />
+          <Icon name="xmark.circle" size={11} />
         </button>
       ) : null}
     </div>

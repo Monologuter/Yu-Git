@@ -4,7 +4,7 @@ import { TrackingBadge } from '../badges/TrackingBadge.jsx';
 
 /**
  * 侧栏里的一行分支。
- * 当前分支：名字加粗 + 图标换品牌青 + 左侧一根 2px 品牌色标记。
+ * 当前分支：名字加粗 + 图标换品牌靛 + 左侧一根 2px 品牌色标记。
  * 「我现在在哪个分支上」是侧栏里最高频要确认的一件事，光靠加粗还不够快。
  * 名字从中间截断：origin/feature/... 两头都有信息。
  */
@@ -31,7 +31,7 @@ export function BranchRow({
         }} />
       ) : null}
       <Icon
-        name={isRemote ? 'cloud' : 'git-branch'} size={12}
+        name={isRemote ? 'cloud' : 'arrow.triangle.branch'} size={12}
         color={selected ? 'var(--selection-fg)' : isCurrent ? 'var(--brand)' : 'var(--ink-2)'}
       />
       <span style={{

@@ -23,14 +23,14 @@ function HistoryPane({ fixtures, selected, onSelect }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 var(--space-regular) 6px' }}>
         <FilterField value={filter} onChange={setFilter} placeholder="搜提交信息" />
         <ToolbarButton
-          icon={author ? 'circle-user' : 'user'} title="按作者或时间筛选"
+          icon={author ? 'person.circle' : 'person'} title="按作者或时间筛选"
           active={!!author} onClick={() => setAuthor(author ? null : 'wangjun')}
         />
       </div>
 
       {filter || author ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 var(--space-regular) 6px' }}>
-          <Icon name="list-filter" size={10} color="var(--brand)" />
+          <Icon name="line.3.horizontal.decrease" size={10} color="var(--brand)" />
           <span style={{ font: 'var(--type-secondary)', color: 'var(--ink-2)' }}>
             在整个历史中找到 {commits.length} 条{author ? ' · 作者 ' + author : ''}
           </span>
@@ -41,7 +41,7 @@ function HistoryPane({ fixtures, selected, onSelect }) {
 
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, borderTop: '1px solid var(--hairline)' }}>
         {commits.length === 0 ? (
-          <EmptyState icon="search" title="没有匹配的提交" description="整个历史里都没有符合这些条件的提交" compact />
+          <EmptyState icon="magnifyingglass" title="没有匹配的提交" description="整个历史里都没有符合这些条件的提交" compact />
         ) : blocks.map((block) => (
           <React.Fragment key={block.day}>
             <DayGroupRow label={block.day} count={block.items.length} />

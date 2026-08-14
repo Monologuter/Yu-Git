@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Git_c7d67c","components":[{"name":"CountPill","sourcePath":"components/badges/CountPill.jsx"},{"name":"RefBadge","sourcePath":"components/badges/RefBadge.jsx"},{"name":"StatusLetter","sourcePath":"components/badges/StatusLetter.jsx"},{"name":"TrackingBadge","sourcePath":"components/badges/TrackingBadge.jsx"},{"name":"Button","sourcePath":"components/controls/Button.jsx"},{"name":"Checkbox","sourcePath":"components/controls/Checkbox.jsx"},{"name":"CopyButton","sourcePath":"components/controls/CopyButton.jsx"},{"name":"FilterField","sourcePath":"components/controls/FilterField.jsx"},{"name":"SegmentedControl","sourcePath":"components/controls/SegmentedControl.jsx"},{"name":"ToolbarButton","sourcePath":"components/controls/ToolbarButton.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"DiffLine","sourcePath":"components/diff/DiffLine.jsx"},{"name":"HunkHeader","sourcePath":"components/diff/HunkHeader.jsx"},{"name":"SelectionBar","sourcePath":"components/diff/SelectionBar.jsx"},{"name":"Banner","sourcePath":"components/feedback/Banner.jsx"},{"name":"EmptyState","sourcePath":"components/feedback/EmptyState.jsx"},{"name":"ExplanationPanel","sourcePath":"components/feedback/ExplanationPanel.jsx"},{"name":"HazardDialog","sourcePath":"components/feedback/HazardDialog.jsx"},{"name":"TransferIndicator","sourcePath":"components/feedback/TransferIndicator.jsx"},{"name":"GEOMETRY","sourcePath":"components/graph/LaneGraph.jsx"},{"name":"LANE_COUNT","sourcePath":"components/graph/LaneGraph.jsx"},{"name":"LaneGraph","sourcePath":"components/graph/LaneGraph.jsx"},{"name":"BranchRow","sourcePath":"components/rows/BranchRow.jsx"},{"name":"CommitRow","sourcePath":"components/rows/CommitRow.jsx"},{"name":"DayGroupRow","sourcePath":"components/rows/DayGroupRow.jsx"},{"name":"DirectoryRow","sourcePath":"components/rows/DirectoryRow.jsx"},{"name":"FileRow","sourcePath":"components/rows/FileRow.jsx"},{"name":"SectionHeader","sourcePath":"components/rows/SectionHeader.jsx"},{"name":"TagRow","sourcePath":"components/rows/TagRow.jsx"}],"sourceHashes":{"components/badges/CountPill.jsx":"6cb5cc555763","components/badges/RefBadge.jsx":"79fe02f2b497","components/badges/StatusLetter.jsx":"a94c9ed3e2f3","components/badges/TrackingBadge.jsx":"34f8b439be96","components/controls/Button.jsx":"aa96b4a3c6ac","components/controls/Checkbox.jsx":"d819a6a007d4","components/controls/CopyButton.jsx":"ae6687762b5c","components/controls/FilterField.jsx":"b9af495320a0","components/controls/SegmentedControl.jsx":"eaa76b01e7e3","components/controls/ToolbarButton.jsx":"d5093b4be55e","components/core/Icon.jsx":"ac190e15923a","components/diff/DiffLine.jsx":"152c2ec51cd8","components/diff/HunkHeader.jsx":"ec7c578c9199","components/diff/SelectionBar.jsx":"3334771edb7e","components/feedback/Banner.jsx":"aa7fd34ad70a","components/feedback/EmptyState.jsx":"a8a2b841b12f","components/feedback/ExplanationPanel.jsx":"9c2e12a6a4ce","components/feedback/HazardDialog.jsx":"9136440f26c4","components/feedback/TransferIndicator.jsx":"c5a541ab0fa2","components/graph/LaneGraph.jsx":"92e4589b49b7","components/rows/BranchRow.jsx":"b3f23407eb65","components/rows/CommitRow.jsx":"dc9afb55127f","components/rows/DayGroupRow.jsx":"0055791f2b02","components/rows/DirectoryRow.jsx":"944913d8135e","components/rows/FileRow.jsx":"bd7ee0fdac3d","components/rows/SectionHeader.jsx":"dbabf9d8b587","components/rows/TagRow.jsx":"efa6e216345b","ui_kits/first-run/Tour.jsx":"cc4fb055fe1d","ui_kits/first-run/Welcome.jsx":"58d4111dbb07","ui_kits/mac-app/ChangesPane.jsx":"afda808f9391","ui_kits/mac-app/CommandPalette.jsx":"9f9fd99acaf3","ui_kits/mac-app/DetailPane.jsx":"cefc1591359a","ui_kits/mac-app/HistoryPane.jsx":"e383710f82e4","ui_kits/mac-app/Sidebar.jsx":"ac2ee19f9240","ui_kits/mac-app/Timeline.jsx":"bad4a9a2d25a","ui_kits/mac-app/Toolbar.jsx":"93e750b82f83","ui_kits/mac-app/data.js":"6ca1aaedb4cd"},"inlinedExternals":[],"unexposedExports":[{"name":"graphWidth","sourcePath":"components/graph/LaneGraph.jsx"},{"name":"laneColor","sourcePath":"components/graph/LaneGraph.jsx"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Git_c7d67c","components":[{"name":"CountPill","sourcePath":"components/badges/CountPill.jsx"},{"name":"RefBadge","sourcePath":"components/badges/RefBadge.jsx"},{"name":"StatusLetter","sourcePath":"components/badges/StatusLetter.jsx"},{"name":"TrackingBadge","sourcePath":"components/badges/TrackingBadge.jsx"},{"name":"Button","sourcePath":"components/controls/Button.jsx"},{"name":"Checkbox","sourcePath":"components/controls/Checkbox.jsx"},{"name":"CopyButton","sourcePath":"components/controls/CopyButton.jsx"},{"name":"FilterField","sourcePath":"components/controls/FilterField.jsx"},{"name":"SegmentedControl","sourcePath":"components/controls/SegmentedControl.jsx"},{"name":"ToolbarButton","sourcePath":"components/controls/ToolbarButton.jsx"},{"name":"Icon","sourcePath":"components/core/Icon.jsx"},{"name":"DiffLine","sourcePath":"components/diff/DiffLine.jsx"},{"name":"HunkHeader","sourcePath":"components/diff/HunkHeader.jsx"},{"name":"SelectionBar","sourcePath":"components/diff/SelectionBar.jsx"},{"name":"Banner","sourcePath":"components/feedback/Banner.jsx"},{"name":"EmptyState","sourcePath":"components/feedback/EmptyState.jsx"},{"name":"ExplanationPanel","sourcePath":"components/feedback/ExplanationPanel.jsx"},{"name":"HazardDialog","sourcePath":"components/feedback/HazardDialog.jsx"},{"name":"TransferIndicator","sourcePath":"components/feedback/TransferIndicator.jsx"},{"name":"GEOMETRY","sourcePath":"components/graph/LaneGraph.jsx"},{"name":"LANE_COUNT","sourcePath":"components/graph/LaneGraph.jsx"},{"name":"LaneGraph","sourcePath":"components/graph/LaneGraph.jsx"},{"name":"BranchRow","sourcePath":"components/rows/BranchRow.jsx"},{"name":"CommitRow","sourcePath":"components/rows/CommitRow.jsx"},{"name":"DayGroupRow","sourcePath":"components/rows/DayGroupRow.jsx"},{"name":"DirectoryRow","sourcePath":"components/rows/DirectoryRow.jsx"},{"name":"FileRow","sourcePath":"components/rows/FileRow.jsx"},{"name":"SectionHeader","sourcePath":"components/rows/SectionHeader.jsx"},{"name":"TagRow","sourcePath":"components/rows/TagRow.jsx"}],"sourceHashes":{"components/badges/CountPill.jsx":"6cb5cc555763","components/badges/RefBadge.jsx":"79fe02f2b497","components/badges/StatusLetter.jsx":"a94c9ed3e2f3","components/badges/TrackingBadge.jsx":"831a7776f333","components/controls/Button.jsx":"aa96b4a3c6ac","components/controls/Checkbox.jsx":"f32114d80576","components/controls/CopyButton.jsx":"ae6687762b5c","components/controls/FilterField.jsx":"8c1cb2b435a2","components/controls/SegmentedControl.jsx":"eaa76b01e7e3","components/controls/ToolbarButton.jsx":"d5093b4be55e","components/core/Icon.jsx":"0d4321f587b1","components/diff/DiffLine.jsx":"152c2ec51cd8","components/diff/HunkHeader.jsx":"ec7c578c9199","components/diff/SelectionBar.jsx":"3334771edb7e","components/feedback/Banner.jsx":"5e9a3e1fa8f6","components/feedback/EmptyState.jsx":"b0b0106838ff","components/feedback/ExplanationPanel.jsx":"22f5b99c32da","components/feedback/HazardDialog.jsx":"3a9de28924be","components/feedback/TransferIndicator.jsx":"c5a541ab0fa2","components/graph/LaneGraph.jsx":"da563339e70d","components/rows/BranchRow.jsx":"48672a2cb6b4","components/rows/CommitRow.jsx":"0d99a89fda08","components/rows/DayGroupRow.jsx":"0055791f2b02","components/rows/DirectoryRow.jsx":"dac4314e2d46","components/rows/FileRow.jsx":"bd7ee0fdac3d","components/rows/SectionHeader.jsx":"dbabf9d8b587","components/rows/TagRow.jsx":"efa6e216345b","ui_kits/first-run/Tour.jsx":"cc4fb055fe1d","ui_kits/first-run/Welcome.jsx":"afc1774b81d6","ui_kits/mac-app/ChangesPane.jsx":"714117b1f98d","ui_kits/mac-app/CommandPalette.jsx":"69f26f4a972e","ui_kits/mac-app/DetailPane.jsx":"cf3538c12eda","ui_kits/mac-app/HistoryPane.jsx":"9b6dfa941e66","ui_kits/mac-app/Sidebar.jsx":"6f421280ccf7","ui_kits/mac-app/Timeline.jsx":"31779278730a","ui_kits/mac-app/Toolbar.jsx":"1a2ef9ec397d","ui_kits/mac-app/data.js":"99f843813b59"},"inlinedExternals":[],"unexposedExports":[{"name":"graphWidth","sourcePath":"components/graph/LaneGraph.jsx"},{"name":"laneColor","sourcePath":"components/graph/LaneGraph.jsx"}]} */
 
 (() => {
 
@@ -204,11 +204,21 @@ Object.assign(__ds_scope, { SegmentedControl });
 try { (() => {
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /**
- * 图标。SF Symbols 的替身 —— 见 Icon.prompt.md 里的替换说明与映射表。
- * 用 mask 而不是 <img>：这样 backgroundColor 走 currentColor，
- * 图标颜色跟着文字走，和 SF Symbols 的行为一致。
+ * 一个 SF Symbol 的位置。name 就是符号名，和 Swift 侧 Image(systemName:) 一字不差。
+ *
+ * 这里不画替身图形，也不带任何图片资源。SF Symbols 不是 Unicode 字符，是 SF 字体
+ * 私有区里的字形，既不能随设计系统分发，网页里也拿不到；画一套描边 SVG 去凑，
+ * 会同时丢掉跟随字重、跟随字号、跟随辅助功能加粗、自动适配深浅这四件事 ——
+ * 而那四件事正是选 SF Symbols 的理由。
+ *
+ * 所以预览端渲染一个与符号同尺寸的占位框：间距、对齐、基线、行内节奏都和真机一致，
+ * 只有字形本身留空。符号名进 data-sf-symbol 与 title，验收和交接都读它。
+ * 框是虚线的 —— 实线方框在文件行里会被读成 Checkbox，而那是一个真实存在的控件。
+ *
+ * 想在 Mac 上看到真符号：页面里塞一张字形表就行 ——
+ *   window.YUGIT_SYMBOL_GLYPHS = { 'arrow.triangle.branch': <这里粘字形>, … }
+ * （字形从 SF Symbols.app 的「拷贝符号」拿）。有表的用 SF Pro 直接画，没有的照旧占位。
  */
-const DEFAULT_BASE = '../../assets/icons/';
 function Icon({
   name,
   size = 14,
@@ -217,28 +227,38 @@ function Icon({
   style,
   ...rest
 }) {
-  const base = typeof window !== 'undefined' && window.YUGIT_ICON_BASE || DEFAULT_BASE;
-  const url = 'url("' + base + name + '.svg")';
+  const glyphs = typeof window !== 'undefined' && window.YUGIT_SYMBOL_GLYPHS || {};
+  const glyph = glyphs[name];
   return /*#__PURE__*/React.createElement("span", _extends({
-    title: title,
+    "data-sf-symbol": name,
+    title: title || name,
     "aria-hidden": title ? undefined : true,
     style: {
-      display: 'inline-block',
-      flex: '0 0 auto',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       width: size,
       height: size,
-      backgroundColor: color,
-      maskImage: url,
-      WebkitMaskImage: url,
-      maskSize: 'contain',
-      WebkitMaskSize: 'contain',
-      maskRepeat: 'no-repeat',
-      WebkitMaskRepeat: 'no-repeat',
-      maskPosition: 'center',
-      WebkitMaskPosition: 'center',
+      flex: '0 0 auto',
+      color,
       ...style
     }
-  }, rest));
+  }, rest), glyph ? /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: '"SF Pro Text", "SF Pro", -apple-system, system-ui',
+      fontSize: size,
+      lineHeight: 1
+    }
+  }, glyph) : /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: '76%',
+      height: '76%',
+      boxSizing: 'border-box',
+      border: '1px dashed currentColor',
+      borderRadius: Math.max(2, Math.round(size * 0.18)),
+      opacity: 0.42
+    }
+  }));
 }
 Object.assign(__ds_scope, { Icon });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/core/Icon.jsx", error: String((e && e.message) || e) }); }
@@ -262,7 +282,7 @@ function TrackingBadge({
         ...style
       }
     }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-      name: "triangle-alert",
+      name: "exclamationmark.triangle",
       size: 11
     }));
   }
@@ -285,7 +305,7 @@ function TrackingBadge({
       gap: 1
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "arrow-up",
+    name: "arrow.up",
     size: 9
   }), ahead) : null, behind ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -294,7 +314,7 @@ function TrackingBadge({
       gap: 1
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "arrow-down",
+    name: "arrow.down",
     size: 9
   }), behind) : null);
 }
@@ -438,7 +458,7 @@ function Checkbox({
       color: 'var(--text-on-accent)'
     }
   }, checked ? /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "check",
+    name: "checkmark",
     size: 9
   }) : null), label);
 }
@@ -514,7 +534,7 @@ function FilterField({
       ...style
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "list-filter",
+    name: "line.3.horizontal.decrease",
     size: 11,
     color: "var(--ink-2)"
   }), /*#__PURE__*/React.createElement("input", {
@@ -550,7 +570,7 @@ function FilterField({
       cursor: 'default'
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "circle-x",
+    name: "xmark.circle",
     size: 11
   })) : null);
 }
@@ -829,22 +849,22 @@ const TONES = {
   warn: {
     fg: 'var(--warn)',
     bg: 'var(--warn-wash)',
-    icon: 'triangle-alert'
+    icon: 'exclamationmark.triangle'
   },
   danger: {
     fg: 'var(--danger)',
     bg: 'var(--danger-wash)',
-    icon: 'triangle-alert'
+    icon: 'exclamationmark.triangle'
   },
   info: {
     fg: 'var(--brand)',
     bg: 'var(--brand-wash)',
-    icon: 'info'
+    icon: 'info.circle'
   },
   ok: {
     fg: 'var(--ok)',
     bg: 'var(--ok-wash)',
-    icon: 'circle-check'
+    icon: 'checkmark.circle'
   }
 };
 function Banner({
@@ -931,7 +951,7 @@ try { (() => {
  * 标题说清「现在是什么情况」、说明句给出「下一步做什么」。
  */
 function EmptyState({
-  icon = 'circle-check',
+  icon = 'checkmark.circle',
   title,
   description,
   action,
@@ -1046,7 +1066,7 @@ function ExplanationPanel({
       flex: 1
     }
   }), /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: open ? 'chevron-up' : 'chevron-down',
+    name: open ? 'chevron.up' : 'chevron.down',
     size: 11,
     color: "var(--ink-2)"
   })), open ? error ? /*#__PURE__*/React.createElement("div", {
@@ -1057,7 +1077,7 @@ function ExplanationPanel({
       color: 'var(--warn)'
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "triangle-alert",
+    name: "exclamationmark.triangle",
     size: 12
   }), error) : loading && !text ? /*#__PURE__*/React.createElement("span", {
     style: {
@@ -1085,7 +1105,7 @@ function ExplanationPanel({
       color: 'var(--ink-3)'
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "info",
+    name: "info.circle",
     size: 10
   }), "AI \u751F\u6210\u7684\u89E3\u91CA\u53EF\u80FD\u6709\u8BEF\uFF0C\u8BF7\u4EE5\u4EE3\u7801\u4E3A\u51C6") : null) : null);
 }
@@ -1128,7 +1148,7 @@ function HazardDialog({
       gap: 'var(--space-regular)'
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "triangle-alert",
+    name: "exclamationmark.triangle",
     size: 18,
     color: "var(--warn)"
   }), /*#__PURE__*/React.createElement("span", {
@@ -1266,6 +1286,8 @@ try { (() => {
  *   丢掉的颜色只影响这一行，而这一行本来就靠背景高亮定位；
  *   「看不见」是更严重的问题。
  * - 节点靠形状区分：环 = 普通提交，实心点 = 合并，外圈细环 = HEAD。
+ * - HEAD 外环用 --ink-1 深墨，不用品牌色：分支图是轨道色的地盘，品牌色进来只会
+ *   多出一次「这是品牌还是某条分支」的判断。品牌色在侧栏、AI 入口、空状态出现。
  *
  * 几何量与 tokens/graph.css 一一对应（SVG 的 r/cx 属性吃不进 var()，
  * 所以这里是数字；线宽走 CSS 的 stroke-width，仍然读 token）。
@@ -1330,7 +1352,7 @@ function LaneGraph({
     cy: middle,
     r: GEOMETRY.headRingR,
     fill: "none",
-    stroke: "var(--brand)",
+    stroke: "var(--ink-1)",
     style: {
       strokeWidth: 'var(--graph-head-ring-w)'
     }
@@ -1358,7 +1380,7 @@ Object.assign(__ds_scope, { GEOMETRY, LANE_COUNT, laneColor, graphWidth, LaneGra
 try { (() => {
 /**
  * 侧栏里的一行分支。
- * 当前分支：名字加粗 + 图标换品牌青 + 左侧一根 2px 品牌色标记。
+ * 当前分支：名字加粗 + 图标换品牌靛 + 左侧一根 2px 品牌色标记。
  * 「我现在在哪个分支上」是侧栏里最高频要确认的一件事，光靠加粗还不够快。
  * 名字从中间截断：origin/feature/... 两头都有信息。
  */
@@ -1403,7 +1425,7 @@ function BranchRow({
       background: 'var(--brand)'
     }
   }) : null, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: isRemote ? 'cloud' : 'git-branch',
+    name: isRemote ? 'cloud' : 'arrow.triangle.branch',
     size: 12,
     color: selected ? 'var(--selection-fg)' : isCurrent ? 'var(--brand)' : 'var(--ink-2)'
   }), /*#__PURE__*/React.createElement("span", {
@@ -1492,7 +1514,7 @@ function CommitRow({
       minWidth: 0
     }
   }, isMerge ? /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "git-merge",
+    name: "arrow.triangle.merge",
     size: 11,
     title: "\u5408\u5E76\u63D0\u4EA4",
     color: selected ? 'var(--selection-fg)' : 'var(--merge)'
@@ -1626,7 +1648,7 @@ function DirectoryRow({
       ...style
     }
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
-    name: "chevron-right",
+    name: "chevron.right",
     size: 9,
     color: "var(--ink-2)",
     style: {
@@ -2003,7 +2025,7 @@ Object.assign(window, {
 // ui_kits/first-run/Welcome.jsx
 try { (() => {
 /* 欢迎页：没打开仓库时的入口。
-   对应 Repository/RootView.swift 的 WelcomeView —— 品牌标志换成青底白「驭」的字组，
+   对应 Repository/RootView.swift 的 WelcomeView —— 品牌标志换成靛底白「驭」的字组，
    这是整个应用里唯一一处可以放品牌的地方（仓库里没有图形 logo）。 */
 const {
   Button,
@@ -2246,7 +2268,7 @@ function CommitPanel({
     }
   }), /*#__PURE__*/React.createElement(Button, {
     size: "small",
-    icon: "shield-check",
+    icon: "checkmark.shield",
     disabled: !staged,
     title: staged ? '提交前让 AI 通读暂存的改动，按风险分级列出值得确认的地方' : '先暂存一些改动'
   }, "\u81EA\u67E5"), /*#__PURE__*/React.createElement(Button, {
@@ -2269,7 +2291,7 @@ function CommitPanel({
       color: 'var(--warn)'
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "triangle-alert",
+    name: "exclamationmark.triangle",
     size: 10
   }), "\u4FEE\u6539\u540E commit hash \u4F1A\u53D8\uFF0C\u82E5\u5DF2\u63A8\u9001\u5219\u9700\u8981 force push") : null);
 }
@@ -2363,7 +2385,7 @@ function ChangesPane({
     onChange: setFilter,
     placeholder: "\u8FC7\u6EE4\u6587\u4EF6\u8DEF\u5F84"
   }), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: tree ? 'layers' : 'text-align-start',
+    icon: tree ? 'square.stack.3d.up' : 'text.alignleft',
     title: tree ? '改为平铺显示完整路径' : '改为按目录分组',
     onClick: () => setTree(!tree)
   })) : null, /*#__PURE__*/React.createElement("div", {
@@ -2380,12 +2402,12 @@ function ChangesPane({
       });
     }
   }, !staged.length && !unstaged.length && !conflicted.length ? filter ? /*#__PURE__*/React.createElement(EmptyState, {
-    icon: "search",
+    icon: "magnifyingglass",
     title: "\u6CA1\u6709\u5339\u914D\u7684\u6587\u4EF6",
     description: "\u8BD5\u8BD5\u522B\u7684\u5173\u952E\u8BCD",
     compact: true
   }) : /*#__PURE__*/React.createElement(EmptyState, {
-    icon: "circle-check",
+    icon: "checkmark.circle",
     title: "\u5DE5\u4F5C\u533A\u5E72\u51C0",
     description: "\u6CA1\u6709\u5F85\u5904\u7406\u7684\u6539\u52A8",
     compact: true
@@ -2617,7 +2639,7 @@ function CommandPalette({
       height: 240
     }
   }, /*#__PURE__*/React.createElement(EmptyState, {
-    icon: "search",
+    icon: "magnifyingglass",
     title: '没有匹配「' + query + '」的命令',
     description: "\u8BD5\u8BD5\u300C\u6574\u7406\u300D\u300C\u6682\u5B58\u300D\u300C\u65F6\u95F4\u7EBF\u300D",
     compact: true
@@ -2709,7 +2731,7 @@ function FileDetail({
       padding: '8px var(--space-loose)'
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "file-text",
+    name: "doc.text",
     size: 13,
     color: "var(--ink-2)"
   }), /*#__PURE__*/React.createElement("span", {
@@ -2750,7 +2772,7 @@ function FileDetail({
     variant: "borderless",
     size: "small"
   }, isStaged ? '取消暂存整个文件' : '暂存整个文件'), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: wrap ? 'text-align-start' : 'move-horizontal',
+    icon: wrap ? 'text.alignleft' : 'arrow.left.and.right',
     title: wrap ? '改为不折行（长行横向滚动）' : '折行显示长行',
     onClick: () => setWrap(!wrap)
   })), /*#__PURE__*/React.createElement("div", {
@@ -3086,7 +3108,7 @@ function DetailPane({
     selectedFile: commitFile,
     onSelectFile: setCommitFile
   }) : /*#__PURE__*/React.createElement(EmptyState, {
-    icon: "panel-right",
+    icon: "sidebar.right",
     title: "\u672A\u9009\u62E9\u5185\u5BB9",
     description: "\u5728\u5DE6\u4FA7\u9009\u62E9\u4E00\u4E2A\u6587\u4EF6\u6216\u63D0\u4EA4"
   }));
@@ -3153,7 +3175,7 @@ function HistoryPane({
     onChange: setFilter,
     placeholder: "\u641C\u63D0\u4EA4\u4FE1\u606F"
   }), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: author ? 'circle-user' : 'user',
+    icon: author ? 'person.circle' : 'person',
     title: "\u6309\u4F5C\u8005\u6216\u65F6\u95F4\u7B5B\u9009",
     active: !!author,
     onClick: () => setAuthor(author ? null : 'wangjun')
@@ -3165,7 +3187,7 @@ function HistoryPane({
       padding: '0 var(--space-regular) 6px'
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "list-filter",
+    name: "line.3.horizontal.decrease",
     size: 10,
     color: "var(--brand)"
   }), /*#__PURE__*/React.createElement("span", {
@@ -3192,7 +3214,7 @@ function HistoryPane({
       borderTop: '1px solid var(--hairline)'
     }
   }, commits.length === 0 ? /*#__PURE__*/React.createElement(EmptyState, {
-    icon: "search",
+    icon: "magnifyingglass",
     title: "\u6CA1\u6709\u5339\u914D\u7684\u63D0\u4EA4",
     description: "\u6574\u4E2A\u5386\u53F2\u91CC\u90FD\u6CA1\u6709\u7B26\u5408\u8FD9\u4E9B\u6761\u4EF6\u7684\u63D0\u4EA4",
     compact: true
@@ -3273,7 +3295,7 @@ function Disclosure({
       color: 'var(--ink-2)'
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "chevron-right",
+    name: "chevron.right",
     size: 9,
     style: {
       transform: expanded ? 'rotate(90deg)' : 'none',
@@ -3406,7 +3428,7 @@ const {
 } = window.Git_c7d67c;
 const HAZARD = {
   none: {
-    icon: 'circle-check',
+    icon: 'checkmark.circle',
     color: 'var(--ink-2)'
   },
   rewrite: {
@@ -3414,7 +3436,7 @@ const HAZARD = {
     color: 'var(--merge)'
   },
   discard: {
-    icon: 'trash-2',
+    icon: 'trash',
     color: 'var(--danger)'
   }
 };
@@ -3490,7 +3512,7 @@ function EntryRow({
       color: 'var(--ink-2)'
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "undo-2",
+    name: "arrow.uturn.backward",
     size: 9
   }), "\u53EF\u64A4\u9500") : null), open ? /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3540,7 +3562,7 @@ function Timeline({
       padding: 'var(--space-loose)'
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "rotate-ccw",
+    name: "clock.arrow.circlepath",
     size: 14,
     color: "var(--brand)"
   }), /*#__PURE__*/React.createElement("span", {
@@ -3552,10 +3574,10 @@ function Timeline({
       flex: 1
     }
   }), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "refresh-cw",
+    icon: "arrow.clockwise",
     title: "\u5237\u65B0\u65F6\u95F4\u7EBF"
   }), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "x",
+    icon: "xmark",
     title: "\u5173\u95ED",
     onClick: onClose
   })), /*#__PURE__*/React.createElement("div", {
@@ -3605,7 +3627,7 @@ function Timeline({
       background: hovering === s.summary ? 'var(--surface-hover)' : 'transparent'
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "camera",
+    name: "camera.fill",
     size: 12,
     color: "var(--accent)",
     style: {
@@ -3707,7 +3729,7 @@ function Toolbar({
       flex: '0 0 auto'
     }
   }, /*#__PURE__*/React.createElement(TrafficLights, null), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "panel-left",
+    icon: "sidebar.left",
     title: sidebarOpen ? '隐藏侧栏' : '显示侧栏',
     onClick: onToggleSidebar,
     active: sidebarOpen
@@ -3719,7 +3741,7 @@ function Toolbar({
       paddingLeft: 'var(--space-regular)'
     }
   }, /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "chevron-left",
+    icon: "chevron.left",
     title: "\u56DE\u5230\u6B22\u8FCE\u9875"
   }), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3741,7 +3763,7 @@ function Toolbar({
       color: 'var(--ink-2)'
     }
   }, /*#__PURE__*/React.createElement(Icon, {
-    name: "git-branch",
+    name: "arrow.triangle.branch",
     size: 10,
     color: "var(--brand)"
   }), branch))), /*#__PURE__*/React.createElement("span", {
@@ -3751,17 +3773,17 @@ function Toolbar({
   }), transferring ? /*#__PURE__*/React.createElement(TransferIndicator, {
     label: "\u5BF9\u8C61 1240 / 3877"
   }) : null, /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "circle-arrow-down",
+    icon: "arrow.down.circle",
     title: "\u4ECE\u8FDC\u7A0B\u62C9\u53D6\u5F15\u7528\u4E0E\u5BF9\u8C61\uFF0C\u4E0D\u6539\u52A8\u5DE5\u4F5C\u533A",
     disabled: transferring,
     onClick: onFetch
   }), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "arrow-down-to-line",
+    icon: "arrow.down.to.line",
     title: "\u62C9\u53D6\u5E76\u5408\u5E76\u5230\u5F53\u524D\u5206\u652F",
     disabled: transferring,
     onClick: onPull
   }), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "arrow-up-to-line",
+    icon: "arrow.up.to.line",
     title: "\u63A8\u9001\u5230 upstream",
     disabled: transferring,
     onClick: onPush
@@ -3772,12 +3794,12 @@ function Toolbar({
       background: 'var(--hairline)'
     }
   }), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "rotate-ccw",
+    icon: "clock.arrow.circlepath",
     title: "\u65F6\u95F4\u7EBF",
     active: timelineOpen,
     onClick: onTimeline
   }), /*#__PURE__*/React.createElement(ToolbarButton, {
-    icon: "ellipsis",
+    icon: "ellipsis.circle",
     title: "\u547D\u4EE4\u9762\u677F\u3001\u641C\u7D22\u3001\u65F6\u95F4\u7EBF\u3001\u5237\u65B0",
     onClick: onPalette
   }));
@@ -4171,57 +4193,57 @@ window.YUGIT_FIXTURES = function () {
     hint: '根据暂存的改动生成，可直接编辑',
     cmd: ''
   }, {
-    icon: 'layers',
+    icon: 'square.stack.3d.up',
     title: '分批提交…',
     hint: '把一大坨改动拆成几次说得清楚的提交',
     cmd: 'git commit -m … （分多次）'
   }, {
-    icon: 'shield-check',
+    icon: 'checkmark.shield',
     title: '提交前自查',
     hint: '让 AI 通读暂存的改动，按风险分级',
     cmd: 'git diff --staged'
   }, {
-    icon: 'git-merge',
+    icon: 'arrow.triangle.merge',
     title: '整理提交历史…',
     hint: '拖动重排、squash、reword',
     cmd: 'git rebase -i HEAD~10'
   }, {
-    icon: 'circle-arrow-down',
+    icon: 'arrow.down.circle',
     title: '获取',
     hint: '只更新远程引用，不动工作区',
     cmd: 'git fetch --all --prune'
   }, {
-    icon: 'arrow-up-to-line',
+    icon: 'arrow.up.to.line',
     title: '推送',
     hint: '推送到 upstream',
     cmd: 'git push origin kino-aigc-chenya'
   }, {
-    icon: 'archive',
+    icon: 'tray.and.arrow.down',
     title: '暂存改动到 stash',
     hint: '把当前改动收起来，稍后再拿回',
     cmd: 'git stash push -u'
   }, {
-    icon: 'search',
+    icon: 'magnifyingglass',
     title: '搜索仓库',
     hint: '提交、信息、文件内容、分支',
     cmd: 'git log -S … / git grep'
   }, {
-    icon: 'rotate-ccw',
+    icon: 'clock.arrow.circlepath',
     title: '时间线',
     hint: '所有写操作都在这里，可逐步撤销',
     cmd: 'git reflog / refs/yugit/*'
   }, {
-    icon: 'columns-2',
+    icon: 'square.split.2x1',
     title: '并行工作区…',
     hint: '同时开两个分支干活',
     cmd: 'git worktree add ../ai-cloud-fix'
   }, {
-    icon: 'git-pull-request',
+    icon: 'arrow.triangle.pull',
     title: '新建 Pull Request…',
     hint: 'GitHub / GitLab / Gitee',
     cmd: ''
   }, {
-    icon: 'undo-2',
+    icon: 'arrow.uturn.backward',
     title: '撤销上一步操作',
     hint: '退回到那一刻，当前状态会先存下来',
     cmd: 'git reset --hard refs/yugit/snapshot-…'

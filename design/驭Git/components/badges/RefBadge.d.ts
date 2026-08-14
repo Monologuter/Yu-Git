@@ -1,4 +1,4 @@
-/** commit 上的 ref 徽章：本地分支（品牌青）、远程分支（灰）、tag（警示黄）。 */
+/** commit 上的 ref 徽章：本地分支（品牌靛）、远程分支（灰）、tag（警示黄）。 */
 export interface RefBadgeProps {
   kind?: 'local' | 'remote' | 'tag';
   children?: React.ReactNode;

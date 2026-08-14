@@ -22,7 +22,7 @@ export function Checkbox({ checked, onChange, label, disabled = false, style }) 
           color: 'var(--text-on-accent)',
         }}
       >
-        {checked ? <Icon name="check" size={9} /> : null}
+        {checked ? <Icon name="checkmark" size={9} /> : null}
       </span>
       {label}
     </label>

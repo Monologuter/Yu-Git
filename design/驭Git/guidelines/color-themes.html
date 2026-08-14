@@ -1,0 +1,65 @@
+<!-- @dsCard group="Colors" viewport="700x330" name="四套主题 × 浅深" subtitle="8 组色值。深浅与主题正交，每组落成一个 [data-theme] 单选择器" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>四套主题</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:#F0F1F3;font:var(--type-body);padding:12px 14px;-webkit-font-smoothing:antialiased}
+.row{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:var(--radius-small);margin-bottom:3px;background:var(--surface-app);border:1px solid var(--hairline)}
+.lbl{font:var(--type-secondary);color:var(--ink-1);width:64px;flex:0 0 auto}
+.app{display:flex;align-items:center;gap:4px;width:104px;flex:0 0 auto}
+.side{width:22px;height:18px;border-radius:3px;background:var(--surface-sidebar-opaque);border:1px solid var(--hairline)}
+.ink{font:var(--type-caption);color:var(--ink-1);width:20px}
+.br{width:30px;height:18px;border-radius:3px;background:var(--brand)}
+.lanes{display:flex;gap:2px;flex:1}.lanes span{flex:1;height:16px;border-radius:2px}
+.sem{display:flex;gap:2px;flex:0 0 auto}.sem span{width:14px;height:16px;border-radius:2px}
+.note{font:var(--type-caption);color:var(--ink-3);width:150px;flex:0 0 auto;text-align:right}
+.cap{font:var(--type-caption);color:#6F7276;line-height:1.5;text-wrap:pretty;margin:8px 0 0}</style>
+</head><body>
+<div class="row">
+<span class="lbl">默认 · 浅</span>
+<span class="app"><span class="side"></span><span class="ink">Aa</span><span class="br"></span></span>
+<span class="lanes"><span style="background:var(--lane-1)"></span><span style="background:var(--lane-2)"></span><span style="background:var(--lane-3)"></span><span style="background:var(--lane-4)"></span><span style="background:var(--lane-5)"></span><span style="background:var(--lane-6)"></span><span style="background:var(--lane-7)"></span><span style="background:var(--lane-8)"></span></span>
+<span class="sem"><span style="background:var(--warn)"></span><span style="background:var(--danger)"></span><span style="background:var(--ok)"></span><span style="background:var(--merge)"></span><span style="background:var(--accent)"></span></span>
+<span class="note">跟随系统强调色，最接近原生</span></div>
+<div class="row" data-theme="dark">
+<span class="lbl">默认 · 深</span>
+<span class="app"><span class="side"></span><span class="ink">Aa</span><span class="br"></span></span>
+<span class="lanes"><span style="background:var(--lane-1)"></span><span style="background:var(--lane-2)"></span><span style="background:var(--lane-3)"></span><span style="background:var(--lane-4)"></span><span style="background:var(--lane-5)"></span><span style="background:var(--lane-6)"></span><span style="background:var(--lane-7)"></span><span style="background:var(--lane-8)"></span></span>
+<span class="sem"><span style="background:var(--warn)"></span><span style="background:var(--danger)"></span><span style="background:var(--ok)"></span><span style="background:var(--merge)"></span><span style="background:var(--accent)"></span></span>
+<span class="note"></span></div>
+<div class="row" data-theme="mo">
+<span class="lbl">墨 · 浅</span>
+<span class="app"><span class="side"></span><span class="ink">Aa</span><span class="br"></span></span>
+<span class="lanes"><span style="background:var(--lane-1)"></span><span style="background:var(--lane-2)"></span><span style="background:var(--lane-3)"></span><span style="background:var(--lane-4)"></span><span style="background:var(--lane-5)"></span><span style="background:var(--lane-6)"></span><span style="background:var(--lane-7)"></span><span style="background:var(--lane-8)"></span></span>
+<span class="sem"><span style="background:var(--warn)"></span><span style="background:var(--danger)"></span><span style="background:var(--ok)"></span><span style="background:var(--merge)"></span><span style="background:var(--accent)"></span></span>
+<span class="note">低对比暖调，非重点后退</span></div>
+<div class="row" data-theme="mo-dark">
+<span class="lbl">墨 · 深</span>
+<span class="app"><span class="side"></span><span class="ink">Aa</span><span class="br"></span></span>
+<span class="lanes"><span style="background:var(--lane-1)"></span><span style="background:var(--lane-2)"></span><span style="background:var(--lane-3)"></span><span style="background:var(--lane-4)"></span><span style="background:var(--lane-5)"></span><span style="background:var(--lane-6)"></span><span style="background:var(--lane-7)"></span><span style="background:var(--lane-8)"></span></span>
+<span class="sem"><span style="background:var(--warn)"></span><span style="background:var(--danger)"></span><span style="background:var(--ok)"></span><span style="background:var(--merge)"></span><span style="background:var(--accent)"></span></span>
+<span class="note"></span></div>
+<div class="row" data-theme="zhou">
+<span class="lbl">昼 · 浅</span>
+<span class="app"><span class="side"></span><span class="ink">Aa</span><span class="br"></span></span>
+<span class="lanes"><span style="background:var(--lane-1)"></span><span style="background:var(--lane-2)"></span><span style="background:var(--lane-3)"></span><span style="background:var(--lane-4)"></span><span style="background:var(--lane-5)"></span><span style="background:var(--lane-6)"></span><span style="background:var(--lane-7)"></span><span style="background:var(--lane-8)"></span></span>
+<span class="sem"><span style="background:var(--warn)"></span><span style="background:var(--danger)"></span><span style="background:var(--ok)"></span><span style="background:var(--merge)"></span><span style="background:var(--accent)"></span></span>
+<span class="note">高对比、边框明确、色盲友好</span></div>
+<div class="row" data-theme="zhou-dark">
+<span class="lbl">昼 · 深</span>
+<span class="app"><span class="side"></span><span class="ink">Aa</span><span class="br"></span></span>
+<span class="lanes"><span style="background:var(--lane-1)"></span><span style="background:var(--lane-2)"></span><span style="background:var(--lane-3)"></span><span style="background:var(--lane-4)"></span><span style="background:var(--lane-5)"></span><span style="background:var(--lane-6)"></span><span style="background:var(--lane-7)"></span><span style="background:var(--lane-8)"></span></span>
+<span class="sem"><span style="background:var(--warn)"></span><span style="background:var(--danger)"></span><span style="background:var(--ok)"></span><span style="background:var(--merge)"></span><span style="background:var(--accent)"></span></span>
+<span class="note"></span></div>
+<div class="row" data-theme="pu">
+<span class="lbl">谱 · 浅</span>
+<span class="app"><span class="side"></span><span class="ink">Aa</span><span class="br"></span></span>
+<span class="lanes"><span style="background:var(--lane-1)"></span><span style="background:var(--lane-2)"></span><span style="background:var(--lane-3)"></span><span style="background:var(--lane-4)"></span><span style="background:var(--lane-5)"></span><span style="background:var(--lane-6)"></span><span style="background:var(--lane-7)"></span><span style="background:var(--lane-8)"></span></span>
+<span class="sem"><span style="background:var(--warn)"></span><span style="background:var(--danger)"></span><span style="background:var(--ok)"></span><span style="background:var(--merge)"></span><span style="background:var(--accent)"></span></span>
+<span class="note">饱和度最高，语法色是主角</span></div>
+<div class="row" data-theme="pu-dark">
+<span class="lbl">谱 · 深</span>
+<span class="app"><span class="side"></span><span class="ink">Aa</span><span class="br"></span></span>
+<span class="lanes"><span style="background:var(--lane-1)"></span><span style="background:var(--lane-2)"></span><span style="background:var(--lane-3)"></span><span style="background:var(--lane-4)"></span><span style="background:var(--lane-5)"></span><span style="background:var(--lane-6)"></span><span style="background:var(--lane-7)"></span><span style="background:var(--lane-8)"></span></span>
+<span class="sem"><span style="background:var(--warn)"></span><span style="background:var(--danger)"></span><span style="background:var(--ok)"></span><span style="background:var(--merge)"></span><span style="background:var(--accent)"></span></span>
+<span class="note"></span></div>
+<p class="cap">每行从左到右：侧栏材质 · 正文 · 品牌靛 · 8 条轨道 · 警示/危险/完成/合并/系统强调。三条硬约束在六组里都不变：红绿归 diff、纯蓝归系统、品牌靛靠明度而非色相跟轨道区分且不进分支图。取舍各不同 —— 墨把轨道色度压到 ×0.82（相邻最小 ΔE 6.9，最松），昼把两档明度拉到 0.155（ΔE 13.0，色盲友好是它的设计目标），谱走满饱和。完整数值见 <code>tokens/themes.css</code>，每组注释里带实测对比。</p>
+</body></html>

@@ -7,10 +7,10 @@ import { Icon } from '../core/Icon.jsx';
  * 并且把出路直接做成按钮。它横跨三栏，切到哪一栏都看得见。
  */
 const TONES = {
-  warn: { fg: 'var(--warn)', bg: 'var(--warn-wash)', icon: 'triangle-alert' },
-  danger: { fg: 'var(--danger)', bg: 'var(--danger-wash)', icon: 'triangle-alert' },
-  info: { fg: 'var(--brand)', bg: 'var(--brand-wash)', icon: 'info' },
-  ok: { fg: 'var(--ok)', bg: 'var(--ok-wash)', icon: 'circle-check' },
+  warn: { fg: 'var(--warn)', bg: 'var(--warn-wash)', icon: 'exclamationmark.triangle' },
+  danger: { fg: 'var(--danger)', bg: 'var(--danger-wash)', icon: 'exclamationmark.triangle' },
+  info: { fg: 'var(--brand)', bg: 'var(--brand-wash)', icon: 'info.circle' },
+  ok: { fg: 'var(--ok)', bg: 'var(--ok-wash)', icon: 'checkmark.circle' },
 };
 
 export function Banner({ tone = 'warn', headline, detail, actions, footnote, style }) {

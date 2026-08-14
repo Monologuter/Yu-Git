@@ -27,12 +27,12 @@ export function ExplanationPanel({ title, text, loading = false, expanded, onTog
         <Icon name="sparkles" size={13} color="var(--brand)" />
         <span style={{ font: 'var(--type-callout)', fontWeight: 'var(--weight-medium)' }}>{title}</span>
         <span style={{ flex: 1 }} />
-        <Icon name={open ? 'chevron-up' : 'chevron-down'} size={11} color="var(--ink-2)" />
+        <Icon name={open ? 'chevron.up' : 'chevron.down'} size={11} color="var(--ink-2)" />
       </button>
       {open ? (
         error ? (
           <div style={{ display: 'flex', gap: 6, font: 'var(--type-callout)', color: 'var(--warn)' }}>
-            <Icon name="triangle-alert" size={12} />{error}
+            <Icon name="exclamationmark.triangle" size={12} />{error}
           </div>
         ) : loading && !text ? (
           <span style={{ font: 'var(--type-callout)', color: 'var(--ink-2)' }}>正在阅读改动…</span>
@@ -41,7 +41,7 @@ export function ExplanationPanel({ title, text, loading = false, expanded, onTog
             <span style={{ font: 'var(--type-callout)', color: 'var(--text-body)', textWrap: 'pretty' }}>{text}</span>
             {!loading ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, font: 'var(--type-caption)', color: 'var(--ink-3)' }}>
-                <Icon name="info" size={10} />AI 生成的解释可能有误，请以代码为准
+                <Icon name="info.circle" size={10} />AI 生成的解释可能有误，请以代码为准
               </span>
             ) : null}
           </div>

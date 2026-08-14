@@ -1,21 +1,22 @@
-<!-- @dsCard group="Components" viewport="700x230" name="图标 Icon" subtitle="SF Symbols 的 Lucide 替身 · 63 个 · 11/14/16 三档" -->
+<!-- @dsCard group="Components" viewport="700x300" name="图标 Icon" subtitle="只承诺 SF Symbols 符号名，不分发图形：预览里是同尺寸占位框，零图片资源" -->
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>图标 Icon</title>
 <link rel="stylesheet" href="../../styles.css">
-<script>window.YUGIT_ICON_BASE='../../assets/icons/'</script>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}.grid{display:flex;flex-direction:column;gap:14px}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.lbl{font:var(--type-caption);color:var(--ink-3);width:64px;flex:0 0 auto;text-align:right}.pane{border:1px solid var(--hairline);border-radius:var(--radius-large);overflow:hidden;background:var(--surface-app)}</style>
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:14px 16px;-webkit-font-smoothing:antialiased}.grid{display:flex;flex-direction:column;gap:9px}.row{display:flex;align-items:flex-start;gap:8px}.lbl{font:var(--type-caption);color:var(--ink-3);width:52px;flex:0 0 auto;text-align:right;padding-top:3px}.set{display:flex;flex-wrap:wrap;gap:4px;flex:1}.chip{display:flex;align-items:center;gap:4px;padding:2px 6px 2px 4px;border-radius:var(--radius-small);background:var(--surface-sunken);border:1px solid var(--hairline)}.nm{font:var(--type-mono);font-size:10px;color:var(--ink-2)}.note{font:var(--type-caption);color:var(--ink-3);text-wrap:pretty;line-height:1.5}</style>
 </head><body>
 <div id="root"></div>
 <script src="../../_ds_bundle.js"></script>
 <script type="text/babel">
 const { Icon } = window.Git_c7d67c;
 const SETS = [
-  ['Git', ['git-branch','git-merge','git-pull-request','cloud','tag','archive','layers','columns-2']],
-  ['动作', ['circle-arrow-down','arrow-down-to-line','arrow-up-to-line','refresh-cw','rotate-ccw','undo-2','plus','trash-2','copy','pencil']],
-  ['状态', ['circle-check','triangle-alert','circle-x','info','shield','shield-check','lock','eye-off','clock-alert']],
-  ['界面', ['list-filter','search','command','ellipsis','panel-left','panel-right','chevron-right','chevron-down','folder','file-text','sparkles','lightbulb']],
+  ['工具栏', ['chevron.left','arrow.down.circle','arrow.down.to.line','arrow.up.to.line','clock.arrow.circlepath','arrow.clockwise','ellipsis.circle','command','magnifyingglass','sidebar.right']],
+  ['侧栏', ['arrow.triangle.branch','tag','plus','line.3.horizontal.decrease','xmark.circle.fill','arrow.up','arrow.down','chevron.right']],
+  ['变更', ['checkmark.circle','sparkles','checkmark.shield','eye.slash','exclamationmark.triangle','trash','doc.on.doc','text.alignleft','pencil']],
+  ['文件', ['doc','doc.text','doc.text.magnifyingglass','doc.badge.ellipsis','equal.circle','folder']],
+  ['历史', ['arrow.triangle.merge','arrow.triangle.pull','arrow.uturn.backward','checklist','square.stack.3d.up','camera.fill','line.3.horizontal']],
+  ['提示', ['info.circle','questionmark.circle','lightbulb','clock','clock.badge.exclamationmark','lock','shield','key','safari']],
 ];
 function Demo() {
   return (
@@ -23,20 +24,26 @@ function Demo() {
       {SETS.map(([label, names]) => (
         <div className="row" key={label}>
           <span className="lbl">{label}</span>
-          {names.map((n) => (
-            <span key={n} title={n} style={{display:'flex',alignItems:'center',justifyContent:'center',width:26,height:26,borderRadius:'var(--radius-small)',background:'var(--surface-sunken)',color:'var(--ink-1)'}}>
-              <Icon name={n} size={14} />
-            </span>
-          ))}
+          <div className="set">
+            {names.map((n) => (
+              <span className="chip" key={n}><Icon name={n} size={13} /><span className="nm">{n}</span></span>
+            ))}
+          </div>
         </div>
       ))}
-      <div className="row"><span className="lbl">尺寸</span>
-        <Icon name="git-branch" size={11} /><Icon name="git-branch" size={14} /><Icon name="git-branch" size={16} />
-        <span style={{font:'var(--type-caption)',color:'var(--ink-3)'}}>11 配 11pt · 14 配正文 · 16 配工具栏</span>
-        <span style={{width:12}} />
-        <Icon name="sparkles" size={14} color="var(--brand)" />
-        <span style={{font:'var(--type-caption)',color:'var(--ink-3)'}}>AI 入口一律品牌青</span>
+      <div className="row">
+        <span className="lbl">尺寸</span>
+        <div className="set" style={{alignItems:'center',gap:8}}>
+          <Icon name="arrow.triangle.branch" size={11} /><Icon name="arrow.triangle.branch" size={14} /><Icon name="arrow.triangle.branch" size={16} />
+          <span className="note">11 配 11pt · 14 配正文 · 16 配工具栏 · 56 只给空状态</span>
+          <Icon name="sparkles" size={14} color="var(--brand)" />
+          <span className="note">AI 入口一律品牌色</span>
+        </div>
       </div>
+      <p className="note" style={{margin:'2px 0 0'}}>
+        方框是占位符，不是图标：真机由 <code style={{font:'var(--type-mono)',fontSize:10}}>Image(systemName:)</code> 渲染，
+        跟随字重、字号、辅助功能加粗与深浅模式。设计系统只承诺符号名 —— 名字与 Swift 源码一字不差，一个图片资源都不带。
+      </p>
     </div>
   );
 }

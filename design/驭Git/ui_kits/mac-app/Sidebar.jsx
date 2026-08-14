@@ -12,7 +12,7 @@ function Disclosure({ title, count, expanded, onToggle }) {
         font: 'var(--type-secondary)', fontWeight: 'var(--weight-semibold)', color: 'var(--ink-2)',
       }}
     >
-      <Icon name="chevron-right" size={9} style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform var(--dur-fast) var(--ease-standard)' }} />
+      <Icon name="chevron.right" size={9} style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform var(--dur-fast) var(--ease-standard)' }} />
       <span>{title}</span>
       <span style={{ color: 'var(--ink-4)', fontWeight: 'var(--weight-regular)' }}>{count}</span>
     </div>

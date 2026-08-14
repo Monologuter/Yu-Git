@@ -46,13 +46,13 @@ function CommitPanel({ message, onMessage, amend, onAmend, staged, onCommit, onD
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-regular)' }}>
         <Checkbox checked={amend} onChange={onAmend} label="修改上一条提交" />
         <span style={{ flex: 1 }} />
-        <Button size="small" icon="shield-check" disabled={!staged} title={staged ? '提交前让 AI 通读暂存的改动，按风险分级列出值得确认的地方' : '先暂存一些改动'}>自查</Button>
+        <Button size="small" icon="checkmark.shield" disabled={!staged} title={staged ? '提交前让 AI 通读暂存的改动，按风险分级列出值得确认的地方' : '先暂存一些改动'}>自查</Button>
         <Button size="small" icon="sparkles" onClick={onDraft} disabled={!staged || drafting} title="根据暂存的改动起草提交信息，生成后可直接编辑">{drafting ? '起草中…' : 'AI 起草'}</Button>
         <Button size="small" variant="default" onClick={onCommit} disabled={!staged || !message.trim()}>提交</Button>
       </div>
       {amend ? (
         <span style={{ display: 'flex', alignItems: 'center', gap: 5, font: 'var(--type-caption)', color: 'var(--warn)' }}>
-          <Icon name="triangle-alert" size={10} />修改后 commit hash 会变，若已推送则需要 force push
+          <Icon name="exclamationmark.triangle" size={10} />修改后 commit hash 会变，若已推送则需要 force push
         </span>
       ) : null}
     </div>
@@ -120,7 +120,7 @@ function ChangesPane({ fixtures, selected, onSelect, onDiscard, onResolve }) {
       {total > 8 || filter ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 var(--space-regular) 6px' }}>
           <FilterField value={filter} onChange={setFilter} placeholder="过滤文件路径" />
-          <ToolbarButton icon={tree ? 'layers' : 'text-align-start'} title={tree ? '改为平铺显示完整路径' : '改为按目录分组'} onClick={() => setTree(!tree)} />
+          <ToolbarButton icon={tree ? 'square.stack.3d.up' : 'text.alignleft'} title={tree ? '改为平铺显示完整路径' : '改为按目录分组'} onClick={() => setTree(!tree)} />
         </div>
       ) : null}
 
@@ -133,8 +133,8 @@ function ChangesPane({ fixtures, selected, onSelect, onDiscard, onResolve }) {
       >
         {!staged.length && !unstaged.length && !conflicted.length ? (
           filter
-            ? <EmptyState icon="search" title="没有匹配的文件" description="试试别的关键词" compact />
-            : <EmptyState icon="circle-check" title="工作区干净" description="没有待处理的改动" compact />
+            ? <EmptyState icon="magnifyingglass" title="没有匹配的文件" description="试试别的关键词" compact />
+            : <EmptyState icon="checkmark.circle" title="工作区干净" description="没有待处理的改动" compact />
         ) : null}
 
         {conflicted.length ? (

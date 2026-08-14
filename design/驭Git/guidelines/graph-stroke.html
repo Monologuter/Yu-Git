@@ -1,0 +1,11 @@
+<!-- @dsCard group="Brand" viewport="700x170" name="线宽两档 = 你在这里" subtitle="常规轨道 2.5pt，HEAD 所在轨道 3.5pt。线宽是信息层级，不是装饰" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>线宽两档</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:14px 16px;-webkit-font-smoothing:antialiased}.row{display:flex;gap:18px;align-items:flex-start}.cell{display:flex;flex-direction:column;gap:4px}.nm{font:var(--type-caption);color:var(--ink-2)}.hx{font:var(--type-mono);font-size:10px;color:var(--ink-3)}.note{font:var(--type-caption);color:var(--ink-3);line-height:1.5;text-wrap:pretty}</style>
+</head><body>
+<div class="row">
+<div class="cell"><svg width="120" height="64" viewBox="0 0 120 64"><path d="M 18 0 L 18 64" stroke="var(--lane-1)" stroke-width="2.5" fill="none"/><path d="M 46 0 C 46 32, 74 32, 74 64" stroke="var(--lane-2)" stroke-width="2.5" fill="none"/><path d="M 102 0 L 102 64" stroke="var(--lane-4)" stroke-width="2.5" fill="none"/><circle cx="18" cy="32" r="4.5" fill="var(--lane-1)"/><circle cx="18" cy="32" r="2.6" fill="var(--surface-app)"/></svg><span class="nm">常规轨道</span><span class="hx">--graph-line 2.5px</span></div>
+<div class="cell"><svg width="120" height="64" viewBox="0 0 120 64"><path d="M 18 0 L 18 64" stroke="var(--lane-1)" stroke-width="3.5" fill="none"/><path d="M 46 0 C 46 32, 74 32, 74 64" stroke="var(--lane-2)" stroke-width="3.5" fill="none"/><path d="M 102 0 L 102 64" stroke="var(--lane-4)" stroke-width="3.5" fill="none"/><circle cx="18" cy="32" r="6.5" fill="none" stroke="var(--ink-1)" stroke-width="1.5"/><circle cx="18" cy="32" r="4.5" fill="var(--lane-1)"/><circle cx="18" cy="32" r="2.6" fill="var(--surface-app)"/></svg><span class="nm">HEAD 所在轨道</span><span class="hx">--graph-line-head 3.5px</span></div>
+<p class="note" style="flex:1;margin:0">粗的那条在说「你现在在这里」。用线宽表达它，比再塞一个图形标记省地方，也比只靠颜色可靠 —— 色觉缺陷下线宽照样看得出。HEAD 节点再加一圈 <code>--ink-1</code> 深墨 1.5pt 细环，形状与颜色双通道 —— 环不用品牌色，分支图整块归轨道色。<br><br>两个值必须一起改：只改常规的，层级就没了；只改 HEAD 的，粗细差会大到像故障。</p>
+</div>
+</body></html>

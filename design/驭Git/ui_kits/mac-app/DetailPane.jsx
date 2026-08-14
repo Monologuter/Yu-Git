@@ -35,7 +35,7 @@ function FileDetail({ diff, isStaged, onBlame }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px var(--space-loose)' }}>
-        <Icon name="file-text" size={13} color="var(--ink-2)" />
+        <Icon name="doc.text" size={13} color="var(--ink-2)" />
         <span style={{
           font: 'var(--type-body)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
           whiteSpace: 'nowrap', direction: 'rtl', textAlign: 'left',
@@ -47,7 +47,7 @@ function FileDetail({ diff, isStaged, onBlame }) {
         <span style={{ flex: 1 }} />
         <Button variant="borderless" size="small" onClick={onBlame} title="逐行看这段代码是谁写的：人，还是哪个 AI 工具">查看归因</Button>
         <Button variant="borderless" size="small">{isStaged ? '取消暂存整个文件' : '暂存整个文件'}</Button>
-        <ToolbarButton icon={wrap ? 'text-align-start' : 'move-horizontal'} title={wrap ? '改为不折行（长行横向滚动）' : '折行显示长行'} onClick={() => setWrap(!wrap)} />
+        <ToolbarButton icon={wrap ? 'text.alignleft' : 'arrow.left.and.right'} title={wrap ? '改为不折行（长行横向滚动）' : '折行显示长行'} onClick={() => setWrap(!wrap)} />
       </div>
       <div style={{ borderTop: '1px solid var(--hairline)' }} />
       <div style={{ padding: '8px var(--space-loose) 0' }}>
@@ -200,7 +200,7 @@ function DetailPane({ fixtures, selectedFile, isStaged, selectedCommit, onBlame 
           selectedFile={commitFile} onSelectFile={setCommitFile}
         />
       ) : (
-        <EmptyState icon="panel-right" title="未选择内容" description="在左侧选择一个文件或提交" />
+        <EmptyState icon="sidebar.right" title="未选择内容" description="在左侧选择一个文件或提交" />
       )}
     </div>
   );

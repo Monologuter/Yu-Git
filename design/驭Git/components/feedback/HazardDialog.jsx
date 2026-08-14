@@ -16,7 +16,7 @@ export function HazardDialog({ title, whatHappens, undoable, howToUndo, command,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-regular)' }}>
-        <Icon name="triangle-alert" size={18} color="var(--warn)" />
+        <Icon name="exclamationmark.triangle" size={18} color="var(--warn)" />
         <span style={{ font: 'var(--type-title)', color: 'var(--text-body)' }}>{title}</span>
       </div>
 

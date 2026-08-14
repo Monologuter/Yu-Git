@@ -1,8 +1,8 @@
 空状态。四栏里出现的每一处空白都该是它，而不是一片纯白。
 
 ```jsx
-<EmptyState icon="circle-check" title="工作区干净" description="没有待处理的改动" />
-<EmptyState icon="file-search" tone="warn" title="这个 diff 很大"
+<EmptyState icon="checkmark.circle" title="工作区干净" description="没有待处理的改动" />
+<EmptyState icon="doc.text.magnifyingglass" tone="warn" title="这个 diff 很大"
   description="共 12480 行变化，展开可能需要一点时间"
   action={<Button>仍然展开</Button>} />
 ```

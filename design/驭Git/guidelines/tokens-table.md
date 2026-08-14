@@ -7,11 +7,11 @@
 
 | 名称 | 浅色 | 深色 | 用途 |
 |---|---|---|---|
-| brand | #017272 | #5CC6B9 | 品牌青。当前分支标记、AI 入口、空状态图标、进度点、品牌字 |
-| brand-hover | #005F5F | #7BD6CB | 品牌色元素的悬停 / 按下 |
-| brand-wash | #DCF9F8 | #0A3535 | 空状态圆底、信息横幅底 |
-| brand-wash-strong | #C6F1EA | #10474A | 需要更实一档的品牌浅底 |
-| brand-on | #FFFFFF | #08211F | 画在品牌色上的前景 |
+| brand | #4A3D8B | #938BDA | 品牌靛。当前分支标记、AI 入口、空状态图标、进度点、品牌字。**不进分支图** |
+| brand-hover | #3C2E7A | #A8A7E3 | 品牌色元素的悬停 / 按下 |
+| brand-wash | #F2F2FF | #282841 | 空状态圆底、信息横幅底 |
+| brand-wash-strong | #E6E5FF | #38375B | 需要更实一档的品牌浅底 |
+| brand-on | #FFFFFF | #12101F | 画在品牌色上的前景 |
 
 ## 系统强调色（默认主题跟随系统，此处为系统默认蓝）
 
@@ -82,14 +82,14 @@
 
 | 名称 | 浅色 | 深色 | 色相 / 用途 |
 |---|---|---|---|
-| lane-1 | #00857A | #0CB6A8 | 青 185°，与品牌同族，主线默认落这一轨 |
+| lane-1 | #00857A | #00B0A2 | 靛青 185°，主线默认落这一轨 |
 | lane-2 | #A665E5 | #D1A9FF | 紫 305° |
-| lane-3 | #9A6704 | #FCAB05 | 琥 75° |
-| lane-4 | #089DC1 | #0BAFD7 | 蓝 222° |
-| lane-5 | #B63795 | #F67BD1 | 玫 340° |
-| lane-6 | #00A86E | #0DCD88 | 碧 160° |
-| lane-7 | #3A68E0 | #6E9AFF | 靛 265° |
-| lane-8 | #E85A0E | #FE8959 | 赭 42° |
+| lane-3 | #9A6704 | #CB8900 | 琥 75° |
+| lane-4 | #089DC1 | #47D0F9 | 蓝 222° |
+| lane-5 | #B63795 | #DE65BA | 玫 340° |
+| lane-6 | #9C9023 | #D1C12A | 柘 103° |
+| lane-7 | #3A68E0 | #6894F8 | 靛 265° |
+| lane-8 | #E85A0E | #FFA37E | 赭 42° |
 | lane-on-emphasized | #FFFFFF | #FFFFFF | 选中行上的线与节点一律换成它 |
 
 色觉校验（Viénot 模拟）：浅色组红色弱下最近的一对距离 23、绿色弱 16（紫 vs 靛，
@@ -160,7 +160,7 @@
 | graph-node-hole | 2.6 | 1.6 内缩 | 中心挖空半径 |
 | graph-node-merge-r | **3.2** | — | 合并提交：实心点 |
 | graph-head-ring-r | **6.5** | — | HEAD 外圈细环半径 |
-| graph-head-ring-w | **1.5** | — | HEAD 外圈线宽（品牌青） |
+| graph-head-ring-w | **1.5** | — | HEAD 外圈线宽（`--ink-1` 深墨，不用品牌色） |
 | diff-gutter-digit | 7 | 7 | 行号列按最大行号位数 × 7 + 10 |
 | diff-marker-width | 14 | 14 | +/− 标记列 |
 | diff-selected-bar | 3 | 3 | 选中行左侧竖条 |
@@ -177,3 +177,48 @@
 | blur-sidebar | blur(30) saturate(180%) | 侧栏 vibrancy |
 | blur-toolbar | blur(20) saturate(180%) | 工具栏 |
 | blur-overlay | blur(12) saturate(140%) | 选择条、sheet 背后 |
+
+## 主题 · 墨 / 昼 / 谱（各浅深两组，共 6 组）
+
+默认主题的两组在上面。这 6 组住 `tokens/themes.css`，每组一个单选择器：
+`[data-theme="mo"|"mo-dark"|"zhou"|"zhou-dark"|"pu"|"pu-dark"]`。深浅与主题正交，
+应用侧把（主题, 深浅）映射成这一个属性值。下表只列承重的 18 个；
+完整 50 个 token 与每组实测对比见 `tokens/themes.css` 的注释。
+
+| 名称 | 墨浅 | 墨深 | 昼浅 | 昼深 | 谱浅 | 谱深 | 用途 |
+|---|---|---|---|---|---|---|---|
+| brand | #514A88 | #857FC3 | #423384 | #8E86D8 | #4B3A96 | #887ED7 | 品牌靛 |
+| ink-1 | #3C3730 | #CBC3BB | #0F1112 | #E5E7EA | #1C2027 | #DCE3EF | 正文 |
+| ink-2 | #68625A | #979189 | #4E5153 | #A3A6A8 | #535861 | #9CA2AD | 次要 |
+| ink-3 | #766F68 | #89827A | #5C5E61 | #929497 | #696D77 | #848A95 | 三级 hash/时间 |
+| surface-app | #FAF6EF | #1E1914 | #FFFFFF | #090B0C | #FBFCFF | #13161D | 窗口底 |
+| surface-sunken | #F2EEE7 | #14100B | #F1F3F5 | #030405 | #F1F2F6 | #0A0D13 | 下沉块 |
+| surface-sidebar-opaque | #F0EBE3 | #231E17 | #E9EBED | #101214 | #EAECF1 | #191C25 | 侧栏回退色 |
+| hairline | #DBD6CF | #39332D | #B6B8BA | #3D3F41 | #D0D2D5 | #33373F | 分隔线 |
+| hairline-strong | #C0BBB4 | #534D47 | #858688 | #636567 | #ADAFB2 | #525760 | 描边 |
+| warn | #95601E | #B17C3D | #9F630C | #AD7021 | #9E6100 | #B77419 | 警示 |
+| danger | #B74744 | #D6635D | #C54542 | #D3524E | #C93B3B | #E25350 | 危险 |
+| ok | #2A7A47 | #479560 | #1E8246 | #2F8E52 | #018040 | #2A9554 | 完成 |
+| merge | #8258AF | #9E73CC | #8B59BE | #9867CC | #8C54C1 | #A16AD9 | 合并 |
+| diff-add-row | #DFFAE5 | #152D1C | #D1FFDC | #001D09 | #D5FEDE | #042B13 | 新增整行底 |
+| diff-del-row | #FFEDEB | #3A1E1C | #FFEDEB | #300505 | #FFEDEB | #3C1513 | 删除整行底 |
+| syn-keyword | #73479F | #A579D4 | #7E45B3 | #A169D9 | #813CBD | #AD6AEE | 关键字 |
+| syn-string | #8B4C27 | #BF7D57 | #994C17 | #BF6E3E | #9C4700 | #CE7036 | 字符串 |
+| syn-type | #00675F | #429B90 | #006D64 | #029388 | #006C63 | #009B8E | 类型名 |
+
+### 8 轨道在各主题下
+
+| 轨道 | 墨浅 | 墨深 | 昼浅 | 昼深 | 谱浅 | 谱深 |
+|---|---|---|---|---|---|---|
+| lane-1 靛青 | #308279 | #42ACA0 | #007268 | #009B8F | #008277 | #00B0A2 |
+| lane-2 紫 | #AA66EC | #CCABF4 | #B25AFF | #D5B1FF | #B35EFF | #D5B1FF |
+| lane-3 琥 | #936A2A | #C28D3A | #845800 | #B37900 | #976500 | #CB8900 |
+| lane-4 蓝 | #3B9BB8 | #52CDF3 | #009FC3 | #4ED6FF | #00A0C5 | #4ED6FF |
+| lane-5 玫 | #B83396 | #F049C5 | #A90087 | #E400B7 | #C0009A | #FF15CE |
+| lane-6 柘 | #9A9036 | #CCBF4A | #9F9200 | #D9C700 | #A19300 | #D9C700 |
+| lane-7 靛 | #3666E7 | #6E95EE | #1139FF | #487BFF | #2558FF | #6492FF |
+| lane-8 赭 | #DB6635 | #F5A688 | #EC5900 | #FFAD8D | #EE5A00 | #FFAD8D |
+
+三套主题对轨道的取舍不同：墨为了让非重点后退，色度压到 ×0.82（相邻 colorIndex 最小 ΔE 6.9，
+六组里最松）；昼把两档明度差从 0.09 拉到 0.155，相邻最小 ΔE 13.0，且最细的线也过 3:1，
+色盲友好是它的设计目标；谱走满饱和。

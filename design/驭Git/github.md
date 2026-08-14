@@ -4,12 +4,13 @@ path: Yugit
 
 ## Last sync
 
-date: 2026-08-14T16:22:00Z
+date: 2026-08-14T16:31:53Z
 
 ### Updated in this project
 
 - 从 Yugit/DesignSystem/Theme.swift 与各 Feature 视图提取间距、圆角、字号、绘制参数
-- 重做色彩系统：品牌青、8 轨道分支图色板、diff 与语法色板（默认主题浅/深两组）
+- 重做色彩系统：品牌靛 #4A3D8B、8 轨道分支图色板、diff 与语法色板（默认主题浅/深两组）
+- 图标改为只承诺 SF Symbols 符号名（按源码 `Image(systemName:)` 逐处核对），不带图片资源
 - 按 Swift 源码还原组件库与 macOS 三栏 UI kit、首次运行引导
 
 ## Screen map

@@ -10,6 +10,8 @@ import React from 'react';
  *   丢掉的颜色只影响这一行，而这一行本来就靠背景高亮定位；
  *   「看不见」是更严重的问题。
  * - 节点靠形状区分：环 = 普通提交，实心点 = 合并，外圈细环 = HEAD。
+ * - HEAD 外环用 --ink-1 深墨，不用品牌色：分支图是轨道色的地盘，品牌色进来只会
+ *   多出一次「这是品牌还是某条分支」的判断。品牌色在侧栏、AI 入口、空状态出现。
  *
  * 几何量与 tokens/graph.css 一一对应（SVG 的 r/cx 属性吃不进 var()，
  * 所以这里是数字；线宽走 CSS 的 stroke-width，仍然读 token）。
@@ -59,7 +61,7 @@ export function LaneGraph({
       {row.isHead && !emphasized ? (
         <circle
           cx={centerX(row.nodeLane)} cy={middle} r={GEOMETRY.headRingR}
-          fill="none" stroke="var(--brand)" style={{ strokeWidth: 'var(--graph-head-ring-w)' }}
+          fill="none" stroke="var(--ink-1)" style={{ strokeWidth: 'var(--graph-head-ring-w)' }}
         />
       ) : null}
 

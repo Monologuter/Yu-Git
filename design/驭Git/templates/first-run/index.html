@@ -1,7 +1,6 @@
 <!-- @template name="首次运行" description="欢迎页 + 六步新手引导（文案取自 OnboardingStep.repositoryTour）" -->
 <!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>驭Git · 首次运行</title>
 <link rel="stylesheet" href="../../styles.css">
-<script>window.YUGIT_ICON_BASE='../../assets/icons/'</script>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -10,7 +9,7 @@ a{color:var(--brand);text-decoration:none}a:hover{color:var(--brand-hover);text-
 </head><body>
 <div id="root"></div>
 <!-- 消费项目里把这一段的 ../../ 指向绑定的 _ds/<folder> 目录（例如 ../_ds/yugit），
-     styles.css / _ds_bundle.js / assets/icons / ui_kits 四处一起改。 -->
+     styles.css / _ds_bundle.js / ui_kits 三处一起改。 -->
 <script src="../../_ds_bundle.js"></script>
 <script type="text/babel" src="../../ui_kits/first-run/Welcome.jsx"></script>
 <script type="text/babel" src="../../ui_kits/first-run/Tour.jsx"></script>
@@ -23,7 +22,7 @@ function App() {
     <div style={{ position: 'relative', height: '100%', background: 'var(--surface-app)' }}>
       {stage === 'done' ? (
         <EmptyState
-          icon="circle-check" title="引导走完了"
+          icon="checkmark.circle" title="引导走完了"
           description="第一次打开仓库时自动走一遍，之后不再打扰；命令面板里随时能再看一次。"
           action={<a href="../mac-app/index.html"><Button variant="default">进入仓库工作区</Button></a>}
         />

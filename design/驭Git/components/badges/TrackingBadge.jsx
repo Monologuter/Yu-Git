@@ -9,7 +9,7 @@ export function TrackingBadge({ ahead = 0, behind = 0, gone = false, emphasized 
         title="upstream 已在远程被删除"
         style={{ display: 'inline-flex', color: emphasized ? 'var(--selection-fg)' : 'var(--warn)', ...style }}
       >
-        <Icon name="triangle-alert" size={11} />
+        <Icon name="exclamationmark.triangle" size={11} />
       </span>
     );
   }
@@ -25,12 +25,12 @@ export function TrackingBadge({ ahead = 0, behind = 0, gone = false, emphasized 
     >
       {ahead ? (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-          <Icon name="arrow-up" size={9} />{ahead}
+          <Icon name="arrow.up" size={9} />{ahead}
         </span>
       ) : null}
       {behind ? (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-          <Icon name="arrow-down" size={9} />{behind}
+          <Icon name="arrow.down" size={9} />{behind}
         </span>
       ) : null}
     </span>

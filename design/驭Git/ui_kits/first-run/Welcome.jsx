@@ -1,5 +1,5 @@
 /* 欢迎页：没打开仓库时的入口。
-   对应 Repository/RootView.swift 的 WelcomeView —— 品牌标志换成青底白「驭」的字组，
+   对应 Repository/RootView.swift 的 WelcomeView —— 品牌标志换成靛底白「驭」的字组，
    这是整个应用里唯一一处可以放品牌的地方（仓库里没有图形 logo）。 */
 const { Button, Icon } = window.Git_c7d67c;
 
