@@ -8,6 +8,15 @@ struct YugitApp: App {
     @State private var aiSettings = AISettingsStore()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
+    init() {
+        // 在这里而不是 `applicationDidFinishLaunching`：那个回调发生在
+        // 第一次求 body 之后，用户上次选的主题会先闪一下默认主题再切过来。
+        // `App.init` 早于任何视图。
+        ThemeManager.shared.register(InkTheme())
+        ThemeManager.shared.register(DaylightTheme())
+        ThemeManager.shared.register(SpectrumTheme())
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView(model: model)

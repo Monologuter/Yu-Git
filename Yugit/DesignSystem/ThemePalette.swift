@@ -26,12 +26,6 @@ protocol ThemePalette: Sendable {
     /// 一句话说明它适合谁，显示在设置页的选项下方。
     var summary: String { get }
 
-    /// 是否直接沿用系统颜色。
-    ///
-    /// 为 true 时界面完全跟随 macOS 的强调色设置与深浅模式，
-    /// 这是「默认」主题的做法，也是最不容易出错的一套。
-    var followsSystemAppearance: Bool { get }
-
     // MARK: - 强调色与品牌色
     //
     // 这是两个角色，**永不互相替代**：
@@ -157,9 +151,10 @@ struct SystemTheme: ThemePalette {
     let identifier = "system"
     let displayName = "默认"
     let summary = "跟随系统外观与强调色，最接近原生 macOS 应用"
-    let followsSystemAppearance = true
 
-    // 强调色一律走系统的，不落死值——用户在系统设置里改了，界面要跟着改
+    // 强调色一律走系统的，不落死值——用户在系统设置里改了，界面要跟着改。
+    // **每一套主题都这么做**：强调色是用户在系统设置里的选择，
+    // 主题改了它等于把那个选择吃掉。
     var accent: Color { .accentColor }
     var onAccent: Color { Color(nsColor: .alternateSelectedControlTextColor) }
 
