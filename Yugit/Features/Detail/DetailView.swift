@@ -133,19 +133,33 @@ struct CommitDetailView: View {
     let repository: RepositoryViewModel
 
     var body: some View {
-        // 点开某个文件后，用 VSplitView 把面板一分为二，让人自己拖分配空间。
-        // 不这么做的话只有两条路：diff 挤在信息下面看不了几行，
-        // 或者信息被 diff 顶出屏幕——而看 diff 时往往还需要回头看提交说明。
-        // VSplitView 是 macOS 原生控件，分隔条的手感和系统其他 app 一致。
-        if repository.selectedCommitFile != nil {
-            VSplitView {
+        Group {
+            // 点开某个文件后，用 VSplitView 把面板一分为二，让人自己拖分配空间。
+            // 不这么做的话只有两条路：diff 挤在信息下面看不了几行，
+            // 或者信息被 diff 顶出屏幕——而看 diff 时往往还需要回头看提交说明。
+            // VSplitView 是 macOS 原生控件，分隔条的手感和系统其他 app 一致。
+            if repository.selectedCommitFile != nil {
+                VSplitView {
+                    summary
+                        .frame(minHeight: 140, idealHeight: 260)
+                    filePane
+                        .frame(minHeight: 160)
+                }
+            } else {
                 summary
-                    .frame(minHeight: 140, idealHeight: 260)
-                filePane
-                    .frame(minHeight: 160)
             }
-        } else {
-            summary
+        }
+        // **必须挂在 Group 外层，不能挂在 summary 上。**
+        //
+        // 挂在 summary 上时，点击文件会让 body 从「只有 summary」变成
+        // 「VSplitView 里的 summary」，SwiftUI 把它当成另一个位置的新视图而重建，
+        // 于是这个 .task 重新触发 —— 而 reloadSelectedCommitFiles() 头一行就是
+        // selectedCommitFile = nil，刚点开的文件立刻被清掉，视图又切回去。
+        // 表现出来就是「点文件毫无反应」，实际上是点开又瞬间关上了。
+        //
+        // 挂在外层就不会随内部结构切换而重建，只有真的换了提交才重新取。
+        .task(id: commit.hash) {
+            await repository.reloadSelectedCommitFiles()
         }
     }
 
@@ -237,10 +251,6 @@ struct CommitDetailView: View {
             }
             .padding(Theme.Spacing.section)
             .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        // 换一条提交就重新取文件列表
-        .task(id: commit.hash) {
-            await repository.reloadSelectedCommitFiles()
         }
     }
 

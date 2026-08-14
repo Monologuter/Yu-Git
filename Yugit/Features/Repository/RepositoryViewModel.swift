@@ -40,7 +40,20 @@ final class RepositoryViewModel {
     private(set) var transferProgress: TransferProgress?
     private(set) var isTransferring = false
 
-    var selectedCommit: Commit.ID?
+    var selectedCommit: Commit.ID? {
+        didSet {
+            guard selectedCommit != oldValue else { return }
+            // 换了提交，之前点开的那个文件和它的 diff 都不再相干。
+            //
+            // 清空放在这里而不是 reloadSelectedCommitFiles() 里：那是个「加载数据」
+            // 的方法，把「重置选中」这种副作用塞进去，任何一次意外的重复调用都会
+            // 把用户刚点开的文件清掉。事实上就发生过——视图重建让 .task 重新触发，
+            // 表现成「点文件毫无反应」，实际是点开又瞬间关上了。
+            // 状态归零属于「选中变了」这个事件，就该挂在选中上。
+            selectedCommitFile = nil
+            commitFileDiff = nil
+        }
+    }
     var selectedFile: FileSelection?
 
     /// 历史过滤条件。**交给 git 去筛，不在已加载的那几百条里过滤**——
@@ -249,11 +262,8 @@ final class RepositoryViewModel {
     /// 单独一个方法而不是并进 `reloadSelectedDiff`：选中提交和选中文件是
     /// 两条互斥的路径（选了提交就不会有选中文件），混在一起只会让两边都多一层判断。
     func reloadSelectedCommitFiles() async {
-        // 换提交时先把上一条的选中文件和 diff 清掉，
-        // 否则新提交的文件列表旁边会挂着上一条提交里某个文件的 diff。
-        selectedCommitFile = nil
-        commitFileDiff = nil
-
+        // 这里**只加载，不重置选中**——重置由 selectedCommit 的 didSet 负责。
+        // 见那里的注释：把副作用塞进加载方法会让重复调用清掉用户的选择。
         guard let id = selectedCommit,
             let commit = commits.first(where: { $0.id == id })
         else {
