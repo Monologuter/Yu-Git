@@ -80,8 +80,16 @@ type Server struct {
 
 // ── 订阅查询 ─────────────────────────────────────────────────────────
 
+// handleSubscription 如实报告订阅状态。
+//
+// 刻意**不**走 authenticate：那个函数对非 active 的订阅返回 402，
+// 而查询接口的职责就是报告状态——「已过期」是一个合法状态，不是错误。
+// 用 402 表达的话，客户端只能拿到一个 HTTP 错误，没法区分
+// 「该续费了」和「配置填错了」，只能给用户看一个红色报错。
+//
+// 402 留给补全接口，那里才是「你想用但用不了」。
 func (s *Server) handleSubscription(w http.ResponseWriter, r *http.Request) {
-	sub, err := s.authenticate(r)
+	sub, err := s.lookupSubscriber(r)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -100,7 +108,15 @@ func (s *Server) handleSubscription(w http.ResponseWriter, r *http.Request) {
 	if sub.RenewsAt != nil {
 		payload["renews_at"] = sub.RenewsAt.UTC().Format(time.RFC3339)
 	}
-	if remaining == 0 && sub.Status == "active" {
+	// 每种非正常状态都给客户端一句能直接显示的话。
+	// 客户端不该自己拼这些文案——服务端改了续费规则时，
+	// 已经发布的客户端版本没法跟着改。
+	switch {
+	case sub.Status == "expired":
+		payload["message"] = "订阅已过期，续费后立即恢复"
+	case sub.Status == "invalid":
+		payload["message"] = "该凭据已被吊销"
+	case remaining == 0:
 		payload["message"] = "本周期额度已用完，下次续期后恢复"
 	}
 
@@ -176,7 +192,11 @@ func (s *Server) handleCompletions(w http.ResponseWriter, r *http.Request) {
 
 // ── 鉴权 ────────────────────────────────────────────────────────────
 
-func (s *Server) authenticate(r *http.Request) (*Subscriber, error) {
+// lookupSubscriber 验凭据，**不**管订阅状态。
+//
+// 凭据认不出来是真的错误（401）；订阅过期不是——那是一个要如实汇报的状态。
+// 两件事分开，查询接口才能把「已过期」当数据返回。
+func (s *Server) lookupSubscriber(r *http.Request) (*Subscriber, error) {
 	header := r.Header.Get("Authorization")
 	credential, found := strings.CutPrefix(header, "Bearer ")
 	if !found || strings.TrimSpace(credential) == "" {
@@ -193,6 +213,16 @@ func (s *Server) authenticate(r *http.Request) (*Subscriber, error) {
 		// 区分开等于告诉扫描者哪些凭据是真实存在的。
 		return nil, &apiError{status: http.StatusUnauthorized, message: "订阅凭据无效"}
 	}
+	if err != nil {
+		return nil, err
+	}
+	return sub, nil
+}
+
+// authenticate 在验凭据之外要求订阅当前可用。
+// 给真正要花钱的接口用。
+func (s *Server) authenticate(r *http.Request) (*Subscriber, error) {
+	sub, err := s.lookupSubscriber(r)
 	if err != nil {
 		return nil, err
 	}

@@ -141,6 +141,100 @@ struct CloudSubscriptionTests {
         #expect(request?.url?.absoluteString == "https://cloud.example.com/v1/chat/completions")
     }
 
+    // MARK: - 真实服务端响应
+    //
+    // 下面几段 JSON 是**从真实网关抓下来的原样报文**，不是手写的。
+    // 手写 fixture 只能验证「解析器符合我的想象」，验证不了
+    // 「解析器符合服务端的实际行为」——那两者不一致过很多次了。
+
+    @Test("过期订阅以 200 返回状态，不是 HTTP 错误")
+    func expiredSubscriptionArrivesAsData() async throws {
+        // 这里是整条链路最容易设计错的一环：如果服务端用 402 表达「已过期」，
+        // 客户端只能拿到一个 HTTP 错误，没法区分「该续费了」和「配置填错了」，
+        // 用户看到的就是一个红色报错而不是续费入口。
+        // 所以查询接口如实返回状态，402 只留给补全接口。
+        let session = StubURLProtocol.makeSession(
+            json: """
+                {"message":"订阅已过期，续费后立即恢复","remaining_tokens":500000,\
+                "renews_at":"2026-08-13T01:34:19Z","status":"expired","total_tokens":500000}
+                """)
+
+        let subscription = try await YugitCloudProvider(
+            credential: "yg_test",
+            endpoint: .literal("https://cloud.example.com/v1"),
+            session: session
+        ).subscription()
+
+        #expect(subscription.status == .expired)
+        #expect(!subscription.isUsable)
+        // 文案由服务端给：续费规则改了的时候，已发布的客户端版本没法跟着改
+        #expect(subscription.message == "订阅已过期，续费后立即恢复")
+        #expect(subscription.renewsAt != nil)
+    }
+
+    @Test("吊销的凭据同样是状态而不是错误")
+    func revokedSubscriptionArrivesAsData() async throws {
+        let session = StubURLProtocol.makeSession(
+            json: """
+                {"message":"该凭据已被吊销","remaining_tokens":500000,\
+                "renews_at":"2026-09-13T01:34:19Z","status":"invalid","total_tokens":500000}
+                """)
+
+        let subscription = try await YugitCloudProvider(
+            credential: "yg_test",
+            endpoint: .literal("https://cloud.example.com/v1"),
+            session: session
+        ).subscription()
+
+        #expect(subscription.status == .invalid)
+        #expect(!subscription.isUsable)
+    }
+
+    @Test("额度用尽时状态仍是生效中，靠余额判断能不能用")
+    func exhaustedQuotaKeepsActiveStatus() async throws {
+        // 服务端刻意保持 status=active——订阅本身没问题，只是这个周期用完了。
+        // 客户端要靠 remaining_tokens 而不是 status 来决定能不能发请求。
+        let session = StubURLProtocol.makeSession(
+            json: """
+                {"message":"本周期额度已用完，下次续期后恢复","remaining_tokens":0,\
+                "renews_at":"2026-09-13T01:34:18Z","status":"active","total_tokens":500000}
+                """)
+
+        let subscription = try await YugitCloudProvider(
+            credential: "yg_test",
+            endpoint: .literal("https://cloud.example.com/v1"),
+            session: session
+        ).subscription()
+
+        #expect(subscription.status == .active)
+        #expect(!subscription.isUsable)
+        #expect(subscription.usedRatio == 1.0)
+    }
+
+    @Test("解析服务端给的续期时间")
+    func parsesRenewalDate() async throws {
+        let session = StubURLProtocol.makeSession(
+            json: """
+                {"remaining_tokens":500000,"renews_at":"2026-09-13T01:34:18Z",\
+                "status":"active","total_tokens":500000}
+                """)
+
+        let subscription = try await YugitCloudProvider(
+            credential: "yg_test",
+            endpoint: .literal("https://cloud.example.com/v1"),
+            session: session
+        ).subscription()
+
+        let renewsAt = try #require(subscription.renewsAt)
+        let parts = Calendar(identifier: .gregorian).dateComponents(
+            in: TimeZone(identifier: "UTC") ?? .gmt, from: renewsAt)
+        #expect(parts.year == 2026)
+        #expect(parts.month == 9)
+        #expect(parts.day == 13)
+        // 没有 message 字段时不该凭空造一个
+        #expect(subscription.message == nil)
+    }
+
     @Test("云服务的模型清单固定，不让用户手填")
     func modelListIsFixed() {
         // 订阅制下能用哪些模型由服务端决定，让用户填一个服务端不认的名字只会白报错
