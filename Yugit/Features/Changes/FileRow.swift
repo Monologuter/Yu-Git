@@ -6,6 +6,8 @@ struct FileRow: View {
 
     let entry: StatusEntry
     var showsIndexStatus = false
+    /// 平铺模式下要显示所在目录；树里目录已经由缩进表达了，再显示一遍是噪音。
+    var showsFullPath = true
 
     var body: some View {
         HStack(spacing: 8) {
@@ -19,7 +21,7 @@ struct FileRow: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
 
-                if let directory {
+                if showsFullPath, let directory {
                     Text(directory)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -94,5 +96,62 @@ struct FileRow: View {
             }
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+/// 树形变更列表里的目录行。
+struct DirectoryRow: View {
+
+    let node: PathTreeNode<StatusEntry>
+    let depth: Int
+    let isCollapsed: Bool
+    let isStaged: Bool
+    let onToggle: () -> Void
+    let onStageAll: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.tight + 2) {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .rotationEffect(.degrees(isCollapsed ? 0 : 90))
+                .frame(width: 10)
+
+            Image(systemName: isCollapsed ? "folder.fill" : "folder")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+
+            Text(node.name)
+                .font(Theme.Font.body)
+                .lineLimit(1)
+                // 目录名从头部截断：合并后的 a/b/c/d 里，最后一段离文件最近，
+                // 也最能说明这是哪个目录
+                .truncationMode(.head)
+
+            Text("\(node.leafCount)")
+                .font(Theme.Font.secondary)
+                .foregroundStyle(.tertiary)
+
+            Spacer(minLength: 0)
+
+            // 悬停才出现，不然每个目录后面挂一个按钮会很吵
+            if isHovering {
+                Button(isStaged ? "取消" : "暂存") { onStageAll() }
+                    .buttonStyle(.borderless)
+                    .font(Theme.Font.secondary)
+                    .help(
+                        isStaged
+                            ? "取消暂存这个目录下的 \(node.leafCount) 个文件"
+                            : "暂存这个目录下的 \(node.leafCount) 个文件")
+            }
+        }
+        .padding(.leading, CGFloat(depth) * 12)
+        .padding(.vertical, 1)
+        .contentShape(.rect)
+        .onHover { isHovering = $0 }
+        .onTapGesture(perform: onToggle)
+        .help(node.id)
     }
 }

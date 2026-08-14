@@ -24,6 +24,10 @@ struct ChangesView: View {
     @State private var section = Section.changes
     @State private var pendingDiscard: [String]?
     @State private var fileFilter = ""
+    /// 折叠起来的目录。存"折叠的"而不是"展开的"，所以默认全展开——
+    /// 打开变更列表就是为了看有哪些文件，默认折叠等于每次都要先点开一遍。
+    @State private var collapsedDirectories: Set<String> = []
+    @AppStorage("com.chenya.yugit.changes.treeView") private var usesTreeView = true
     @State private var pendingQuickAction: PendingQuickAction?
 
     enum Section: String, CaseIterable, Identifiable {
@@ -136,6 +140,59 @@ struct ChangesView: View {
         !fileFilter.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    // MARK: - 变更：树
+
+    /// 渲染一个分组里的文件，按当前模式决定是树还是平铺。
+    ///
+    /// 树和平铺共用同一个 `FileRow`，只是平铺时显示完整路径、树里显示文件名——
+    /// 两套行视图会立刻在状态图标、右键菜单、选中态上走样。
+    @ViewBuilder
+    private func entryRows(
+        _ entries: [StatusEntry],
+        isStaged: Bool,
+        @ViewBuilder row: @escaping (StatusEntry) -> some View
+    ) -> some View {
+        if usesTreeView {
+            let tree = PathTree.build(from: entries, path: \.path)
+            ForEach(tree.flattenedTree(collapsed: collapsedDirectories)) { item in
+                if let entry = item.node.value {
+                    row(entry)
+                        .padding(.leading, CGFloat(item.depth) * 12)
+                } else {
+                    DirectoryRow(
+                        node: item.node,
+                        depth: item.depth,
+                        isCollapsed: collapsedDirectories.contains(item.node.id),
+                        isStaged: isStaged,
+                        onToggle: {
+                            if collapsedDirectories.contains(item.node.id) {
+                                collapsedDirectories.remove(item.node.id)
+                            } else {
+                                collapsedDirectories.insert(item.node.id)
+                            }
+                        },
+                        onStageAll: {
+                            let paths = item.node.allValues.map(\.path)
+                            Task {
+                                if isStaged {
+                                    await repository.unstage(paths)
+                                } else {
+                                    await repository.stage(paths)
+                                }
+                            }
+                        }
+                    )
+                    // 目录行不是可选中的对象，别让它抢走文件的选中态
+                    .selectionDisabled()
+                }
+            }
+        } else {
+            ForEach(entries, id: \.path) { entry in
+                row(entry)
+            }
+        }
+    }
+
     // MARK: - 变更：列表
 
     @ViewBuilder
@@ -151,9 +208,20 @@ struct ChangesView: View {
             VStack(spacing: 0) {
                 // 文件不多时不显示过滤框，省得白占一行高度
                 if repository.stagedEntries.count + repository.unstagedEntries.count > 8 {
-                    FilterField(text: $fileFilter, placeholder: "过滤文件路径")
-                        .padding(.horizontal, Theme.Spacing.regular)
-                        .padding(.bottom, Theme.Spacing.tight + 2)
+                    HStack(spacing: Theme.Spacing.tight) {
+                        FilterField(text: $fileFilter, placeholder: "过滤文件路径")
+
+                        Button {
+                            usesTreeView.toggle()
+                        } label: {
+                            Image(systemName: usesTreeView ? "list.bullet.indent" : "list.bullet")
+                                .font(.system(size: 11))
+                        }
+                        .buttonStyle(.borderless)
+                        .help(usesTreeView ? "改为平铺显示完整路径" : "改为按目录分组")
+                    }
+                    .padding(.horizontal, Theme.Spacing.regular)
+                    .padding(.bottom, Theme.Spacing.tight + 2)
                 }
 
                 if isFiltering && filteredStaged.isEmpty && filteredUnstaged.isEmpty
@@ -194,8 +262,8 @@ struct ChangesView: View {
 
             if !filteredStaged.isEmpty {
                 SwiftUI.Section {
-                    ForEach(filteredStaged, id: \.path) { entry in
-                        FileRow(entry: entry, showsIndexStatus: true)
+                    entryRows(filteredStaged, isStaged: true) { entry in
+                        FileRow(entry: entry, showsIndexStatus: true, showsFullPath: !usesTreeView)
                             .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: true))
                             .contextMenu {
                                 Button("取消暂存") {
@@ -216,8 +284,8 @@ struct ChangesView: View {
 
             if !filteredUnstaged.isEmpty {
                 SwiftUI.Section {
-                    ForEach(filteredUnstaged, id: \.path) { entry in
-                        FileRow(entry: entry)
+                    entryRows(filteredUnstaged, isStaged: false) { entry in
+                        FileRow(entry: entry, showsFullPath: !usesTreeView)
                             .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
                             .contextMenu {
                                 Button("暂存") {
