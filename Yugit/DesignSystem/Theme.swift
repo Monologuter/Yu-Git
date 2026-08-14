@@ -56,6 +56,13 @@ enum Theme {
         static var secondary: SwiftUI.Font { .system(size: 11) }
         /// 标题：面板标题
         static var title: SwiftUI.Font { .system(size: 15, weight: .semibold) }
+        /// 欢迎页的品牌字。
+        ///
+        /// 和下面的 `mark` 一样只出现在欢迎页与 sheet，**不进主界面**——
+        /// 主界面只用 body / secondary / title / mono 四档，多一档层次就糊。
+        static var display: SwiftUI.Font { .system(size: 32, weight: .semibold) }
+        /// 欢迎页的「驭」字标。
+        static var mark: SwiftUI.Font { .system(size: 56, weight: .semibold) }
         /// 说明文本：sheet 正文、空状态的说明句。
         ///
         /// 比 body 小一档、比 secondary 大一档。整段的说明文字用 body 会太重

@@ -58,7 +58,8 @@ struct OnboardingView: View {
                     }
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(nsColor: .underPageBackgroundColor), in: .rect(cornerRadius: 6))
+                    .background(
+                        Theme.Colors.sunkenBackground, in: .rect(cornerRadius: Theme.Radius.medium))
                 }
 
                 Spacer()
@@ -69,11 +70,16 @@ struct OnboardingView: View {
 
     private var footer: some View {
         HStack {
-            // 进度点：让人知道还剩几步，不至于以为没完没了
+            // 进度点：让人知道还剩几步，不至于以为没完没了。
+            // 当前那一点用品牌色而不是强调色——这里没有任何选中态要区分，
+            // 而首次运行恰恰是产品该露脸的地方。
             HStack(spacing: 5) {
                 ForEach(steps.indices, id: \.self) { position in
                     Circle()
-                        .fill(position == index ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .fill(
+                            position == index
+                                ? Theme.Colors.brand : Theme.Colors.decorativeText.opacity(0.5)
+                        )
                         .frame(width: 6, height: 6)
                 }
             }

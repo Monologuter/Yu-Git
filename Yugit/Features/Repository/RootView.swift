@@ -34,17 +34,17 @@ struct WelcomeView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            VStack(spacing: 8) {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 56, weight: .light))
-                    .foregroundStyle(.tint)
+            VStack(spacing: Theme.Spacing.regular) {
+                brandMark
 
                 Text("驭Git")
-                    .font(.system(size: 32, weight: .semibold))
+                    .font(Theme.Font.display)
+                    // display 这一档字大，默认字距会显得松散
+                    .tracking(-0.32)
 
                 Text("AI 帮你写代码，驭Git 帮你驾驭它")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.callout)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             Button {
@@ -63,6 +63,22 @@ struct WelcomeView: View {
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.background)
+    }
+
+    /// 品牌标志：靛底白「驭」。
+    ///
+    /// 仓库里没有任何图形 logo，这里也不造一个——整块由一个圆角矩形和一个汉字
+    /// 构成，两行代码，任何分辨率下都清晰，也不必为深浅模式各出一版图。
+    ///
+    /// 换掉原来那个 SF Symbol 分支图标是因为它谁都在用：那个符号出现在
+    /// 每一个 Git 工具里，放在欢迎页正中央等于告诉用户「这是一个 Git 客户端」，
+    /// 而不是「这是驭Git」。
+    private var brandMark: some View {
+        Text("驭")
+            .font(Theme.Font.mark)
+            .foregroundStyle(Theme.Colors.onBrand)
+            .frame(width: 96, height: 96)
+            .background(Theme.Colors.brand, in: .rect(cornerRadius: 22))
     }
 
     private var recentList: some View {
