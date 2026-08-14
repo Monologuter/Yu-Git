@@ -32,6 +32,23 @@ struct DiffView: View {
     /// 这个文件的语言，按路径判定一次。
     private var language: Language { Language.detect(fromPath: diff.path) }
 
+    /// 一个 hunk 里每行「真正变了的那几段」。
+    ///
+    /// 在 hunk 层算一次而不是每行各算：行内差异是**成对**的，
+    /// 一次比较同时得出删除行和新增行两边的范围，逐行算等于把每对都算两遍。
+    private func inlineChanges(in hunk: DiffHunk) -> [Int: [Range<Int>]] {
+        var result: [Int: [Range<Int>]] = [:]
+        for pair in hunk.inlinePairs {
+            let comparison = InlineDiff.compare(
+                old: hunk.lines[pair.oldIndex].text,
+                new: hunk.lines[pair.newIndex].text
+            )
+            result[pair.oldIndex] = comparison.old
+            result[pair.newIndex] = comparison.new
+        }
+        return result
+    }
+
     /// 行号列宽度，按这个 diff 里最大的行号算。
     ///
     /// 固定宽度在小文件上很浪费：两列各 44pt 就是 88pt，而三位数行号
@@ -89,6 +106,7 @@ struct DiffView: View {
         ScrollView(wrapsLines ? [.vertical] : [.vertical, .horizontal]) {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
                 ForEach(Array(diff.hunks.enumerated()), id: \.offset) { hunkIndex, hunk in
+                    let inlineRanges = inlineChanges(in: hunk)
                     Section {
                         ForEach(Array(hunk.lines.enumerated()), id: \.offset) { lineIndex, line in
                             DiffLineRow(
@@ -97,6 +115,7 @@ struct DiffView: View {
                                 wrapsLines: wrapsLines,
                                 lineNumberWidth: lineNumberWidth,
                                 language: language,
+                                changedRanges: inlineRanges[lineIndex] ?? [],
                                 onTap: { extendsSelection in
                                     toggle(hunk: hunkIndex, line: lineIndex, extending: extendsSelection)
                                 }
@@ -269,6 +288,8 @@ struct DiffLineRow: View {
     /// 这个文件是什么语言。由 DiffView 按路径判定一次后传下来——
     /// 每行各判一次的话，一个几千行的 diff 要重复几千次同样的扩展名匹配。
     var language: Language = .plain
+    /// 这一行里真正变了的那几段（字符范围）。空数组表示整行都算变化。
+    var changedRanges: [Range<Int>] = []
     /// 参数为 true 表示按住 shift 点击（连选）。
     var onTap: ((Bool) -> Void)?
 
@@ -286,7 +307,7 @@ struct DiffLineRow: View {
                 .foregroundStyle(markerColor)
                 .frame(width: 14)
 
-            Text(highlighted)
+            Text(styled)
                 .font(.system(.body, design: .monospaced))
                 .textSelection(.enabled)
                 .fixedSize(horizontal: !wrapsLines, vertical: true)
@@ -325,7 +346,35 @@ struct DiffLineRow: View {
         line.text.hasSuffix("\r") ? String(line.text.dropLast()) + "␍" : line.text
     }
 
-    /// 上过色的行。
+    /// 最终画出来的那一行：语法高亮 + 行内变化底色。
+    ///
+    /// 两者叠在一起而不是二选一：语法色管"这是什么"，行内底色管"这里改了"，
+    /// 是两个正交的维度。只留一个的话，要么看不出改在哪，要么代码读起来费劲。
+    private var styled: AttributedString {
+        var result = highlighted
+        guard !isSelected, !changedRanges.isEmpty else { return result }
+
+        // 行内底色比整行底色更深一档：整行已经是浅红/浅绿，
+        // 变化的那几段要在这个背景上再压一层才看得出来。
+        let emphasis: Color = line.kind == .addition ? .green : .red
+        let characters = Array(displayText)
+
+        for range in changedRanges {
+            guard range.upperBound <= characters.count else { continue }
+            // AttributedString 的索引和 Character 索引不是一回事，
+            // 得按字符偏移一步步挪过去，不能拿 Int 直接下标
+            guard
+                let start = result.index(
+                    result.startIndex, offsetByCharacters: range.lowerBound),
+                let end = result.index(
+                    result.startIndex, offsetByCharacters: range.upperBound)
+            else { continue }
+            result[start..<end].backgroundColor = emphasis.opacity(0.28)
+        }
+        return result
+    }
+
+    /// 上过语法色的行。
     ///
     /// 选中时不上色：选中背景是强调色，语法色画在上面对比度全乱，
     /// 而此刻用户关心的是"我选了哪些行"，不是这行的语法结构。
@@ -406,5 +455,23 @@ struct DiffLineRow: View {
         case .deletion: return Color.red.opacity(0.12)
         case .context: return .clear
         }
+    }
+}
+
+extension AttributedString {
+
+    /// 按**字符**数偏移取索引。
+    ///
+    /// `AttributedString` 的索引不能拿 Int 直接下标，而 `InlineDiff` 给出的
+    /// 是字符偏移。用 `characters` 视图一步步挪：直接用 utf8 偏移的话，
+    /// 中文和 emoji 会切到字符中间，轻则乱码重则崩。
+    func index(_ from: Index, offsetByCharacters offset: Int) -> Index? {
+        guard offset >= 0 else { return nil }
+        var index = from
+        for _ in 0..<offset {
+            guard index < endIndex else { return nil }
+            index = characters.index(after: index)
+        }
+        return index <= endIndex ? index : nil
     }
 }
