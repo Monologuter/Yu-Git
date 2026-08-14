@@ -1,0 +1,24 @@
+/* 布局尺寸 —— 应用里量到的真实值，不要「取整」到 4 的倍数 */
+:root {
+  --col-sidebar: 240px;       /* ideal；min 200 / max 340 */
+  --col-sidebar-min: 200px;
+  --col-sidebar-max: 340px;
+  --col-changes: 320px;       /* ideal；min 260 / max 460 */
+  --col-changes-min: 260px;
+  --col-changes-max: 460px;
+  --col-inspector: 300px;     /* 时间线检查器；min 260 / max 420 */
+
+  --toolbar-height: 52px;
+  --traffic-light-inset: 20px;
+
+  --row-commit: 44px;         /* 两行文字：标题 +（hash·作者·时间）*/
+  --row-day-group: 24px;      /* 历史列表的日期分组行 —— 本版新增的节奏落点 */
+  --row-list: 24px;           /* 分支、tag 行 */
+  --row-file: 30px;           /* 变更文件行；带目录副行时 38 */
+  --row-diff: 18px;           /* diff 单行 */
+
+  --sheet-width-sm: 460px;    /* 失败详情、危险操作预警 */
+  --sheet-width-md: 520px;    /* 新手引导 */
+  --indent-tree: 12px;        /* 文件树每级缩进 */
+  --hit-min: 24px;            /* 行内按钮的最小点击目标（桌面端）*/
+}

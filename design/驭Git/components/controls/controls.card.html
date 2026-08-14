@@ -1,0 +1,59 @@
+<!-- @dsCard group="Components" viewport="700x230" name="控件 Controls" subtitle="按钮四种外观 · 工具栏按钮 · 分段控件 · 过滤框 · 复选框 · 复制按钮" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>控件 Controls</title>
+<link rel="stylesheet" href="../../styles.css">
+<script>window.YUGIT_ICON_BASE='../../assets/icons/'</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}.grid{display:flex;flex-direction:column;gap:14px}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.lbl{font:var(--type-caption);color:var(--ink-3);width:64px;flex:0 0 auto;text-align:right}.pane{border:1px solid var(--hairline);border-radius:var(--radius-large);overflow:hidden;background:var(--surface-app)}</style>
+</head><body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+const { Button, ToolbarButton, SegmentedControl, FilterField, Checkbox, CopyButton } = window.Git_c7d67c;
+function Demo() {
+  const [seg, setSeg] = React.useState('history');
+  const [filter, setFilter] = React.useState('kino');
+  const [amend, setAmend] = React.useState(true);
+  return (
+    <div className="grid">
+      <div className="row"><span className="lbl">按钮</span>
+        <Button variant="default">提交</Button>
+        <Button>获取</Button>
+        <Button icon="sparkles" title="根据暂存的改动起草提交信息">AI 起草</Button>
+        <Button variant="borderless" size="small">全部暂存</Button>
+        <Button variant="destructive">丢弃改动…</Button>
+        <Button disabled title="先暂存一些改动，AI 才知道要描述什么">自查</Button>
+      </div>
+      <div className="row"><span className="lbl">尺寸</span>
+        <Button size="small">small 20</Button>
+        <Button size="regular">regular 24</Button>
+        <Button size="large">large 32</Button>
+        <span style={{width:16}} />
+        <span className="lbl">工具栏</span>
+        <ToolbarButton icon="circle-arrow-down" title="获取" />
+        <ToolbarButton icon="arrow-down-to-line" title="拉取" />
+        <ToolbarButton icon="arrow-up-to-line" title="推送" />
+        <ToolbarButton icon="rotate-ccw" title="时间线" active />
+        <ToolbarButton icon="ellipsis" title="更多" badge />
+      </div>
+      <div className="row"><span className="lbl">分段</span>
+        <div style={{width:190}}>
+          <SegmentedControl value={seg} onChange={setSeg}
+            items={[{value:'changes',label:'变更 203'},{value:'history',label:'历史'}]} />
+        </div>
+        <div style={{width:200}}><FilterField value={filter} onChange={setFilter} placeholder="过滤分支与标签" /></div>
+        <div style={{width:150}}><FilterField value="" onChange={()=>{}} placeholder="搜提交信息" /></div>
+      </div>
+      <div className="row"><span className="lbl">其他</span>
+        <Checkbox checked={amend} onChange={setAmend} label="修改上一条提交" />
+        <Checkbox checked={false} onChange={()=>{}} label="包含未跟踪文件" />
+        <span style={{font:'var(--type-mono)',color:'var(--ink-3)'}}>4115987c</span>
+        <CopyButton text="4115987c" title="复制完整 commit hash" />
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body></html>

@@ -1,0 +1,24 @@
+<!-- @dsCard group="Spacing" viewport="700x190" name="行高与列宽" subtitle="信息密度优先：同样宽度下多显示 5 行提交，比留白好看更有价值" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>行高与列宽</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}.b{background:var(--surface-sunken);border:1px solid var(--hairline);border-radius:4px;display:flex;align-items:center;justify-content:center;font:var(--type-caption);color:var(--ink-2)}</style></head><body>
+<div style="display:flex;gap:10px;align-items:flex-start">
+<div class="sw"><div class="b" style="width:120px;height:44px">44 提交行</div><span class="note">两行文字</span></div>
+<div class="sw"><div class="b" style="width:90px;height:30px">30 文件行</div><span class="note">带目录副行 38</span></div>
+<div class="sw"><div class="b" style="width:80px;height:24px">24 分支行</div></div>
+<div class="sw"><div class="b" style="width:80px;height:24px">24 日期组</div></div>
+<div class="sw"><div class="b" style="width:70px;height:18px">18 diff 行</div></div>
+<div class="sw"><div class="b" style="width:100px;height:52px">52 工具栏</div></div>
+</div>
+<div style="margin-top:16px;display:flex;gap:4px;align-items:center">
+<div class="b" style="width:150px;height:40px">侧栏 240<span class="note" style="margin-left:4px">200–340</span></div>
+<div class="b" style="width:200px;height:40px">变更/历史 320<span class="note" style="margin-left:4px">260–460</span></div>
+<div class="b" style="width:1px;height:40px;border:none;background:var(--hairline-strong)"></div>
+<div class="b" style="flex:1;height:40px">详情 剩余</div>
+</div>
+<p class="note" style="margin:10px 0 0">分支图最多吃 84px，且不超过行宽的三分之一 —— 提交标题才是这个列表存在的理由。</p>
+</body></html>

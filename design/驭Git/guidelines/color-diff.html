@@ -1,0 +1,22 @@
+<!-- @dsCard group="Colors" viewport="700x190" name="diff 三层" subtitle="整行底 · 词级底 · 标记色。两层叠加后代码仍需清晰可读" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>diff 配色</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}.code{font:var(--type-mono);padding:2px 0}</style></head><body>
+<div class="grid">
+<div class="sw col"><div class="chip" style="background:var(--diff-add-row);height:30px"></div><span class="nm">add-row</span><span class="hx">#E3FBE8</span><span class="note">正文 15.9:1</span></div>
+<div class="sw col"><div class="chip" style="background:var(--diff-add-word);height:30px"></div><span class="nm">add-word</span><span class="hx">#B3EDC1</span><span class="note">正文 13.1:1</span></div>
+<div class="sw col"><div class="chip" style="background:var(--diff-add-fg);height:30px"></div><span class="nm">add-fg</span><span class="hx">#05773B</span><span class="note">5.7:1</span></div>
+<div class="sw col"><div class="chip" style="background:var(--diff-del-row);height:30px"></div><span class="nm">del-row</span><span class="hx">#FFEEEC</span></div>
+<div class="sw col"><div class="chip" style="background:var(--diff-del-word);height:30px"></div><span class="nm">del-word</span><span class="hx">#FED0CB</span></div>
+<div class="sw col"><div class="chip" style="background:var(--diff-del-fg);height:30px"></div><span class="nm">del-fg</span><span class="hx">#AD3232</span><span class="note">6.4:1</span></div>
+</div>
+<div style="margin-top:14px;border:1px solid var(--hairline);border-radius:var(--radius-medium);overflow:hidden">
+<div class="code" style="background:var(--diff-del-row);display:flex"><span style="width:34px;text-align:right;color:var(--ink-3);padding-right:6px">164</span><span style="width:14px;text-align:center;color:var(--diff-del-fg)">−</span><span>@Operation(summary = "S2 <span style="background:var(--diff-del-word)">多模态</span>生成视频")</span></div>
+<div class="code" style="background:var(--diff-add-row);display:flex"><span style="width:34px;text-align:right;color:var(--ink-3);padding-right:6px">164</span><span style="width:14px;text-align:center;color:var(--diff-add-fg)">+</span><span>@Operation(summary = "S2 <span style="background:var(--diff-add-word)">生成</span>视频")</span></div>
+<div class="code" style="display:flex"><span style="width:34px;text-align:right;color:var(--ink-3);padding-right:6px">165</span><span style="width:14px"></span><span>@PostMapping("/generateVideoS2")</span></div>
+</div>
+</body></html>

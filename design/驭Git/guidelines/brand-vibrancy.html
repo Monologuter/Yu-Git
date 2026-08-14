@@ -1,0 +1,21 @@
+<!-- @dsCard group="Brand" viewport="700x180" name="侧栏 vibrancy" subtitle="Electron 做不到的那层质感：半透明 + 背景模糊，不是灰色填充" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>vibrancy</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}</style></head><body>
+<div style="position:relative;height:130px;border-radius:var(--radius-large);overflow:hidden;border:1px solid var(--hairline);background:linear-gradient(120deg,#2b4c6f,#6a8fae 45%,#c9b79c)">
+<div style="position:absolute;inset:0;display:flex">
+<div style="width:200px;background:var(--surface-sidebar);backdrop-filter:var(--blur-sidebar);-webkit-backdrop-filter:var(--blur-sidebar);border-right:1px solid var(--hairline);padding:10px;display:flex;flex-direction:column;gap:6px">
+<span style="font:var(--type-secondary);font-weight:600;color:var(--ink-2)">本地分支</span>
+<span style="font:var(--type-body);font-weight:600">kino-aigc-chenya</span>
+<span style="font:var(--type-body);color:var(--ink-1)">master</span>
+<span class="note">--surface-sidebar 72% + blur 30 saturate 180%</span>
+</div>
+<div style="flex:1;background:var(--surface-app);padding:10px"><span style="font:var(--type-body)">正文区不透明 —— 代码与 diff 不能有任何底纹干扰</span></div>
+</div>
+</div>
+<p class="note" style="margin:12px 0 0">只有侧栏、工具栏、选择条、命令面板用材质；列表、diff、详情一律不透明。不支持模糊时落到 --surface-sidebar-opaque。</p>
+</body></html>

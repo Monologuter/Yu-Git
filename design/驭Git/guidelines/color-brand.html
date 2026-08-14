@@ -1,0 +1,17 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="品牌 青" subtitle="--brand 系列。系统色管不到的地方才用它：品牌标记、当前分支、AI 入口、空状态" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>品牌青</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}</style></head><body>
+<div class="grid">
+<div class="sw col"><div class="chip" style="background:var(--brand);height:44px"></div><span class="nm">--brand</span><span class="hx">#017272</span><span class="note">白字 5.75:1</span></div>
+<div class="sw col"><div class="chip" style="background:var(--brand-hover);height:44px"></div><span class="nm">--brand-hover</span><span class="hx">#005F5F</span><span class="note">按下 / 悬停</span></div>
+<div class="sw col"><div class="chip" style="background:var(--brand-wash);height:44px"></div><span class="nm">--brand-wash</span><span class="hx">#DCF9F8</span><span class="note">空状态圆底</span></div>
+<div class="sw col"><div class="chip" style="background:var(--brand-wash-strong);height:44px"></div><span class="nm">--brand-wash-strong</span><span class="hx">#C6F1EA</span><span class="note">选中的浅底</span></div>
+<div class="sw col" style="flex:1.2"><div class="chip" style="height:44px;background:var(--brand);display:flex;align-items:center;justify-content:center;color:var(--brand-on);font:var(--type-title)">驭Git</div><span class="nm">--brand-on 白</span><span class="hx">#FFFFFF</span></div>
+</div>
+<p class="note" style="margin:14px 0 0">纯蓝是系统默认强调色，用它做品牌色等于没有品牌色；红与绿被 diff 占用。青是剩下的、且和「墨」系深色主题同源的选择。</p>
+</body></html>

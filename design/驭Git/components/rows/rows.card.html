@@ -1,0 +1,56 @@
+<!-- @dsCard group="Components" viewport="700x380" name="列表行 Rows" subtitle="分支 · tag · 文件 · 目录 · 提交 · 分组头 · 日期分组" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>列表行 Rows</title>
+<link rel="stylesheet" href="../../styles.css">
+<script>window.YUGIT_ICON_BASE='../../assets/icons/'</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}.grid{display:flex;flex-direction:column;gap:14px}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.lbl{font:var(--type-caption);color:var(--ink-3);width:64px;flex:0 0 auto;text-align:right}.pane{border:1px solid var(--hairline);border-radius:var(--radius-large);overflow:hidden;background:var(--surface-app)}</style>
+</head><body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+const { BranchRow, TagRow, FileRow, DirectoryRow, CommitRow, SectionHeader, DayGroupRow, Button } = window.Git_c7d67c;
+function Demo() {
+  const links = [{fromLane:0,toLane:0,colorIndex:0,isHead:true},{fromLane:1,toLane:1,colorIndex:1},{fromLane:2,toLane:2,colorIndex:2}];
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'240px 1fr',gap:16,alignItems:'start'}}>
+      <div className="pane">
+        <SectionHeader title="本地分支" action={<Button variant="borderless" size="small" icon="plus" />} />
+        <div style={{padding:'4px 4px'}}>
+          <BranchRow name="kino-aigc-chenya" isCurrent />
+          <BranchRow name="kino-aigc-new-fix" behind={1} />
+          <BranchRow name="master" />
+          <BranchRow name="origin/kino-aigc-new" isRemote />
+          <BranchRow name="feat/upstream-gone" gone />
+          <TagRow name="v2.2.0" />
+          <TagRow name="tmp-before-rebase" annotated={false} />
+        </div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:16}}>
+        <div className="pane">
+          <SectionHeader title="未暂存" count={12} action={<Button variant="borderless" size="small">全部暂存</Button>} />
+          <div style={{padding:4}}>
+            <DirectoryRow name="ai-web/frontend/src" count={3} action={<Button variant="borderless" size="small">暂存</Button>} />
+            <FileRow depth={1} status="modified" name="kino-navigation.vue" />
+            <FileRow depth={1} status="added" name="zh-cn.ts" />
+            <FileRow status="untracked" name="routes.ts" directory="ai-web/frontend/src/router/elegant" />
+            <FileRow status="unmerged" name="ConflictView.swift" selected />
+          </div>
+        </div>
+        <div className="pane">
+          <DayGroupRow label="今天" count={3} />
+          <CommitRow subject="fix: 导航新增弹窗" hash="6b054b88" author="李泽林" date="4 个月前"
+            laneCount={3} graphRow={{nodeLane:0,colorIndex:0,isHead:true,links}} refs={[{kind:'local',name:'kino-aigc-chenya'}]} />
+          <CommitRow subject="Merge branch 'kino-aigc-new' into kino-aigc-new-seedace2.0" hash="4115987c" author="wangjun" date="4 个月前"
+            isMerge laneCount={3} graphRow={{nodeLane:0,colorIndex:0,isMerge:true,links:[{fromLane:0,toLane:0,colorIndex:0},{fromLane:1,toLane:0,colorIndex:1},{fromLane:2,toLane:2,colorIndex:2}]}} />
+          <CommitRow subject="积分冻结参数转成大写" hash="01cd06d2" author="wangjun" date="4 个月前" selected
+            laneCount={3} graphRow={{nodeLane:1,colorIndex:1,links:[{fromLane:0,toLane:0,colorIndex:0},{fromLane:1,toLane:1,colorIndex:1},{fromLane:2,toLane:2,colorIndex:2}]}} />
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body></html>

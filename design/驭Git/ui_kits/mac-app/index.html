@@ -1,0 +1,140 @@
+<!-- @dsCard group="桌面应用" viewport="1280x800" name="仓库工作区" subtitle="三栏窗口：分支侧栏 · 变更与历史 · 提交详情与 diff。可点选、可切换、⌘K 命令面板" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>驭Git · 仓库工作区</title>
+<link rel="stylesheet" href="../../styles.css">
+<script>window.YUGIT_ICON_BASE='../../assets/icons/'</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>html,body{margin:0;height:100%}body{background:#8a9bb0;font:var(--type-body);color:var(--text-body);-webkit-font-smoothing:antialiased;overflow:hidden}
+/* 窗口外的桌面底色，只为让侧栏的半透明材质看得出来 */
+#root{height:100%}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:5px;border:2px solid transparent;background-clip:padding-box}::-webkit-scrollbar-track{background:transparent}</style>
+</head><body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script src="data.js"></script>
+<script type="text/babel" src="Toolbar.jsx"></script>
+<script type="text/babel" src="Sidebar.jsx"></script>
+<script type="text/babel" src="ChangesPane.jsx"></script>
+<script type="text/babel" src="HistoryPane.jsx"></script>
+<script type="text/babel" src="DetailPane.jsx"></script>
+<script type="text/babel" src="CommandPalette.jsx"></script>
+<script type="text/babel" src="Timeline.jsx"></script>
+<script type="text/babel">
+const { SegmentedControl, Banner, Button, HazardDialog } = window.Git_c7d67c;
+const F = window.YUGIT_FIXTURES;
+
+function App() {
+  const [section, setSection] = React.useState('history');
+  const [commit, setCommit] = React.useState('6b054b88');
+  const [file, setFile] = React.useState(null);
+  const [staged, setStaged] = React.useState(false);
+  const [branch, setBranch] = React.useState('kino-aigc-chenya');
+  const [palette, setPalette] = React.useState(false);
+  const [timeline, setTimeline] = React.useState(false);
+  const [hazard, setHazard] = React.useState(false);
+  const [transferring, setTransferring] = React.useState(false);
+  const [sidebar, setSidebar] = React.useState(true);
+  const [rebasing, setRebasing] = React.useState(true);
+
+  React.useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(true); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const transfer = () => {
+    setTransferring(true);
+    window.setTimeout(() => setTransferring(false), 1800);
+  };
+
+  const changesCount = new Set([...F.changes.staged, ...F.changes.unstaged].map((e) => e.path)).size;
+  const conflicted = F.changes.conflicted.length > 0;
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--surface-app)', position: 'relative' }}>
+      <Toolbar
+        repo="ai-cloud" branch={branch} transferring={transferring}
+        onFetch={transfer} onPull={transfer} onPush={transfer}
+        onPalette={() => setPalette(true)}
+        onTimeline={() => setTimeline(!timeline)} timelineOpen={timeline}
+        onToggleSidebar={() => setSidebar(!sidebar)} sidebarOpen={sidebar}
+      />
+
+      {section === 'changes' && rebasing ? (
+        <Banner
+          headline="整理提交时遇到冲突"
+          detail="进行到第 2 / 6 条。冲突文件：quota.ts。解决并暂存后点「继续」。"
+          footnote="放弃后仍可用备份 tag yugit/backup-0331-0129 回到整理之前的状态"
+          actions={<>
+            <Button onClick={() => setRebasing(false)}>放弃整理</Button>
+            <Button variant="default" disabled title="还有冲突没解决，先在变更列表里处理并暂存">继续</Button>
+          </>}
+        />
+      ) : null}
+
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        {sidebar ? <Sidebar fixtures={F} selected={branch} onSelect={setBranch} /> : null}
+
+        <div style={{
+          width: 'var(--col-changes)', flex: '0 0 auto', display: 'flex', flexDirection: 'column',
+          borderRight: '1px solid var(--hairline)', minHeight: 0, background: 'var(--surface-app)',
+        }}>
+          <div style={{ padding: 'var(--space-regular)' }}>
+            <SegmentedControl
+              value={section} onChange={setSection}
+              items={[
+                { value: 'changes', label: conflicted ? '变更 ⚠ ' + changesCount : '变更 ' + changesCount, title: '工作区里待处理的改动' },
+                { value: 'history', label: '历史', title: '提交历史' },
+              ]}
+            />
+          </div>
+          <div style={{ borderTop: '1px solid var(--hairline)' }} />
+          {section === 'changes' ? (
+            <ChangesPane
+              fixtures={F} selected={file}
+              onSelect={(path, isStaged) => { setFile(path); setStaged(isStaged); setCommit(null); }}
+              onDiscard={() => setHazard(true)} onResolve={() => setHazard(false)}
+            />
+          ) : (
+            <HistoryPane
+              fixtures={F} selected={commit}
+              onSelect={(hash) => { setCommit(hash); setFile(null); }}
+            />
+          )}
+        </div>
+
+        <DetailPane fixtures={F} selectedFile={file} isStaged={staged} selectedCommit={commit} onBlame={() => {}} />
+
+        {timeline ? <Timeline timeline={F.timeline} onClose={() => setTimeline(false)} /> : null}
+      </div>
+
+      {palette ? <CommandPalette commands={F.commands} onClose={() => setPalette(false)} /> : null}
+
+      {hazard ? (
+        <div
+          onClick={() => setHazard(false)}
+          style={{ position: 'absolute', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.12)' }}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <HazardDialog
+              title="确定丢弃 legacy-quota.ts 的改动？"
+              whatHappens="这个文件会回到 HEAD 的内容，未提交的删除操作会消失。"
+              undoable="可以。操作前会自动打一个快照。"
+              howToUndo="在时间线里找到「丢弃改动」这一条，点撤销。"
+              command="git restore --worktree -- ai-web/frontend/src/utils/legacy-quota.ts"
+              confirmLabel="丢弃这个文件的改动"
+              onCancel={() => setHazard(false)} onConfirm={() => setHazard(false)}
+            />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body></html>

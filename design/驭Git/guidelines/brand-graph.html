@@ -1,0 +1,29 @@
+<!-- @dsCard group="Brand" viewport="700x210" name="分支图是门面" subtitle="线宽 1.8 → 2.5，HEAD 轨道 3.5；节点三形态靠形状区分" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>分支图</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}</style></head><body>
+<div style="display:flex;gap:28px;align-items:flex-start">
+<div class="sw">
+<span class="nm">改前 1.8pt · 系统色板</span>
+<svg width="120" height="76"><g fill="none" stroke-linecap="round" stroke-width="1.8">
+<path d="M7 0 L7 76" stroke="#0A84FF"/><path d="M21 0 L21 76" stroke="#AF52DE"/><path d="M35 0 C35 38, 21 38, 21 76" stroke="#5AC8FA"/><path d="M49 0 L49 76" stroke="#FF9500"/>
+</g><circle cx="7" cy="38" r="4" fill="#0A84FF"/><circle cx="7" cy="38" r="2.4" fill="#fff"/></svg>
+</div>
+<div class="sw">
+<span class="nm">改后 2.5pt · HEAD 3.5pt</span>
+<svg width="120" height="76"><g fill="none" stroke-linecap="round">
+<path d="M7 0 L7 76" stroke="var(--lane-1)" stroke-width="3.5"/><path d="M21 0 L21 76" stroke="var(--lane-2)" stroke-width="2.5"/><path d="M35 0 C35 38, 21 38, 21 76" stroke="var(--lane-3)" stroke-width="2.5"/><path d="M49 0 L49 76" stroke="var(--lane-4)" stroke-width="2.5"/>
+</g><circle cx="7" cy="38" r="6.5" fill="none" stroke="var(--brand)" stroke-width="1.5"/><circle cx="7" cy="38" r="4.5" fill="var(--lane-1)"/><circle cx="7" cy="38" r="2.6" fill="var(--surface-app)"/></svg>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:10px"><svg width="24" height="24"><circle cx="12" cy="12" r="4.5" fill="var(--lane-1)"/><circle cx="12" cy="12" r="2.6" fill="var(--surface-app)"/></svg><span class="nm">普通提交 · 环</span></div>
+<div style="display:flex;align-items:center;gap:10px"><svg width="24" height="24"><circle cx="12" cy="12" r="3.2" fill="var(--lane-2)"/></svg><span class="nm">合并提交 · 实心点</span></div>
+<div style="display:flex;align-items:center;gap:10px"><svg width="24" height="24"><circle cx="12" cy="12" r="6.5" fill="none" stroke="var(--brand)" stroke-width="1.5"/><circle cx="12" cy="12" r="4.5" fill="var(--lane-1)"/><circle cx="12" cy="12" r="2.6" fill="var(--surface-app)"/></svg><span class="nm">HEAD · 外圈品牌青细环</span></div>
+<div style="display:flex;align-items:center;gap:10px;background:var(--selection-bg);padding:4px 8px;border-radius:4px"><svg width="24" height="24"><circle cx="12" cy="12" r="4.5" fill="#fff"/><circle cx="12" cy="12" r="2.6" fill="var(--selection-bg)"/></svg><span class="nm" style="color:var(--selection-fg)">选中行 · 换前景色</span></div>
+</div>
+</div>
+</body></html>

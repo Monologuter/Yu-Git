@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>驭Git · 默认主题（浅色）风格确认</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-sunken);color:var(--text-body);font:var(--type-body);-webkit-font-smoothing:antialiased;padding:32px}
+h1{font-family:var(--font-ui);font-size:var(--text-size-display);font-weight:600;letter-spacing:var(--tracking-display);margin:0 0 6px}
+p.sub{font:var(--type-callout);color:var(--ink-2);margin:0 0 28px;max-width:720px;text-wrap:pretty}
+h2{font:var(--type-title);margin:28px 0 10px;display:flex;align-items:baseline;gap:8px}
+h2 small{font:var(--type-secondary);color:var(--ink-2);font-weight:400}
+.card{background:var(--surface-app);border:1px solid var(--hairline);border-radius:var(--radius-large);overflow:hidden;width:700px;max-width:100%}
+.card iframe{display:block;width:700px;border:0}
+.grid{display:flex;flex-wrap:wrap;gap:20px}
+a{color:var(--brand)}a:hover{color:var(--brand-hover)}
+footer{margin-top:36px;font:var(--type-callout);color:var(--ink-2);max-width:720px;text-wrap:pretty}</style>
+</head><body>
+<h1>驭Git · 默认主题（浅色）</h1>
+<p class="sub">简报要求先只做「默认」一套，风格确认后再扩展。这一页把关键决定放在一起看：品牌色、8 轨道色板、分支图的线宽与节点、diff 三层、字号四档。全部数值的文本表在 <a href="tokens-table.md">tokens-table.md</a>。</p>
+
+<h2>品牌 <small>系统色管不到的地方才用它</small></h2>
+<div class="grid">
+<div class="card"><iframe src="color-brand.html" height="160" title="品牌青"></iframe></div>
+<div class="card"><iframe src="brand-wordmark.html" height="190" title="品牌字"></iframe></div>
+</div>
+
+<h2>分支图 <small>门面：线宽 1.8 → 2.5，节点靠形状区分</small></h2>
+<div class="grid">
+<div class="card"><iframe src="brand-graph.html" height="210" title="分支图"></iframe></div>
+<div class="card"><iframe src="color-lanes.html" height="180" title="8 轨道"></iframe></div>
+<div class="card"><iframe src="color-lanes-cvd.html" height="170" title="色觉模拟"></iframe></div>
+</div>
+
+<h2>diff 与语法 <small>红绿在此独占</small></h2>
+<div class="grid">
+<div class="card"><iframe src="color-diff.html" height="190" title="diff 三层"></iframe></div>
+<div class="card"><iframe src="color-syntax.html" height="170" title="语法五类"></iframe></div>
+</div>
+
+<h2>文字与密度</h2>
+<div class="grid">
+<div class="card"><iframe src="type-scale.html" height="210" title="四档字号"></iframe></div>
+<div class="card"><iframe src="color-ink.html" height="170" title="文字四级"></iframe></div>
+<div class="card"><iframe src="space-rows.html" height="190" title="行高与列宽"></iframe></div>
+<div class="card"><iframe src="state-motion.html" height="180" title="状态与动效"></iframe></div>
+<div class="card"><iframe src="brand-vibrancy.html" height="180" title="侧栏 vibrancy"></iframe></div>
+</div>
+
+<footer>其余 8 张基础卡、27 个组件的演示卡、以及两个 UI kit（三栏工作区 / 首次运行）都在 Design System 标签页里；组件卡与 UI kit 需要编译好的组件包才能渲染。</footer>
+</body></html>

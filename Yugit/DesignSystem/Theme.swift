@@ -92,16 +92,30 @@ enum Theme {
 
         private static var palette: any ThemePalette { ThemeManager.shared.palette }
 
-        // ── 品牌 ──
+        // ── 强调色（跟随系统）与品牌色（固定），两者永不互相替代 ──
         static var accent: Color { palette.accent }
         static var onAccent: Color { palette.onAccent }
+        static var brand: Color { palette.brand }
+        static var brandHover: Color { palette.brandHover }
+        static var brandWash: Color { palette.brandWash }
+        static var onBrand: Color { palette.onBrand }
 
         // ── 界面 ──
         static var contentBackground: Color { palette.contentBackground }
+        static var sunkenBackground: Color { palette.sunkenBackground }
+        static var raisedBackground: Color { palette.raisedBackground }
+        static var hoverBackground: Color { palette.hoverBackground }
         static var primaryText: Color { palette.primaryText }
         static var secondaryText: Color { palette.secondaryText }
         static var tertiaryText: Color { palette.tertiaryText }
+        static var decorativeText: Color { palette.decorativeText }
         static var separator: Color { palette.separator }
+        static var separatorStrong: Color { palette.separatorStrong }
+
+        // ── 状态 ──
+        static var warning: Color { palette.warning }
+        static var success: Color { palette.success }
+        static var mergeAccent: Color { palette.mergeAccent }
 
         // ── 分支图 ──
         static var lanes: [NSColor] { palette.lanes }

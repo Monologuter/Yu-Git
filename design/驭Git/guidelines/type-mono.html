@@ -1,0 +1,24 @@
+<!-- @dsCard group="Type" viewport="700x170" name="等宽只给 hash 与代码" subtitle="中文字形本身等宽，人名与标题套西文等宽会破坏字距" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>等宽用法</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}.ok{border-left:2px solid var(--ok);padding-left:10px}.no{border-left:2px solid var(--danger);padding-left:10px}</style></head><body>
+<div style="display:flex;gap:20px">
+<div class="ok" style="flex:1;display:flex;flex-direction:column;gap:6px">
+<span class="nm" style="color:var(--ok)">对</span>
+<span style="font:var(--type-body)">积分冻结参数转成大写</span>
+<span><span style="font:var(--type-mono);color:var(--ink-3)">01cd06d2</span> <span style="font:var(--type-secondary);color:var(--ink-2)">wangjun</span></span>
+<span class="note">标题与人名走 SF Pro + 苹方，只有 hash 用 SF Mono</span>
+</div>
+<div class="no" style="flex:1;display:flex;flex-direction:column;gap:6px">
+<span class="nm" style="color:var(--danger)">错</span>
+<span style="font:var(--type-mono);font-size:13px">积分冻结参数转成大写</span>
+<span style="font:var(--type-mono)">01cd06d2 wangjun</span>
+<span class="note">整行等宽：中文字距被拉开，西文人名也变松</span>
+</div>
+</div>
+<p class="note" style="margin:12px 0 0">等宽的用途只有四处：hash、行号、diff 正文、状态字母。数字对齐用 font-variant-numeric: tabular-nums，不要为了对齐把整段换成等宽。</p>
+</body></html>

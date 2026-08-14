@@ -1,0 +1,15 @@
+<!-- @dsCard group="Colors" viewport="700x170" name="轨道色板 · 色觉模拟" subtitle="红绿色盲下的实际观感（Viénot 模拟）：最近的一对距离 23，相邻轨道永远可分" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>色觉模拟</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}</style></head><body>
+<div class="stack">
+<div><span class="nm">原色</span><div style="display:flex;gap:2px;margin-top:4px"><span style="flex:1;height:26px;border-radius:4px;background:var(--lane-1)"></span><span style="flex:1;height:26px;border-radius:4px;background:var(--lane-2)"></span><span style="flex:1;height:26px;border-radius:4px;background:var(--lane-3)"></span><span style="flex:1;height:26px;border-radius:4px;background:var(--lane-4)"></span><span style="flex:1;height:26px;border-radius:4px;background:var(--lane-5)"></span><span style="flex:1;height:26px;border-radius:4px;background:var(--lane-6)"></span><span style="flex:1;height:26px;border-radius:4px;background:var(--lane-7)"></span><span style="flex:1;height:26px;border-radius:4px;background:var(--lane-8)"></span></div></div>
+<div><span class="nm">红色弱 deuteranopia</span><div style="display:flex;gap:2px;margin-top:4px"><span style="flex:1;height:26px;border-radius:4px;background:#71717C"></span><span style="flex:1;height:26px;border-radius:4px;background:#7D7DE4"></span><span style="flex:1;height:26px;border-radius:4px;background:#797900"></span><span style="flex:1;height:26px;border-radius:4px;background:#8686C2"></span><span style="flex:1;height:26px;border-radius:4px;background:#717193"></span><span style="flex:1;height:26px;border-radius:4px;background:#909071"></span><span style="flex:1;height:26px;border-radius:4px;background:#5D5DE0"></span><span style="flex:1;height:26px;border-radius:4px;background:#979700"></span></div></div>
+<div><span class="nm">绿色弱 protanopia</span><div style="display:flex;gap:2px;margin-top:4px"><span style="flex:1;height:26px;border-radius:4px;background:#7E7E7A"></span><span style="flex:1;height:26px;border-radius:4px;background:#6F6FE5"></span><span style="flex:1;height:26px;border-radius:4px;background:#6E6E06"></span><span style="flex:1;height:26px;border-radius:4px;background:#9595C1"></span><span style="flex:1;height:26px;border-radius:4px;background:#535395"></span><span style="flex:1;height:26px;border-radius:4px;background:#9F9F6D"></span><span style="flex:1;height:26px;border-radius:4px;background:#6464E0"></span><span style="flex:1;height:26px;border-radius:4px;background:#767614"></span></div></div>
+</div>
+<p class="note" style="margin:12px 0 0">紫与靛在绿色弱下最接近（距离 16），因此它们在色板顺序里隔了五位 —— 并行轨道用的是相邻的 colorIndex。</p>
+</body></html>

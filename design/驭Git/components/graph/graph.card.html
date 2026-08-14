@@ -1,0 +1,51 @@
+<!-- @dsCard group="Components" viewport="700x260" name="分支图 LaneGraph" subtitle="2.5pt 线宽 · HEAD 轨道 3.5pt · 环 / 实心点 / HEAD 外环 · 选中态" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>分支图 LaneGraph</title>
+<link rel="stylesheet" href="../../styles.css">
+<script>window.YUGIT_ICON_BASE='../../assets/icons/'</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}.grid{display:flex;flex-direction:column;gap:14px}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.lbl{font:var(--type-caption);color:var(--ink-3);width:64px;flex:0 0 auto;text-align:right}.pane{border:1px solid var(--hairline);border-radius:var(--radius-large);overflow:hidden;background:var(--surface-app)}</style>
+</head><body>
+<div id="root"></div>
+<script src="../../_ds_bundle.js"></script>
+<script type="text/babel">
+const { LaneGraph } = window.Git_c7d67c;
+const straight = (n) => Array.from({length:n},(_,i)=>({fromLane:i,toLane:i,colorIndex:i}));
+const ROWS = [
+  { label:'普通提交', row:{ nodeLane:0, colorIndex:0, links:straight(4) } },
+  { label:'HEAD', row:{ nodeLane:0, colorIndex:0, isHead:true, links:[{fromLane:0,toLane:0,colorIndex:0,isHead:true},...straight(4).slice(1)] } },
+  { label:'分叉', row:{ nodeLane:1, colorIndex:1, links:[{fromLane:0,toLane:0,colorIndex:0},{fromLane:1,toLane:1,colorIndex:1},{fromLane:2,toLane:1,colorIndex:2},{fromLane:3,toLane:3,colorIndex:3}] } },
+  { label:'合并', row:{ nodeLane:0, colorIndex:0, isMerge:true, links:[{fromLane:0,toLane:0,colorIndex:0},{fromLane:1,toLane:0,colorIndex:1},{fromLane:2,toLane:2,colorIndex:2},{fromLane:3,toLane:3,colorIndex:3}] } },
+];
+function Demo() {
+  return (
+    <div style={{display:'flex',gap:24,alignItems:'flex-start'}}>
+      <div style={{display:'flex',flexDirection:'column',gap:0}}>
+        {ROWS.map((r,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'center',gap:10,height:44,borderBottom:'1px solid var(--hairline)'}}>
+            <LaneGraph row={r.row} laneCount={4} />
+            <span style={{font:'var(--type-secondary)',color:'var(--ink-2)',width:70}}>{r.label}</span>
+          </div>
+        ))}
+        <div style={{display:'flex',alignItems:'center',gap:10,height:44,background:'var(--selection-bg)'}}>
+          <LaneGraph row={ROWS[2].row} laneCount={4} emphasized rowBackground="var(--selection-bg)" />
+          <span style={{font:'var(--type-secondary)',color:'var(--selection-fg)',width:70}}>选中行</span>
+        </div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        <span style={{font:'var(--type-secondary)',color:'var(--ink-2)'}}>8 条并行，间距压缩到 84/8 = 10.5</span>
+        <div style={{display:'flex',flexDirection:'column'}}>
+          {[0,1,2].map((i)=>(
+            <div key={i} style={{height:44,borderBottom:'1px solid var(--hairline)',display:'flex',alignItems:'center'}}>
+              <LaneGraph laneCount={8} row={{nodeLane:i+1,colorIndex:i+1,links:Array.from({length:8},(_,l)=>({fromLane:l,toLane:l,colorIndex:l}))}} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body></html>

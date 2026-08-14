@@ -1,0 +1,21 @@
+<!-- @dsCard group="Colors" viewport="700x170" name="语义色" subtitle="警示 · 危险 · 完成 · 合并。红绿只出现在 diff 与状态字母里" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>语义色</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}</style></head><body>
+<div class="grid">
+<div class="sw col"><div class="chip" style="background:var(--warn)"></div><span class="nm">--warn 警示</span><span class="hx">#9F6200 · 5.0:1</span><span class="note">冲突、rebase 半途、force push</span></div>
+<div class="sw col"><div class="chip" style="background:var(--danger)"></div><span class="nm">--danger 危险</span><span class="hx">#B63132 · 6.0:1</span><span class="note">不可逆操作</span></div>
+<div class="sw col"><div class="chip" style="background:var(--ok)"></div><span class="nm">--ok 完成</span><span class="hx">#05773B · 5.7:1</span><span class="note">干净、可合、已复制</span></div>
+<div class="sw col"><div class="chip" style="background:var(--merge)"></div><span class="nm">--merge 合并</span><span class="hx">#7F4BB1 · 5.9:1</span><span class="note">合并提交、改名/复制</span></div>
+</div>
+<div class="grid" style="margin-top:12px">
+<div class="sw col"><div class="chip" style="background:var(--warn-wash);height:24px"></div><span class="nm">--warn-wash</span><span class="hx">#FFEDD8</span></div>
+<div class="sw col"><div class="chip" style="background:var(--danger-wash);height:24px"></div><span class="nm">--danger-wash</span><span class="hx">#FEEBE9</span></div>
+<div class="sw col"><div class="chip" style="background:var(--ok-wash);height:24px"></div><span class="nm">--ok-wash</span><span class="hx">#DBF9E2</span></div>
+<div class="col"></div>
+</div>
+</body></html>

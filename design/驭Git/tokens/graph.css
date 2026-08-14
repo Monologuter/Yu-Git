@@ -1,0 +1,25 @@
+/* 分支图与 diff 的绘制参数
+   分支图是 Git 客户端的门面，第一眼印象几乎全来自它。上一版 1.8pt 细线 + 系统色板
+   太弱；这里把线加粗、把色板换成等距色相两档明度，并给 HEAD 所在轨道再加粗一档。
+   表现力靠线宽和色板拿，不靠自绘控件。 */
+:root {
+  --graph-lane-gap: 14px;      /* 轨道水平间距 */
+  --graph-lane-gap-min: 5px;   /* 压缩下限，再挤两条线会糊成一条 */
+  --graph-width-min: 24px;     /* 线性历史时也不让信息贴左边缘 */
+  --graph-width-max: 84px;     /* 上限：够画 6 条等宽轨道；再多压缩间距，标题优先 */
+  --graph-width-ratio: 0.34; /* @kind other */   /* 且永不吃掉超过三分之一行宽 */
+
+  --graph-line: 2.5px;         /* 曲线线宽（原 1.8pt）*/
+  --graph-line-head: 3.5px;    /* HEAD 所在轨道加粗一档 */
+  --graph-node-r: 4.5px;       /* 普通提交：环 */
+  --graph-node-hole: 2.6px;    /* 中心挖空，密集连线里也能辨认 */
+  --graph-node-merge-r: 3.2px; /* 合并提交：实心点（形状区分，不只靠颜色）*/
+  --graph-head-ring-r: 6.5px;  /* HEAD：外圈品牌色细环 */
+  --graph-head-ring-w: 1.5px;
+
+  --diff-gutter-digit: 7px;    /* 等宽数字宽度；行号列按最大行号位数算 */
+  --diff-gutter-pad: 10px;
+  --diff-marker-width: 14px;   /* +/- 标记列 */
+  --diff-selected-bar: 3px;    /* 选中行左侧竖条 */
+  --diff-fold-threshold: 2000; /* @kind other */ /* 超过这个行数先折叠 */
+}

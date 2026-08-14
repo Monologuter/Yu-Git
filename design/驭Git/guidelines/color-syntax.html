@@ -1,0 +1,22 @@
+<!-- @dsCard group="Colors" viewport="700x170" name="语法高亮 5 类" subtitle="关键字 · 字符串 · 注释 · 数字 · 类型名。全部避开红绿" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>语法高亮</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}.code{font:var(--type-mono);line-height:1.6}</style></head><body>
+<div class="grid">
+<div class="sw col"><div class="chip" style="background:var(--syn-keyword);height:26px"></div><span class="nm">keyword</span><span class="hx">#6D389E</span><span class="note">7.8:1</span></div>
+<div class="sw col"><div class="chip" style="background:var(--syn-string);height:26px"></div><span class="nm">string</span><span class="hx">#8E421B</span><span class="note">7.1:1</span></div>
+<div class="sw col"><div class="chip" style="background:var(--syn-comment);height:26px"></div><span class="nm">comment</span><span class="hx">#7B8187</span><span class="note">3.9:1</span></div>
+<div class="sw col"><div class="chip" style="background:var(--syn-number);height:26px"></div><span class="nm">number</span><span class="hx">#895603</span><span class="note">6.2:1</span></div>
+<div class="sw col"><div class="chip" style="background:var(--syn-type);height:26px"></div><span class="nm">type</span><span class="hx">#066565</span><span class="note">6.9:1</span></div>
+</div>
+<div class="code" style="margin-top:14px;padding:10px;background:var(--surface-sunken);border-radius:var(--radius-medium)">
+<div><span style="color:var(--syn-comment)">// 轨道配色刻意避开红绿</span></div>
+<div><span style="color:var(--syn-keyword)">static let</span> lanes: [<span style="color:var(--syn-type)">NSColor</span>] = [.lane<span style="color:var(--syn-number)">1</span>, .lane<span style="color:var(--syn-number)">2</span>]</div>
+<div><span style="color:var(--syn-keyword)">let</span> title = <span style="color:var(--syn-string)">"提交说明"</span></div>
+</div>
+<p class="note" style="margin:10px 0 0">注释是唯一允许低于 4.5:1 的一类 —— 它本来就该退后。</p>
+</body></html>

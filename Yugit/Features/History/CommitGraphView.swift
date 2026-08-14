@@ -114,6 +114,8 @@ struct CommitHistoryView: NSViewRepresentable {
 
             cell.configure(
                 commit: parent.commits[row],
+                // 上一行是谁，决定这一行要不要把日期显示出来
+                previous: row > 0 ? parent.commits[row - 1] : nil,
                 graphRow: parent.graph.rows.indices.contains(row) ? parent.graph.rows[row] : nil,
                 laneCount: parent.graph.maximumLaneCount
             )
@@ -385,25 +387,48 @@ final class CommitCellView: NSTableCellView {
     /// 必须跟着改前景色：`secondaryLabelColor` / `tertiaryLabelColor` 这类
     /// 语义色是为**浅色背景**调的灰阶，直接画在强调色选中背景上对比度不够，
     /// 看起来像是"变灰了"。分支图同理，交给它自己处理。
+    /// 这一行是不是 merge 提交。影响标题的颜色，见 ``applyTextColors()``。
+    private var isMergeCommit = false
+
     override var backgroundStyle: NSView.BackgroundStyle {
         didSet {
-            let emphasized = backgroundStyle == .emphasized
-            subjectLabel.textColor = emphasized ? Theme.Colors.onEmphasized : .labelColor
-            authorLabel.textColor =
-                emphasized
-                ? Theme.Colors.onEmphasized.withAlphaComponent(0.85) : .secondaryLabelColor
-            let faded: NSColor =
-                emphasized
-                ? Theme.Colors.onEmphasized.withAlphaComponent(0.7) : .tertiaryLabelColor
-            hashLabel.textColor = faded
-            dateLabel.textColor = faded
-
-            graphView.isEmphasized = emphasized
+            applyTextColors()
+            graphView.isEmphasized = backgroundStyle == .emphasized
             graphView.needsDisplay = true
         }
     }
 
-    func configure(commit: Commit, graphRow: CommitGraph.Row?, laneCount: Int) {
+    /// 按「选中与否 + 是不是 merge」决定各标签的颜色。
+    ///
+    /// 集中在一处而不是分散在 backgroundStyle 和 configure 里：
+    /// 两处各写一遍的话，cell 复用时很容易出现「选中态的颜色配上了
+    /// 新一行的内容」这种串味，而那种 bug 只在快速滚动时才偶尔现形。
+    private func applyTextColors() {
+        let emphasized = backgroundStyle == .emphasized
+
+        if emphasized {
+            let accent = Theme.Colors.onEmphasized
+            // 选中行不再区分 merge：此刻用户明确在看这一行，
+            // 把它压暗反而是帮倒忙
+            subjectLabel.textColor = accent
+            authorLabel.textColor = accent.withAlphaComponent(0.85)
+            let faded = accent.withAlphaComponent(0.7)
+            hashLabel.textColor = faded
+            dateLabel.textColor = faded
+        } else {
+            subjectLabel.textColor = isMergeCommit ? .secondaryLabelColor : .labelColor
+            authorLabel.textColor = .secondaryLabelColor
+            hashLabel.textColor = .tertiaryLabelColor
+            dateLabel.textColor = .tertiaryLabelColor
+        }
+    }
+
+    func configure(
+        commit: Commit,
+        previous: Commit?,
+        graphRow: CommitGraph.Row?,
+        laneCount: Int
+    ) {
         graphView.row = graphRow
 
         // 轨道多到放不下时压缩间距，而不是把图形区一路撑宽去挤占标题。
@@ -424,13 +449,56 @@ final class CommitCellView: NSTableCellView {
         subjectLabel.stringValue = commit.subject
         hashLabel.stringValue = commit.abbreviatedHash
         authorLabel.stringValue = commit.author.name
-        dateLabel.stringValue = Self.relativeFormatter.localizedString(
-            for: commit.author.date, relativeTo: Date())
+        dateLabel.stringValue = Self.dateText(for: commit, previous: previous)
+
+        // merge 提交的标题几乎都是 git 自动生成的「Merge branch 'x' into y」，
+        // 信息量接近零，却和真正干了活的提交长得一模一样。
+        // 降一档颜色让它退到背景里去，眼睛扫过时自动跳过——
+        // 但不隐藏：合并点是历史结构的一部分，藏起来图就读不懂了。
+        isMergeCommit = commit.isMerge
+        applyTextColors()
     }
 
-    private static let relativeFormatter: RelativeDateTimeFormatter = {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .short
+    /// 时间列显示什么。
+    ///
+    /// 每行都写「3个月前」是一整列重复的同一句话：既没有信息量，
+    /// 也让列表失去节奏——眼睛找不到任何落点。
+    ///
+    /// 改成：跨到新的一天时显示日期，同一天内显示具体时刻。
+    /// 于是日期出现的位置天然成了分界线，不必额外画分隔行，
+    /// 也就不用为此破坏 NSTableView 的固定行高（那是 5 万行流畅滚动的前提）。
+    private static func dateText(for commit: Commit, previous: Commit?) -> String {
+        let date = commit.author.date
+        let calendar = Calendar.current
+
+        let isNewDay =
+            previous.map { !calendar.isDate($0.author.date, inSameDayAs: date) } ?? true
+        guard isNewDay else { return timeFormatter.string(from: date) }
+
+        // 今天和昨天用词说，比「8月14日」更快认出来
+        if calendar.isDateInToday(date) { return "今天" }
+        if calendar.isDateInYesterday(date) { return "昨天" }
+
+        // 跨年了就带上年份，否则「3月11日」会和去年的同一天混淆
+        let sameYear = calendar.isDate(date, equalTo: Date(), toGranularity: .year)
+        return (sameYear ? dayFormatter : fullDateFormatter).string(from: date)
+    }
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+
+    private static let dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("MMMd")
+        return formatter
+    }()
+
+    private static let fullDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("yMMMd")
         return formatter
     }()
 }
@@ -522,7 +590,12 @@ final class LaneGraphView: NSView {
         } else {
             Theme.Colors.laneNodeCore.setFill()
         }
-        NSBezierPath(ovalIn: nodeRect.insetBy(dx: 1.6, dy: 1.6)).fill()
+        // 挖空的深度跟着线宽走，而不是写死。
+        // 写死的话，线加粗之后环壁相对变薄，节点看起来像线上打了个结；
+        // 反过来线变细时环壁又会显得笨重。让它随线宽缩放，
+        // 换主题调线宽时节点自动保持协调。
+        let wall = Theme.Colors.laneLineWidth * 0.55
+        NSBezierPath(ovalIn: nodeRect.insetBy(dx: wall, dy: wall)).fill()
     }
 }
 

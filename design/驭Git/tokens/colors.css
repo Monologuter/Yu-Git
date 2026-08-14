@@ -1,0 +1,158 @@
+/* 色彩 · 主题「默认」
+   现状：这一版只落了「默认」主题的浅色与深色两组（共 8 组中的 2 组）。
+   墨 / 昼 / 谱 三套等风格确认后再扩展；主题一律以 [data-theme] 单选择器作用域实现，
+   深浅色与主题正交 —— 和 macOS 的系统级深浅切换保持一致。
+
+   三条硬约束写在色值层面，改值时不要绕过：
+   1. 红与绿被 diff 独占（--diff-*）。分支图与语法色板一律避开这两个色相。
+   2. 纯蓝是系统强调色（--accent），跟随用户在系统设置里的选择，不是品牌色。
+   3. 品牌色是「青」（--brand），只出现在系统色管不到的地方：品牌标记、当前分支、
+      AI 入口、空状态。它和 --accent 永不互相替代。 */
+:root {
+  color-scheme: light;
+
+  /* ── 品牌 青 ───────────────────────────────────────── */
+  --brand: #017272;                 /* 5.75:1 on white */
+  --brand-hover: #005F5F;
+  --brand-wash: #DCF9F8;
+  --brand-wash-strong: #C6F1EA;
+  --brand-on: #FFFFFF;
+
+  /* ── 系统强调色（默认主题跟随系统，此处是系统默认蓝的落地值）── */
+  --accent: #007AFF;                /* NSColor.controlAccentColor */
+  --accent-selection: #0064E1;      /* 选中行背景，白字 5.4:1 */
+  --accent-on: #FFFFFF;             /* alternateSelectedControlTextColor */
+  --accent-wash: #E8F1FF;
+  --focus-ring: #007AFF;
+
+  /* ── 中性 ─────────────────────────────────────────── */
+  --ink-1: #151618;   /* 正文：提交标题、文件名 18.1:1 */
+  --ink-2: #55585C;   /* 次要：作者、分支名 7.2:1 */
+  --ink-3: #6F7276;   /* 三级：hash、时间、行号 4.8:1（比系统 tertiary 深，够 AA）*/
+  --ink-4: #9C9FA2;   /* 装饰与禁用，永不承载文字信息 */
+
+  --surface-app: #FFFFFF;           /* 窗口正文底 textBackgroundColor */
+  --surface-sunken: #F7F8F9;        /* hunk 头、说明面板 underPageBackgroundColor */
+  --surface-raised: #FDFDFE;        /* sheet、浮层 */
+  --surface-sidebar: rgba(243, 245, 247, 0.72);   /* 侧栏 vibrancy，需配 backdrop-filter */
+  --surface-sidebar-opaque: #F3F5F7;              /* 不支持模糊时的回退 */
+  --surface-hover: #EEF0F3;
+  --surface-press: #E4E6EA;
+  --fill-quaternary: #E9EBEE;       /* 计数胶囊底 */
+
+  --hairline: #DDE0E3;              /* 分栏线、行分隔 */
+  --hairline-strong: #CBCED2;       /* 输入框描边、可拖动分隔条 */
+
+  /* ── 语义 ─────────────────────────────────────────── */
+  --warn: #9F6200;    --warn-wash: #FFEDD8;     /* 冲突、rebase 半途、force push */
+  --danger: #B63132;  --danger-wash: #FEEBE9;   /* 不可逆操作 */
+  --ok: #05773B;      --ok-wash: #DBF9E2;       /* 完成、干净、可合 */
+  --merge: #7F4BB1;                             /* 合并提交、重命名/复制 */
+
+  /* ── diff（红绿在此独占）───────────────────────────── */
+  --diff-add-row: #E3FBE8;     /* 整行底；正文在其上 15.9:1 */
+  --diff-add-word: #B3EDC1;    /* 词级底，压在整行底之上；正文 13.1:1 */
+  --diff-add-fg: #05773B;      /* + 标记、+N 统计 5.7:1 */
+  --diff-del-row: #FFEEEC;
+  --diff-del-word: #FED0CB;
+  --diff-del-fg: #AD3232;      /* 6.4:1 */
+
+  /* ── 语法高亮（5 类，避开红绿）───────────────────────── */
+  --syn-keyword: #6D389E;   /* 7.8:1 */
+  --syn-string: #8E421B;    /* 7.1:1 */
+  --syn-comment: #7B8187;   /* 3.9:1，注释是唯一允许低于 4.5 的一类 */
+  --syn-number: #895603;    /* 6.2:1 */
+  --syn-type: #066565;      /* 6.9:1 */
+  --syn-plain: var(--ink-1);
+
+  /* ── 分支图 8 轨道 ────────────────────────────────────
+     等距色相 + 两档明度（OKLCH L 0.555 / 0.645），色度取各色相在 sRGB 里的上限。
+     两档而非一档：8 个等明度色相在红绿色盲眼里必然有几对糊在一起，而明度是
+     色觉缺陷下唯一还可靠的通道。两档只差 0.09，正常视力下看不出「脏」，
+     模拟下最近的一对距离从 2 提到 23。相邻 colorIndex 永远跨档。 */
+  --lane-1: #00857A;   /* 青 —— 与品牌同族，主线默认落在这一轨 */
+  --lane-2: #A665E5;   /* 紫 */
+  --lane-3: #9A6704;   /* 琥 */
+  --lane-4: #089DC1;   /* 蓝 */
+  --lane-5: #B63795;   /* 玫 */
+  --lane-6: #00A86E;   /* 碧 */
+  --lane-7: #3A68E0;   /* 靛 */
+  --lane-8: #E85A0E;   /* 赭 */
+  --lane-on-emphasized: #FFFFFF;   /* 选中行：线与节点一律换成它 */
+
+  /* ── 语义别名（组件只用这一层）─────────────────────── */
+  --text-body: var(--ink-1);
+  --text-secondary: var(--ink-2);
+  --text-tertiary: var(--ink-3);
+  --text-disabled: var(--ink-4);
+  --text-on-accent: var(--accent-on);
+  --text-brand: var(--brand);
+  --surface-card: var(--surface-raised);
+  --surface-panel: var(--surface-app);
+  --border-default: var(--hairline);
+  --border-control: var(--hairline-strong);
+  --border-focus: var(--focus-ring);
+  --selection-bg: var(--accent-selection);
+  --selection-fg: var(--accent-on);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --brand: #5CC6B9;
+  --brand-hover: #7BD6CB;
+  --brand-wash: #0A3535;
+  --brand-wash-strong: #10474A;
+  --brand-on: #08211F;
+
+  --accent: #0A84FF;
+  --accent-selection: #145EC1;
+  --accent-on: #FFFFFF;
+  --accent-wash: #12233A;
+  --focus-ring: #0A84FF;
+
+  --ink-1: #EEF0F3;
+  --ink-2: #A2A5A9;
+  --ink-3: #83868B;
+  --ink-4: #5B5E62;
+
+  --surface-app: #181A1C;
+  --surface-sunken: #0F1113;
+  --surface-raised: #232528;
+  --surface-sidebar: rgba(33, 35, 38, 0.68);
+  --surface-sidebar-opaque: #212326;
+  --surface-hover: #2C2E31;
+  --surface-press: #383B3E;
+  --fill-quaternary: #2E3033;
+
+  --hairline: #323437;
+  --hairline-strong: #4B4D51;
+
+  --warn: #F1AF57;   --warn-wash: #3A2A0E;
+  --danger: #F97770; --danger-wash: #3D1F1D;
+  --ok: #65C281;     --ok-wash: #15301F;
+  --merge: #C699F8;
+
+  --diff-add-row: #1B3422;
+  --diff-add-word: #1C5430;
+  --diff-add-fg: #6AD18A;
+  --diff-del-row: #442321;
+  --diff-del-word: #70312E;
+  --diff-del-fg: #FF847D;
+
+  --syn-keyword: #C797FD;
+  --syn-string: #EEA471;
+  --syn-comment: #81878D;
+  --syn-number: #EBB25F;
+  --syn-type: #6BCAC9;
+
+  --lane-1: #0CB6A8;
+  --lane-2: #D1A9FF;
+  --lane-3: #FCAB05;
+  --lane-4: #0BAFD7;
+  --lane-5: #F67BD1;
+  --lane-6: #0DCD88;
+  --lane-7: #6E9AFF;
+  --lane-8: #FE8959;
+  --lane-on-emphasized: #FFFFFF;
+}

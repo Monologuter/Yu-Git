@@ -1,0 +1,14 @@
+<!-- @dsCard group="Type" viewport="700x200" name="派生字号" subtitle="只出现在 sheet、欢迎页、说明文本里，不进主界面" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>派生字号</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}.r{display:flex;align-items:baseline;gap:14px;padding:5px 0}.t{width:150px;flex:0 0 auto;font:var(--type-caption);color:var(--ink-3)}</style></head><body>
+<div class="r"><span class="t">display · 32 / 600</span><span style="font-family:var(--font-ui);font-size:var(--text-size-display);font-weight:600;letter-spacing:var(--tracking-display)">驭Git</span></div>
+<div class="r"><span class="t">sheet-title · 20 / 600</span><span style="font-family:var(--font-ui);font-size:var(--text-size-sheet-title);font-weight:600">先认识这三栏</span></div>
+<div class="r"><span class="t">callout · 12 / 400</span><span style="font:var(--type-callout)">左边是分支，中间是变更与历史，右边是详情。</span></div>
+<div class="r"><span class="t">caption · 10 / 400</span><span style="font:var(--type-caption);color:var(--ink-3)">AI 生成的解释可能有误，请以代码为准</span></div>
+<p class="note" style="margin:12px 0 0">派生档来自 SwiftUI 的语义字体（.title3 / .callout / .caption2），所以在 macOS 上会跟随「辅助功能 → 更大文本」缩放。主界面那四档是固定 pt，不跟随 —— 它们要和 NSTableView 的行高对齐。</p>
+</body></html>

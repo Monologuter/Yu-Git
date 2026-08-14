@@ -1,0 +1,36 @@
+/* 间距 · 圆角 · 描边 · 动效
+   4pt 网格不是玄学：macOS 系统控件本身按 4pt 设计，跟着排才能和系统控件对齐。 */
+:root {
+  --space-hairline: 2px;  /* 同一行内紧密相关的两个元素，如图标与其文字 */
+  --space-tight: 4px;     /* 一组内部 */
+  --space-regular: 8px;   /* 默认，拿不准时用这个 */
+  --space-loose: 12px;    /* 相关的两组之间 */
+  --space-section: 16px;  /* 区块之间 */
+  --space-major: 24px;    /* 大块留白，只在 sheet 与欢迎页出现 */
+
+  --radius-small: 4px;    /* 徽章、状态底、选中的文件行 */
+  --radius-medium: 6px;   /* 按钮、输入框 */
+  --radius-large: 10px;   /* 卡片、面板、sheet */
+  --radius-capsule: 999px;
+
+  --border-width: 1px;
+  --border-focus-width: 2px;
+
+  /* 阴影只给浮层，界面内一律用 hairline 分隔。
+     多层阴影在 AppKit 里要么做不到、要么很贵，所以每种浮层只有一层。 */
+  --shadow-none: none;
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --shadow-sheet: 0 24px 64px rgba(0, 0, 0, 0.24);
+
+  /* vibrancy：侧栏是「Electron 做不到的质感」，按 NSVisualEffectView 观感调 */
+  --blur-sidebar: saturate(180%) blur(30px); /* @kind other */
+  --blur-toolbar: saturate(180%) blur(20px); /* @kind other */
+  --blur-overlay: saturate(140%) blur(12px); /* @kind other */
+
+  /* 动效 —— 一律短、一律 easeInOut，界面里不做位移动画 */
+  --dur-instant: 90ms; /* @kind other */
+  --dur-fast: 120ms; /* @kind other */   /* 焦点环、hover */
+  --dur-medium: 150ms; /* @kind other */ /* 图标切换、淡入淡出 */
+  --dur-slow: 220ms; /* @kind other */   /* sheet 出现 */
+  --ease-standard: cubic-bezier(0.42, 0, 0.58, 1); /* @kind other */
+}

@@ -32,23 +32,61 @@ protocol ThemePalette: Sendable {
     /// 这是「默认」主题的做法，也是最不容易出错的一套。
     var followsSystemAppearance: Bool { get }
 
-    // MARK: - 品牌
+    // MARK: - 强调色与品牌色
+    //
+    // 这是两个角色，**永不互相替代**：
+    //
+    // - `accent` 跟随用户在系统设置里选的强调色。选中行、默认按钮、焦点环用它，
+    //   因为那是 macOS 的既定习惯——用户把系统调成粉色，选中行就该是粉色。
+    // - `brand` 是产品自己的颜色，固定不变。当前分支标记、AI 入口、空状态、
+    //   品牌字用它，那些地方系统色管不到，也正是产品辨识度的来源。
+    //
+    // 把两者合成一个的话，要么选中态失去系统一致性，要么品牌完全消失——
+    // 现在这一版界面「看不出是驭Git」，根因就是只有 accent 没有 brand。
 
-    /// 主色。用于当前分支标记、主按钮、选中态。
+    /// 系统强调色。
     var accent: Color { get }
-    /// 画在主色背景上的前景色。
+    /// 画在强调色背景上的前景色。
     ///
-    /// 单独给一个而不是固定用白色：低对比主题的主色可能很浅，
-    /// 白字压不住。
+    /// 单独给一个而不是固定用白色：低对比主题的强调色可能很浅，白字压不住。
     var onAccent: Color { get }
+
+    /// 品牌色。
+    var brand: Color { get }
+    /// 品牌色元素的悬停与按下态。
+    var brandHover: Color { get }
+    /// 品牌色的极浅底，用于空状态圆底、信息横幅。
+    var brandWash: Color { get }
+    /// 画在品牌色上的前景。
+    var onBrand: Color { get }
 
     // MARK: - 界面
 
+    /// 窗口正文底。
     var contentBackground: Color { get }
+    /// 下沉面：hunk 头、说明面板、分组头。
+    var sunkenBackground: Color { get }
+    /// 浮起面：sheet、popover、命令面板。
+    var raisedBackground: Color { get }
+    /// 行与按钮的悬停底。
+    var hoverBackground: Color { get }
+
     var primaryText: Color { get }
     var secondaryText: Color { get }
     var tertiaryText: Color { get }
+    /// 装饰与禁用。**永不承载文字信息**——它的对比度不足以阅读。
+    var decorativeText: Color { get }
+
     var separator: Color { get }
+    /// 更实一档的描边：输入框、可拖动分隔条。
+    var separatorStrong: Color { get }
+
+    // MARK: - 状态
+
+    var warning: Color { get }
+    var success: Color { get }
+    /// 合并提交、改名/复制状态字母。
+    var mergeAccent: Color { get }
 
     // MARK: - 分支图
     //
@@ -119,42 +157,79 @@ struct SystemTheme: ThemePalette {
     let summary = "跟随系统外观与强调色，最接近原生 macOS 应用"
     let followsSystemAppearance = true
 
+    // 强调色一律走系统的，不落死值——用户在系统设置里改了，界面要跟着改
     var accent: Color { .accentColor }
     var onAccent: Color { Color(nsColor: .alternateSelectedControlTextColor) }
 
-    var contentBackground: Color { Color(nsColor: .textBackgroundColor) }
-    var primaryText: Color { Color(nsColor: .labelColor) }
-    var secondaryText: Color { Color(nsColor: .secondaryLabelColor) }
-    var tertiaryText: Color { Color(nsColor: .tertiaryLabelColor) }
-    var separator: Color { Color(nsColor: .separatorColor) }
+    var brand: Color { .theme(light: 0x01_7272, dark: 0x5C_C6B9) }
+    var brandHover: Color { .theme(light: 0x00_5F5F, dark: 0x7B_D6CB) }
+    var brandWash: Color { .theme(light: 0xDC_F9F8, dark: 0x0A_3535) }
+    var onBrand: Color { .theme(light: 0xFF_FFFF, dark: 0x08_211F) }
 
-    /// 刻意避开红绿——那两个颜色在 diff 里已经稳定表示增删，
-    /// 在分支图里再用一次，读者会下意识以为它们有关联。
+    var contentBackground: Color { .theme(light: 0xFF_FFFF, dark: 0x18_1A1C) }
+    var sunkenBackground: Color { .theme(light: 0xF7_F8F9, dark: 0x0F_1113) }
+    var raisedBackground: Color { .theme(light: 0xFD_FDFE, dark: 0x23_2528) }
+    var hoverBackground: Color { .theme(light: 0xEE_F0F3, dark: 0x2C_2E31) }
+
+    // ink 三级比系统的 tertiaryLabelColor 深一档：hash 和时间是要读的信息，
+    // 系统那一档在浅色下只有 3.3:1，够不上 AA
+    var primaryText: Color { .theme(light: 0x15_1618, dark: 0xEE_F0F3) }
+    var secondaryText: Color { .theme(light: 0x55_585C, dark: 0xA2_A5A9) }
+    var tertiaryText: Color { .theme(light: 0x6F_7276, dark: 0x83_868B) }
+    var decorativeText: Color { .theme(light: 0x9C_9FA2, dark: 0x5B_5E62) }
+
+    var separator: Color { .theme(light: 0xDD_E0E3, dark: 0x32_3437) }
+    var separatorStrong: Color { .theme(light: 0xCB_CED2, dark: 0x4B_4D51) }
+
+    var warning: Color { .theme(light: 0x9F_6200, dark: 0xF1_AF57) }
+    var success: Color { .theme(light: 0x05_773B, dark: 0x65_C281) }
+    var mergeAccent: Color { .theme(light: 0x7F_4BB1, dark: 0xC6_99F8) }
+
+    /// 等距色相 + 两档明度（OKLCH L 0.555 / 0.645）。
+    ///
+    /// 两档明度而非全等明度是刻意的：8 个等明度色相在色觉缺陷下必然有几对
+    /// 糊在一起，而明度是那时唯一还可靠的通道。两档只差 0.09，
+    /// 正常视力看不出「脏」。相邻 colorIndex 永远跨明度档。
+    ///
+    /// 全部避开红绿——那两个色相被 diff 独占。
     var lanes: [NSColor] {
         [
-            .systemBlue, .systemPurple, .systemTeal, .systemOrange,
-            .systemIndigo, .systemPink, .systemBrown, .systemCyan,
+            .theme(light: 0x00_857A, dark: 0x0C_B6A8),  // 1 青 185°
+            .theme(light: 0xA6_65E5, dark: 0xD1_A9FF),  // 2 紫 305°
+            .theme(light: 0x9A_6704, dark: 0xFC_AB05),  // 3 琥 75°
+            .theme(light: 0x08_9DC1, dark: 0x0B_AFD7),  // 4 蓝 222°
+            .theme(light: 0xB6_3795, dark: 0xF6_7BD1),  // 5 玫 340°
+            .theme(light: 0x00_A86E, dark: 0x0D_CD88),  // 6 碧 160°
+            .theme(light: 0x3A_68E0, dark: 0x6E_9AFF),  // 7 靛 265°
+            .theme(light: 0xE8_5A0E, dark: 0xFE_8959),  // 8 赭 42°
         ]
     }
-    var laneOnSelection: NSColor { .alternateSelectedControlTextColor }
-    var laneNodeCore: NSColor { .textBackgroundColor }
+    var laneOnSelection: NSColor { .white }
+    var laneNodeCore: NSColor { .theme(light: 0xFF_FFFF, dark: 0x18_1A1C) }
     var laneNodeCoreOnSelection: NSColor { .selectedContentBackgroundColor }
 
-    var laneLineWidth: CGFloat { 1.8 }
-    var laneNodeRadius: CGFloat { 4 }
+    // 3pt 而不是 1.8pt。这是「看起来专不专业」影响最大的单个数值：
+    // 细线在 Retina 上被渲染成一根发丝，整张图显得单薄廉价；
+    // 加粗之后曲线才有分量，分叉合并的走向也才看得清。
+    // 这也是 GitKraken 唯一值得照搬的地方。
+    var laneLineWidth: CGFloat { 2.5 }
+    var laneNodeRadius: CGFloat { 4.5 }
 
-    var diffAddedText: Color { .green }
-    var diffDeletedText: Color { .red }
-    var diffAddedLine: Color { .green.opacity(0.12) }
-    var diffDeletedLine: Color { .red.opacity(0.12) }
-    var diffAddedWord: Color { .green.opacity(0.28) }
-    var diffDeletedWord: Color { .red.opacity(0.28) }
-    var conflict: Color { .orange }
-    var danger: Color { .red }
+    // 不用 opacity 叠出来，而是各给一个实色。
+    // 半透明色叠在不同底色上会得到不同结果——选中行、悬停行、
+    // 分组头下方的底色都不一样，用 opacity 的话每种组合都要重新验对比度。
+    var diffAddedText: Color { .theme(light: 0x05_773B, dark: 0x6A_D18A) }
+    var diffDeletedText: Color { .theme(light: 0xAD_3232, dark: 0xFF_847D) }
+    var diffAddedLine: Color { .theme(light: 0xE3_FBE8, dark: 0x1B_3422) }
+    var diffDeletedLine: Color { .theme(light: 0xFF_EEEC, dark: 0x44_2321) }
+    var diffAddedWord: Color { .theme(light: 0xB3_EDC1, dark: 0x1C_5430) }
+    var diffDeletedWord: Color { .theme(light: 0xFE_D0CB, dark: 0x70_312E) }
+    var conflict: Color { .theme(light: 0x9F_6200, dark: 0xF1_AF57) }
+    var danger: Color { .theme(light: 0xB6_3132, dark: 0xF9_7770) }
 
-    var syntaxKeyword: Color { .purple }
-    var syntaxString: Color { .brown }
-    var syntaxComment: Color { .secondary }
-    var syntaxNumber: Color { .orange }
-    var syntaxType: Color { .teal }
+    var syntaxKeyword: Color { .theme(light: 0x6D_389E, dark: 0xC7_97FD) }
+    var syntaxString: Color { .theme(light: 0x8E_421B, dark: 0xEE_A471) }
+    var syntaxComment: Color { .theme(light: 0x7B_8187, dark: 0x81_878D) }
+    var syntaxNumber: Color { .theme(light: 0x89_5603, dark: 0xEB_B25F) }
+    var syntaxType: Color { .theme(light: 0x06_6565, dark: 0x6B_CAC9) }
 }

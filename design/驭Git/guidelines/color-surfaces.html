@@ -1,0 +1,22 @@
+<!-- @dsCard group="Colors" viewport="700x180" name="表面与描边" subtitle="窗口、下沉、浮层、侧栏 vibrancy、悬停、按下、hairline" -->
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>表面</title>
+<link rel="stylesheet" href="../styles.css">
+<style>html,body{margin:0}body{background:var(--surface-app);color:var(--text-body);font:var(--type-body);padding:16px;-webkit-font-smoothing:antialiased}
+.sw{display:flex;flex-direction:column;gap:4px}.chip{height:44px;border-radius:var(--radius-medium)}
+.nm{font:var(--type-secondary);color:var(--ink-2)}.hx{font:var(--type-mono);color:var(--ink-3);text-transform:uppercase}
+.grid{display:flex;gap:10px}.col{flex:1;min-width:0}.stack{display:flex;flex-direction:column;gap:12px}
+.note{font:var(--type-caption);color:var(--ink-3)}</style></head><body>
+<div class="grid">
+<div class="sw col"><div class="chip" style="background:var(--surface-app);border:1px solid var(--hairline)"></div><span class="nm">app 正文底</span><span class="hx">#FFFFFF</span></div>
+<div class="sw col"><div class="chip" style="background:var(--surface-sunken)"></div><span class="nm">sunken 下沉</span><span class="hx">#F7F8F9</span></div>
+<div class="sw col"><div class="chip" style="background:var(--surface-sidebar-opaque)"></div><span class="nm">sidebar 侧栏</span><span class="hx">#F3F5F7 · 72%</span></div>
+<div class="sw col"><div class="chip" style="background:var(--surface-hover)"></div><span class="nm">hover</span><span class="hx">#EEF0F3</span></div>
+<div class="sw col"><div class="chip" style="background:var(--surface-press)"></div><span class="nm">press</span><span class="hx">#E4E6EA</span></div>
+<div class="sw col"><div class="chip" style="background:var(--fill-quaternary)"></div><span class="nm">quaternary</span><span class="hx">#E9EBEE</span></div>
+</div>
+<div style="margin-top:14px;display:flex;gap:16px;align-items:center">
+<div style="flex:1;height:36px;border-top:1px solid var(--hairline);display:flex;align-items:flex-end"><span class="nm">--hairline #DDE0E3 分栏线、行分隔</span></div>
+<div style="flex:1;height:36px;border-top:1px solid var(--hairline-strong);display:flex;align-items:flex-end"><span class="nm">--hairline-strong #CBCED2 输入框、分隔条</span></div>
+</div>
+<p class="note" style="margin:10px 0 0">界面里不用阴影分层，一律 hairline；阴影只给 sheet 与 popover 各一层。</p>
+</body></html>

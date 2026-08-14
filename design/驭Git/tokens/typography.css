@@ -1,0 +1,45 @@
+/* 字体 · 只有四档
+   档位再多，视觉层次反而会糊 —— 读者分辨不出 12 和 13 的差别，只会觉得乱。
+
+   没有 @font-face，也不会有：应用侧的硬约束是「不用自定义字体」，界面一律走
+   SF Pro（西文）+ 苹方（中文）+ SF Mono（等宽），全部由 macOS 提供。
+   这份设计系统因此只声明字体栈，不打包字体二进制。
+   在非 macOS 上预览会落到本地 system-ui，字距与字重会有出入，属预期。
+
+   等宽只给 hash、行号、diff 正文和状态字母。中文字形本身等宽，
+   人名和标题套西文等宽会破坏字距。 */
+:root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+
+  /* 四档 —— 主界面只许用这四个 */
+  --text-size-body: 13px;        /* 提交标题、文件名、分支名 */
+  --text-size-secondary: 11px;   /* 作者、计数、角标 */
+  --text-size-title: 15px;       /* 面板标题，semibold */
+  --text-size-mono: 11px;        /* hash、行号、diff 正文、状态字母 */
+
+  /* 系统派生字号 —— 只出现在 sheet、欢迎页、说明文本里，不进主界面 */
+  --text-size-callout: 12px;     /* SwiftUI .callout */
+  --text-size-caption: 10px;     /* SwiftUI .caption2 */
+  --text-size-sheet-title: 20px; /* sheet 标题 .title3 */
+  --text-size-display: 32px;     /* 欢迎页品牌字 */
+  --text-size-mark: 56px;        /* 欢迎页与空状态的大字符 */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --leading-body: 1.35;
+  --leading-tight: 1.2;
+  --leading-mono: 1.45;
+  --tracking-display: -0.01em;   /* 仅 display 档 */
+
+  /* 成套别名，直接 font: var(--type-body) */
+  --type-body: var(--weight-regular) var(--text-size-body) / var(--leading-body) var(--font-ui);
+  --type-secondary: var(--weight-regular) var(--text-size-secondary) / var(--leading-body) var(--font-ui);
+  --type-title: var(--weight-semibold) var(--text-size-title) / var(--leading-tight) var(--font-ui);
+  --type-mono: var(--weight-regular) var(--text-size-mono) / var(--leading-mono) var(--font-mono);
+  --type-callout: var(--weight-regular) var(--text-size-callout) / var(--leading-body) var(--font-ui);
+  --type-caption: var(--weight-regular) var(--text-size-caption) / var(--leading-body) var(--font-ui);
+}
