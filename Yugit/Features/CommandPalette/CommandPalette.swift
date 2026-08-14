@@ -60,8 +60,13 @@ struct CommandPaletteView: View {
             Divider()
 
             if filtered.isEmpty {
-                ContentUnavailableView.search(text: query)
-                    .frame(height: 200)
+                EmptyStateView(
+                    "没有匹配的命令",
+                    systemImage: "magnifyingglass",
+                    description: "「\(query)」没有对应的命令",
+                    compact: true
+                )
+                .frame(height: 200)
             } else {
                 ScrollViewReader { proxy in
                     List(Array(filtered.enumerated()), id: \.element.id) { index, command in

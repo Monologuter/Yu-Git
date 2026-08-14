@@ -22,10 +22,10 @@ struct ComposeView: View {
                 ProgressView("正在读取改动…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if model.blocks.isEmpty {
-                ContentUnavailableView(
+                EmptyStateView(
                     "没有可拆分的改动",
                     systemImage: "square.stack.3d.up.slash",
-                    description: Text("工作区是干净的，或者只剩二进制与敏感文件")
+                    description: "工作区是干净的，或者只剩二进制与敏感文件"
                 )
             } else {
                 content
@@ -92,9 +92,10 @@ struct ComposeView: View {
             Divider()
 
             if model.unassigned.isEmpty {
-                ContentUnavailableView(
+                EmptyStateView(
                     "都安排好了", systemImage: "checkmark.circle",
-                    description: Text("每一块改动都归了组")
+                    description: "每一块改动都归了组",
+                    compact: true
                 )
             } else {
                 List {
@@ -126,13 +127,13 @@ struct ComposeView: View {
             Divider()
 
             if model.commits.isEmpty {
-                ContentUnavailableView {
-                    Label("还没有分组", systemImage: "square.stack.3d.up")
-                } description: {
-                    Text(
-                        aiSettings.isAvailable
-                            ? "点右上角让 AI 提议，或者自己新建一组" : "点「新建分组」开始，把左边的改动挪进来")
-                }
+                EmptyStateView(
+                    "还没有分组",
+                    systemImage: "square.stack.3d.up",
+                    description: aiSettings.isAvailable
+                        ? "点右上角让 AI 提议，或者自己新建一组" : "点「新建分组」开始，把左边的改动挪进来",
+                    compact: true
+                )
             } else {
                 List {
                     ForEach($model.commits) { $commit in

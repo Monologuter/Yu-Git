@@ -56,6 +56,12 @@ enum Theme {
         static var secondary: SwiftUI.Font { .system(size: 11) }
         /// 标题：面板标题
         static var title: SwiftUI.Font { .system(size: 15, weight: .semibold) }
+        /// 说明文本：sheet 正文、空状态的说明句。
+        ///
+        /// 比 body 小一档、比 secondary 大一档。整段的说明文字用 body 会太重
+        /// （它是给单行标题用的），用 secondary 又读着费劲——11pt 适合角标，
+        /// 不适合连续阅读的句子。
+        static var callout: SwiftUI.Font { .system(size: 12) }
         /// 等宽：hash、行号、diff 正文
         static var mono: SwiftUI.Font { .system(size: 11, design: .monospaced) }
     }
@@ -114,6 +120,7 @@ enum Theme {
 
         // ── 状态 ──
         static var warning: Color { palette.warning }
+        static var warningWash: Color { palette.warningWash }
         static var success: Color { palette.success }
         static var mergeAccent: Color { palette.mergeAccent }
 

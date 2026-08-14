@@ -200,18 +200,19 @@ struct ForgeView: View {
         if model.isLoading {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if model.locator == nil {
-            ContentUnavailableView {
-                Label("认不出这个仓库的托管平台", systemImage: "questionmark.circle")
-            } description: {
-                Text(model.errorMessage ?? "目前支持 GitHub、GitLab（含自建）、Gitee。")
-            }
+            EmptyStateView(
+                "认不出这个仓库的托管平台",
+                systemImage: "questionmark.circle",
+                description: model.errorMessage ?? "目前支持 GitHub、GitLab（含自建）、Gitee。",
+                tone: .warning
+            )
         } else if !model.hasToken {
             tokenSetup
         } else if model.requests.isEmpty {
-            ContentUnavailableView(
+            EmptyStateView(
                 "没有\(model.filter == .open ? "进行中的" : "")\(model.noun)",
                 systemImage: "tray",
-                description: Text("在当前分支上推送后可以新建一个")
+                description: "在当前分支上推送后可以新建一个"
             )
         } else {
             List(model.requests) { request in

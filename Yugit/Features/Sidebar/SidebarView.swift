@@ -222,7 +222,7 @@ struct BranchRow: View {
         HStack(spacing: 6) {
             Image(systemName: branch.isRemote ? "cloud" : "arrow.triangle.branch")
                 .font(.caption)
-                .foregroundStyle(branch.isCurrent ? Color.accentColor : .secondary)
+                .foregroundStyle(branch.isCurrent ? Theme.Colors.brand : Theme.Colors.secondaryText)
                 .frame(width: 14)
 
             Text(branch.name)
@@ -233,6 +233,21 @@ struct BranchRow: View {
             Spacer(minLength: 4)
 
             trackingBadge
+        }
+        // 当前分支：图标换品牌靛 + 左侧一根竖标。
+        //
+        // 「我现在在哪个分支上」是侧栏里最高频要确认的一件事，光靠加粗不够快——
+        // 几十个分支排在一起时，字重差别要盯着看才分辨得出来。竖标是唯一
+        // 在余光里也能定位的信号。用品牌色而不是强调色：强调色归选中态，
+        // 两者同屏时必须能区分「我站在这」和「我点了这」。
+        .overlay(alignment: .leading) {
+            if branch.isCurrent {
+                Capsule()
+                    .fill(Theme.Colors.brand)
+                    .frame(width: 2)
+                    .padding(.vertical, 1)
+                    .offset(x: -6)
+            }
         }
         .help(tooltip)
     }

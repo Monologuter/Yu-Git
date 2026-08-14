@@ -136,16 +136,18 @@ struct BlameView: View {
             ProgressView("正在追溯每一行的出处…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = model.errorMessage {
-            ContentUnavailableView {
-                Label("读不到 blame", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(error).textSelection(.enabled)
-            }
+            EmptyStateView(
+                "读不到 blame",
+                systemImage: "exclamationmark.triangle",
+                description: error,
+                tone: .warning
+            )
         } else if let result = model.result {
             if model.visibleLines.isEmpty {
-                ContentUnavailableView(
+                EmptyStateView(
                     model.showsAIOnly ? "这个文件没有 AI 参与的行" : "文件是空的",
-                    systemImage: model.showsAIOnly ? "person" : "doc"
+                    systemImage: model.showsAIOnly ? "person" : "doc",
+                    description: model.showsAIOnly ? "关掉「只看 AI」可以看到全部内容" : nil
                 )
             } else {
                 ScrollView([.vertical, .horizontal]) {

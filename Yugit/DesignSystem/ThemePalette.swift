@@ -84,6 +84,8 @@ protocol ThemePalette: Sendable {
     // MARK: - 状态
 
     var warning: Color { get }
+    /// 警示色的极浅底，用于横幅与需要注意的空状态圆底。
+    var warningWash: Color { get }
     var success: Color { get }
     /// 合并提交、改名/复制状态字母。
     var mergeAccent: Color { get }
@@ -192,6 +194,7 @@ struct SystemTheme: ThemePalette {
     var separatorStrong: Color { .theme(light: 0xCB_CED2, dark: 0x4B_4D51) }
 
     var warning: Color { .theme(light: 0x9F_6200, dark: 0xF1_AF57) }
+    var warningWash: Color { .theme(light: 0xFF_EDD8, dark: 0x3A_2A0E) }
     var success: Color { .theme(light: 0x05_773B, dark: 0x65_C281) }
     var mergeAccent: Color { .theme(light: 0x7F_4BB1, dark: 0xC6_99F8) }
 

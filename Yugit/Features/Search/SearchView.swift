@@ -156,13 +156,17 @@ struct SearchView: View {
     @ViewBuilder
     private var results: some View {
         if model.query.isEmpty {
-            ContentUnavailableView(
+            EmptyStateView(
                 "搜索仓库",
                 systemImage: "magnifyingglass",
-                description: Text("在被跟踪的文件里搜内容与文件名，或按说明、作者、hash 搜提交")
+                description: "在被跟踪的文件里搜内容与文件名，或按说明、作者、hash 搜提交"
             )
         } else if !model.hasResults && !model.isSearching {
-            ContentUnavailableView.search(text: model.query)
+            EmptyStateView(
+                "没有匹配的结果",
+                systemImage: "magnifyingglass",
+                description: "「\(model.query)」在当前搜索范围里没有命中"
+            )
         } else {
             List {
                 switch model.scope {

@@ -14,10 +14,10 @@ struct DetailView: View {
             } else if let commit = selectedCommit {
                 CommitDetailView(commit: commit, repository: repository)
             } else {
-                ContentUnavailableView(
+                EmptyStateView(
                     "未选择内容",
                     systemImage: "sidebar.right",
-                    description: Text("在左侧选择一个文件或提交")
+                    description: "在左侧选择一个文件或提交"
                 )
             }
         }
@@ -65,10 +65,12 @@ struct DetailView: View {
             } else if repository.isLoadingDiff {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ContentUnavailableView(
+                EmptyStateView(
                     "无法读取 diff",
                     systemImage: "exclamationmark.triangle",
-                    description: Text("这个文件的差异暂时取不到")
+                    description: "这个文件的差异暂时取不到",
+                    tone: .warning,
+                    compact: true
                 )
             }
         }
@@ -347,10 +349,11 @@ struct CommitDetailView: View {
                 if diff.hunks.isEmpty {
                     // 纯改名走到这里：文件确实变了（路径变了），但内容一个字节没动。
                     // 说清楚是"没有内容变化"，而不是让人对着空白面板猜是不是加载失败。
-                    ContentUnavailableView(
+                    EmptyStateView(
                         emptyDiffTitle(for: repository.selectedCommitFile),
                         systemImage: "equal.circle",
-                        description: Text("这次提交没有改动这个文件的内容")
+                        description: "这次提交没有改动这个文件的内容",
+                        compact: true
                     )
                 } else {
                     // 历史里的 diff 是只读的：那些改动已经进了提交，

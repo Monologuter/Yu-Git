@@ -172,11 +172,11 @@ struct WorktreeView: View {
         if model.isLoading && model.statuses.isEmpty {
             ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if model.statuses.count <= 1 {
-            ContentUnavailableView {
-                Label("还没有并行工作区", systemImage: "square.split.2x1")
-            } description: {
-                Text("给每个 agent 分一个工作区，它们就不会互相踩工作区了。")
-            } actions: {
+            EmptyStateView(
+                "还没有并行工作区",
+                systemImage: "square.split.2x1",
+                description: "给每个 agent 分一个工作区，它们就不会互相踩工作区了。"
+            ) {
                 Button("新建一个") { isAdding = true }
             }
         } else {

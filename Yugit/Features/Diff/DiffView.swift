@@ -66,16 +66,18 @@ struct DiffView: View {
 
     var body: some View {
         if diff.isBinary {
-            ContentUnavailableView(
+            EmptyStateView(
                 "二进制文件",
                 systemImage: "doc.badge.ellipsis",
-                description: Text("二进制内容无法按行比较，只能整个文件暂存")
+                description: "二进制内容无法按行比较，只能整个文件暂存",
+                compact: true
             )
         } else if diff.hunks.isEmpty {
-            ContentUnavailableView(
+            EmptyStateView(
                 "没有内容变化",
                 systemImage: "equal.circle",
-                description: Text(modeChangeDescription ?? "文件内容与对比基准一致")
+                description: modeChangeDescription ?? "文件内容与对比基准一致",
+                compact: true
             )
         } else if totalLineCount > Self.foldThreshold && !expandedLargeDiff {
             largeDiffPrompt
@@ -203,11 +205,12 @@ struct DiffView: View {
     }
 
     private var largeDiffPrompt: some View {
-        ContentUnavailableView {
-            Label("这个 diff 很大", systemImage: "doc.text.magnifyingglass")
-        } description: {
-            Text("共 \(totalLineCount) 行变化，展开可能需要一点时间")
-        } actions: {
+        EmptyStateView(
+            "这个 diff 很大",
+            systemImage: "doc.text.magnifyingglass",
+            description: "共 \(totalLineCount) 行变化，展开可能需要一点时间",
+            compact: true
+        ) {
             Button("仍然展开") { expandedLargeDiff = true }
         }
     }

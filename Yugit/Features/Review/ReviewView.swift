@@ -115,10 +115,11 @@ struct ReviewView: View {
                     }
 
                     if review.findings.isEmpty {
-                        ContentUnavailableView(
+                        EmptyStateView(
                             "没有发现值得指出的问题",
                             systemImage: "checkmark.circle",
-                            description: Text("这不代表没有问题，只代表从 diff 本身看不出来")
+                            description: "这不代表没有问题，只代表从 diff 本身看不出来",
+                            compact: true
                         )
                     } else {
                         // 分级导航：鉴权/数据层置顶，格式化垫底且默认折叠
@@ -133,17 +134,18 @@ struct ReviewView: View {
                 .padding(12)
             }
         } else if let error = model.errorMessage {
-            ContentUnavailableView {
-                Label("评审没能完成", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(error).textSelection(.enabled)
-            } actions: {
+            EmptyStateView(
+                "评审没能完成",
+                systemImage: "exclamationmark.triangle",
+                description: error,
+                tone: .warning
+            ) {
                 Button("重试") { Task { await model.run(using: aiSettings) } }
             }
         } else {
-            ContentUnavailableView(
+            EmptyStateView(
                 "还没有开始", systemImage: "sparkles",
-                description: Text("点下面的「开始评审」")
+                description: "点下面的「开始评审」"
             )
         }
     }

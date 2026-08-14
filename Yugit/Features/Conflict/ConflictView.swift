@@ -19,10 +19,10 @@ struct ConflictView: View {
             Divider()
 
             if model.paths.isEmpty {
-                ContentUnavailableView(
+                EmptyStateView(
                     "没有冲突",
                     systemImage: "checkmark.circle",
-                    description: Text("所有冲突都已处理完")
+                    description: "所有冲突都已处理完"
                 )
             } else {
                 HSplitView {
@@ -103,10 +103,11 @@ struct ConflictView: View {
                 .padding(12)
             }
         } else {
-            ContentUnavailableView(
+            EmptyStateView(
                 "这个文件没有冲突标记",
                 systemImage: "doc",
-                description: Text("可能已经解决过了")
+                description: "可能已经解决过了",
+                compact: true
             )
         }
     }
@@ -326,7 +327,7 @@ private struct SuggestionCard: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Theme.Colors.brand)
                 Text("AI 建议")
                     .font(.caption.weight(.medium))
 

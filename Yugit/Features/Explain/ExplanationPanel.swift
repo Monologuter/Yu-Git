@@ -47,8 +47,11 @@ struct ExplanationPanel: View {
             if isExpanded && text.isEmpty && !isLoading { start() }
         } label: {
             HStack(spacing: 6) {
+                // AI 相关的入口一律用品牌色而不是强调色。
+                // 强调色跟随用户的系统设置，它归选中态和默认按钮；
+                // AI 是产品自己的东西，跟着系统走反而认不出是同一族功能。
                 Image(systemName: "sparkles")
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(Theme.Colors.brand)
                 Text(title)
                     .font(.callout.weight(.medium))
                 Spacer()

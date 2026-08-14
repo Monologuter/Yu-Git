@@ -26,11 +26,12 @@ struct AISettingsView: View {
 
             Section("服务商") {
                 if store.configurations.isEmpty {
-                    ContentUnavailableView {
-                        Label("还没有配置服务商", systemImage: "sparkles")
-                    } description: {
-                        Text("驭Git 用你自己的 API Key，不经过任何中转服务器。")
-                    } actions: {
+                    EmptyStateView(
+                        "还没有配置服务商",
+                        systemImage: "sparkles",
+                        description: "驭Git 用你自己的 API Key，不经过任何中转服务器。",
+                        compact: true
+                    ) {
                         addMenu
                     }
                 } else {

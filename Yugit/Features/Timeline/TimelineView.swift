@@ -17,10 +17,11 @@ struct TimelineView: View {
             Divider()
 
             if repository.timelineEntries.isEmpty && repository.timelineSnapshots.isEmpty {
-                ContentUnavailableView(
+                EmptyStateView(
                     "时间线还是空的",
                     systemImage: "clock.arrow.circlepath",
-                    description: Text("做过的操作会记在这里，危险操作会自动留下可恢复的时间点")
+                    description: "做过的操作会记在这里，危险操作会自动留下可恢复的时间点",
+                    compact: true
                 )
             } else {
                 list

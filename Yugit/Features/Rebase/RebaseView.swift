@@ -32,10 +32,10 @@ struct RebaseView: View {
             } else if let plan {
                 list(plan)
             } else {
-                ContentUnavailableView(
+                EmptyStateView(
                     "没有可整理的提交",
                     systemImage: "checklist",
-                    description: Text("当前分支还没有提交，或者提交都已经推送给别人了")
+                    description: "当前分支还没有提交，或者提交都已经推送给别人了"
                 )
             }
 

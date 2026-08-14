@@ -198,10 +198,10 @@ struct ChangesView: View {
     @ViewBuilder
     private var changeList: some View {
         if !repository.hasChanges && repository.conflictedEntries.isEmpty {
-            ContentUnavailableView(
+            EmptyStateView(
                 "工作区干净",
                 systemImage: "checkmark.circle",
-                description: Text("没有待处理的改动")
+                description: "没有待处理的改动"
             )
             .frame(maxHeight: .infinity)
         } else {
@@ -227,10 +227,11 @@ struct ChangesView: View {
                 if isFiltering && filteredStaged.isEmpty && filteredUnstaged.isEmpty
                     && filteredConflicted.isEmpty
                 {
-                    ContentUnavailableView(
+                    EmptyStateView(
                         "没有匹配的文件",
                         systemImage: "line.3.horizontal.decrease",
-                        description: Text("试试别的关键词")
+                        description: "试试别的关键词",
+                        compact: true
                     )
                     .frame(maxHeight: .infinity)
                 } else {
@@ -417,16 +418,17 @@ struct ChangesView: View {
     private var historyContent: some View {
         if repository.commits.isEmpty {
             if !repository.historyFilter.isEmpty {
-                ContentUnavailableView(
+                EmptyStateView(
                     "没有匹配的提交",
                     systemImage: "magnifyingglass",
-                    description: Text("整个历史里都没有符合这些条件的提交")
+                    description: "整个历史里都没有符合这些条件的提交",
+                    compact: true
                 )
             } else {
-                ContentUnavailableView(
+                EmptyStateView(
                     "尚无提交",
                     systemImage: "clock",
-                    description: Text("这个仓库还没有任何 commit")
+                    description: "这个仓库还没有任何 commit"
                 )
             }
         } else {
