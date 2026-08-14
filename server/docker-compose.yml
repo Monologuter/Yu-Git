@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yugit
+      POSTGRES_USER: yugit
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?必须在 .env 里设置 DB_PASSWORD}
+      # 关掉不需要的统计收集，省内存
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # 只绑本机：数据库没有任何理由暴露到公网
+    ports:
+      - "127.0.0.1:5433:5432"
+    command:
+      # 默认配置在 1.6G 内存的机器上偏大，调小到够用即可
+      - postgres
+      - -c
+      - shared_buffers=96MB
+      - -c
+      - max_connections=40
+      - -c
+      - work_mem=4MB
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yugit -d yugit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    build: ./gateway
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://yugit:${DB_PASSWORD}@db:5432/yugit?sslmode=disable
+      LISTEN_ADDR: ":8080"
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      ZHIPU_API_KEY: ${ZHIPU_API_KEY:-}
+      STANDARD_MODEL: ${STANDARD_MODEL:-deepseek-chat}
+      PRO_MODEL: ${PRO_MODEL:-deepseek-reasoner}
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
+volumes:
+  db-data:
