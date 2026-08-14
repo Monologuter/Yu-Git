@@ -133,6 +133,24 @@ struct CommitDetailView: View {
     let repository: RepositoryViewModel
 
     var body: some View {
+        // 点开某个文件后，用 VSplitView 把面板一分为二，让人自己拖分配空间。
+        // 不这么做的话只有两条路：diff 挤在信息下面看不了几行，
+        // 或者信息被 diff 顶出屏幕——而看 diff 时往往还需要回头看提交说明。
+        // VSplitView 是 macOS 原生控件，分隔条的手感和系统其他 app 一致。
+        if repository.selectedCommitFile != nil {
+            VSplitView {
+                summary
+                    .frame(minHeight: 140, idealHeight: 260)
+                filePane
+                    .frame(minHeight: 160)
+            }
+        } else {
+            summary
+        }
+    }
+
+    /// 提交信息 + 改动文件列表。
+    private var summary: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.section) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
@@ -258,10 +276,89 @@ struct CommitDetailView: View {
             } else {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(repository.selectedCommitFiles) { change in
-                        CommitFileRow(change: change)
+                        CommitFileRow(
+                            change: change,
+                            isSelected: repository.selectedCommitFile == change
+                        ) {
+                            // 再点一次已选中的文件就收起 diff，
+                            // 省得为了看回提交说明还得去拖分隔条
+                            repository.selectedCommitFile =
+                                repository.selectedCommitFile == change ? nil : change
+                        }
                     }
                 }
             }
+        }
+    }
+
+    /// 下半部分：点开的那个文件在这次提交里的 diff。
+    @ViewBuilder
+    private var filePane: some View {
+        VStack(spacing: 0) {
+            if let change = repository.selectedCommitFile {
+                HStack(spacing: Theme.Spacing.regular) {
+                    Text(change.path)
+                        .font(Theme.Font.body)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+
+                    if let diff = repository.commitFileDiff, !diff.isBinary {
+                        HStack(spacing: Theme.Spacing.tight) {
+                            Text("+\(diff.addedLineCount)").foregroundStyle(.green)
+                            Text("−\(diff.deletedLineCount)").foregroundStyle(.red)
+                        }
+                        .font(Theme.Font.mono)
+                    }
+
+                    Spacer(minLength: Theme.Spacing.regular)
+
+                    Button("收起") { repository.selectedCommitFile = nil }
+                        .buttonStyle(.borderless)
+                        .font(Theme.Font.secondary)
+                }
+                .padding(.horizontal, Theme.Spacing.loose)
+                .padding(.vertical, Theme.Spacing.regular)
+
+                Divider()
+            }
+
+            if repository.isLoadingCommitFileDiff {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let diff = repository.commitFileDiff {
+                if diff.hunks.isEmpty {
+                    // 纯改名走到这里：文件确实变了（路径变了），但内容一个字节没动。
+                    // 说清楚是"没有内容变化"，而不是让人对着空白面板猜是不是加载失败。
+                    ContentUnavailableView(
+                        emptyDiffTitle(for: repository.selectedCommitFile),
+                        systemImage: "equal.circle",
+                        description: Text("这次提交没有改动这个文件的内容")
+                    )
+                } else {
+                    // 历史里的 diff 是只读的：那些改动已经进了提交，
+                    // 暂存/取消暂存对它没有意义，给了按钮也只会让人困惑。
+                    DiffView(
+                        diff: diff,
+                        isStaged: true,
+                        onStageHunk: { _ in },
+                        onUnstageHunk: { _ in },
+                        onApplyLines: { _ in }
+                    )
+                }
+            }
+        }
+        // 换文件就重新取 diff
+        .task(id: repository.selectedCommitFile) {
+            await repository.reloadCommitFileDiff()
+        }
+    }
+
+    private func emptyDiffTitle(for change: CommitFileChange?) -> String {
+        guard let change else { return "没有内容变化" }
+        return switch change.kind {
+        case .renamed: "只改了名字"
+        case .copied: "从别处复制而来"
+        default: "没有内容变化"
         }
     }
 
@@ -298,10 +395,12 @@ struct CommitDetailView: View {
     }
 }
 
-/// 提交详情里的一行文件。
+/// 提交详情里的一行文件。点一下看它在这次提交里的 diff。
 private struct CommitFileRow: View {
 
     let change: CommitFileChange
+    let isSelected: Bool
+    let onSelect: () -> Void
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.regular) {
@@ -309,7 +408,7 @@ private struct CommitFileRow: View {
             // 不固定的话 A/M/D 宽度不同，整列会呈锯齿状。
             Text(change.kind.letter)
                 .font(Theme.Font.mono)
-                .foregroundStyle(color)
+                .foregroundStyle(letterColor)
                 .frame(width: 14, alignment: .center)
                 .help(change.kind.displayName)
 
@@ -320,12 +419,11 @@ private struct CommitFileRow: View {
                     .font(Theme.Font.body)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .textSelection(.enabled)
 
                 if let source = change.sourcePath {
                     Text("原名 \(source)")
                         .font(Theme.Font.secondary)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(sourceColor)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -333,21 +431,43 @@ private struct CommitFileRow: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.vertical, Theme.Spacing.tight)
+        .foregroundStyle(isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : .primary)
+        .padding(.horizontal, Theme.Spacing.regular)
+        .padding(.vertical, Theme.Spacing.tight + 1)
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: Theme.Radius.small)
+                    .fill(Color(nsColor: .selectedContentBackgroundColor))
+            }
+        }
+        // 整行都可点，不是只有文字——目标小的点击区最招人烦
+        .contentShape(.rect)
+        .onTapGesture(perform: onSelect)
         .help(change.path)
     }
 
     /// 状态字母的颜色。
     ///
     /// 增删沿用 diff 里的绿红，这两个颜色在这个 app 里已经稳定表示增删，
-    /// 换一套反而要让人重新学。
-    private var color: Color {
-        switch change.kind {
+    /// 换一套反而要让人重新学。选中时整行反白，字母也跟着走，
+    /// 否则绿色画在强调色背景上对比度不够。
+    private var letterColor: Color {
+        if isSelected {
+            return Color(nsColor: .alternateSelectedControlTextColor)
+        }
+        return switch change.kind {
         case .added: .green
         case .deleted: .red
         case .renamed, .copied: .blue
         default: .secondary
         }
+    }
+
+    /// 「原名 xxx」那一行的颜色。选中时同样要压得住强调色背景。
+    private var sourceColor: Color {
+        isSelected
+            ? Color(nsColor: .alternateSelectedControlTextColor).opacity(0.75)
+            : Color(nsColor: .tertiaryLabelColor)
     }
 }
 

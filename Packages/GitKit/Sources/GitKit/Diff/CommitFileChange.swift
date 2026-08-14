@@ -164,4 +164,51 @@ extension GitClient {
         )
         return NameStatusParser.parse(fromRoot.standardOutput)
     }
+
+    /// 取某次提交里单个文件的 diff。
+    ///
+    /// 参数收的是 ``CommitFileChange`` 而不是一个路径字符串，因为**重命名必须
+    /// 同时给出旧路径和新路径**：
+    ///
+    /// `-M`（重命名检测）要同时看见「旧路径被删」和「新路径被加」这一对才能配对。
+    /// 只用 `-- <新路径>` 过滤的话，旧路径那条记录被过滤掉了，配不上对，
+    /// git 于是把它当成一个全新文件——一次纯改名会显示成"整个文件都是新增的"，
+    /// 几百行绿色，而真实改动是零。传两个路径进去才会得到 `rename from/to`。
+    ///
+    /// merge 和根提交的处理同 ``filesChanged(inCommit:in:detectRenames:)``：
+    /// `git show <merge> -- <path>` 对合并提交同样是空输出。
+    public func diff(
+        ofFile change: CommitFileChange,
+        inCommit hash: String,
+        in repository: URL,
+        contextLines: Int = 3
+    ) async throws -> FileDiff {
+        // 旧路径放前面，跟 git 自己输出 `diff --git a/旧 b/新` 的顺序一致
+        var paths: [String] = []
+        if let source = change.sourcePath {
+            paths.append(source)
+        }
+        paths.append(change.path)
+
+        let arguments = [
+            "diff-tree", "-p", "--no-commit-id", "-M", "--unified=\(contextLines)",
+        ]
+
+        let withParent = try await runReturningResult(
+            arguments + ["\(hash)^1", hash, "--"] + paths,
+            in: repository,
+            allowsOptionalLocks: false
+        )
+
+        if withParent.isSuccess, !withParent.standardOutput.isEmpty {
+            return try DiffParser.parse(withParent.standardOutput, path: change.path)
+        }
+
+        let fromRoot = try await run(
+            arguments + ["--root", hash, "--"] + paths,
+            in: repository,
+            allowsOptionalLocks: false
+        )
+        return try DiffParser.parse(fromRoot.standardOutput, path: change.path)
+    }
 }

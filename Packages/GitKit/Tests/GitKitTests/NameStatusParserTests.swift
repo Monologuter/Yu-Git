@@ -141,4 +141,57 @@ struct CommitFilesIntegrationTests {
         let merged = try await client.filesChanged(inCommit: mergeCommit, in: repo)
         #expect(merged.contains { $0.path == "侧边.txt" })
     }
+
+    @Test("纯改名的单文件 diff 不能显示成整个文件都是新增")
+    func renameDiffKeepsRenameSemantics() async throws {
+        let sandbox = try await TemporaryRepository()
+        let repo = sandbox.url
+        let client = sandbox.client
+
+        // 内容多几行，一旦被当成新文件就会出现明显的大段新增
+        try sandbox.write("一\n二\n三\n四\n五\n", to: "原名.txt")
+        try await sandbox.commitAll("建文件")
+        try await sandbox.git("mv", "原名.txt", "新名.txt")
+        try await sandbox.commitAll("只改名")
+        let renameCommit = try await head(of: sandbox)
+
+        let changes = try await client.filesChanged(inCommit: renameCommit, in: repo)
+        let change = try #require(changes.first)
+        #expect(change.sourcePath == "原名.txt")
+
+        let diff = try await client.diff(
+            ofFile: change, inCommit: renameCommit, in: repo)
+
+        // 关键断言：纯改名没有任何内容变化。
+        // 只用新路径过滤的话 -M 配不上对，git 会把它当成全新文件，
+        // 这里就会看到 5 行新增——那是错的。
+        #expect(diff.addedLineCount == 0)
+        #expect(diff.deletedLineCount == 0)
+    }
+
+    @Test("merge 提交里的单文件 diff 拿得到")
+    func mergeFileDiffIsReachable() async throws {
+        let sandbox = try await TemporaryRepository()
+        let repo = sandbox.url
+        let client = sandbox.client
+
+        try sandbox.write("base\n", to: "底稿.txt")
+        try await sandbox.commitAll("根提交")
+        let root = try await head(of: sandbox)
+
+        try await sandbox.git("checkout", "--quiet", "-b", "side", root)
+        try sandbox.write("新增一行\n", to: "侧边.txt")
+        try await sandbox.commitAll("侧边提交")
+        try await sandbox.git("checkout", "--quiet", "main")
+        try await sandbox.git("merge", "--quiet", "--no-ff", "side", "-m", "合并")
+        let mergeCommit = try await head(of: sandbox)
+
+        let changes = try await client.filesChanged(inCommit: mergeCommit, in: repo)
+        let change = try #require(changes.first { $0.path == "侧边.txt" })
+        let diff = try await client.diff(
+            ofFile: change, inCommit: mergeCommit, in: repo)
+
+        // git show <merge> -- <path> 在这里是空输出，靠 ^1 才拿得到
+        #expect(diff.addedLineCount == 1)
+    }
 }
