@@ -45,8 +45,13 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
       ZHIPU_API_KEY: ${ZHIPU_API_KEY:-}
-      STANDARD_MODEL: ${STANDARD_MODEL:-deepseek-chat}
-      PRO_MODEL: ${PRO_MODEL:-deepseek-reasoner}
+      # 路由不给默认值：默认值只在「默认的那家上游」上是对的，
+      # 换一家就成了一个必然 404 的模型名，而且错得很隐蔽。
+      # 网关启动时会校验这四项，配错直接起不来。
+      STANDARD_UPSTREAM: ${STANDARD_UPSTREAM:-}
+      PRO_UPSTREAM: ${PRO_UPSTREAM:-}
+      STANDARD_MODEL: ${STANDARD_MODEL:?必须指定标准套餐用哪个模型}
+      PRO_MODEL: ${PRO_MODEL:?必须指定增强套餐用哪个模型}
       TZ: Asia/Shanghai
     ports:
       - "127.0.0.1:8080:8080"

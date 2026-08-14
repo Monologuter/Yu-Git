@@ -45,7 +45,17 @@ func main() {
 		log.Printf("已加载上游：%s", name)
 	}
 
-	server := &Server{store: store, upstreams: upstreams}
+	// 路由在启动时就解析好并校验。配错了宁可起不来，
+	// 也好过跑起来之后让用户在发请求时收到一句「不支持的模型」。
+	routing, err := resolveRouting(upstreams)
+	if err != nil {
+		log.Fatalf("上游路由配置有问题：%v", err)
+	}
+	for public, route := range routing {
+		log.Printf("路由：%s → %s/%s", public, route.Upstream, route.Model)
+	}
+
+	server := &Server{store: store, upstreams: upstreams, routing: routing}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /v1/subscription", server.handleSubscription)
@@ -76,6 +86,8 @@ func main() {
 type Server struct {
 	store     *Store
 	upstreams map[string]Upstream
+	// 对外套餐名 → 落到哪个上游的哪个模型。启动时解析并校验过。
+	routing map[string]Route
 }
 
 // ── 订阅查询 ─────────────────────────────────────────────────────────
@@ -147,7 +159,7 @@ func (s *Server) handleCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	upstream, ok := s.upstreams[modelToUpstream(req.Model)]
+	route, ok := s.routing[req.Model]
 	if !ok {
 		writeError(w, &apiError{
 			status:  http.StatusBadRequest,
@@ -155,11 +167,13 @@ func (s *Server) handleCompletions(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	// routing 里的上游名在启动时校验过一定存在，这里不会落空
+	upstream := s.upstreams[route.Upstream]
 
 	// 记账用的输入规模。上游若返回真实 usage 会覆盖它。
 	estimatedInput := estimateTokens(req.textForEstimate())
 
-	usage, err := upstream.Forward(r.Context(), w, &req)
+	usage, err := upstream.Forward(r.Context(), w, &req, route.Model)
 	if err != nil {
 		// 流已经开始写之后就不能再改状态码了，只能记日志。
 		// 客户端会因为流没有正常收尾而报错，这是对的。

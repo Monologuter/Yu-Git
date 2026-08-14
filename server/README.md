@@ -22,7 +22,17 @@
 拿到一个看不懂的超时。所以上游候选只有 DeepSeek / 通义 / 智谱。
 
 顺带也是成本问题：按 Claude 的价算，一个中度使用的用户每月上游成本约 ¥110，
-订阅制根本做不平；DeepSeek 能压到 ¥10 上下，才有定价空间。
+订阅制根本做不平；国内几家能压到 ¥10 上下，才有定价空间。
+
+当前生产用的是**通义**，两档这样分：
+
+| 对外套餐 | 上游模型 | 为什么 |
+|---|---|---|
+| `yugit-standard` | `qwen-plus` | 提交信息生成、变更解释这类活儿它绰绰有余，单价低 |
+| `yugit-pro` | `qwen3-coder-plus` | diff 评审和冲突解析全是代码，代码专用模型比通用旗舰更对口 |
+
+换供应商只需要改 `.env` 重启，客户端一行都不用动——这正是对外只暴露
+两个抽象套餐名的意义。
 
 ## 部署
 
@@ -52,11 +62,19 @@ systemctl restart docker
 cp .env.example .env
 ```
 
-必须改的两项：
+必须改的三项：
 
 - `DB_PASSWORD` — 随便一个强密码，用 `openssl rand -base64 24` 生成
 - **至少一个上游 API Key** — `DEEPSEEK_API_KEY` / `DASHSCOPE_API_KEY` / `ZHIPU_API_KEY`
   任选。一个都不配的话网关会直接拒绝启动，因为那样它没有存在意义。
+- `STANDARD_MODEL` / `PRO_MODEL` — 两个对外套餐各用上游的哪个模型。
+  **刻意不给默认值**：默认值只在「默认的那家上游」上是对的，换一家就变成
+  一个必然 404 的名字，而且错得很隐蔽。配了多个上游时还要用
+  `STANDARD_UPSTREAM` / `PRO_UPSTREAM` 指定各走哪家；只配一个时留空即可。
+
+这几项都在**启动时**校验，配错了网关直接起不来。好过跑起来之后让用户在
+发请求时收到一句「不支持的模型」——那时候既看不出是服务端配置问题，
+也不知道该找谁。
 
 ### 3. 起服务
 
@@ -79,14 +97,23 @@ curl http://127.0.0.1:8080/healthz     # 应该回 ok
 
 ### 5. nginx + TLS
 
-`nginx/yugit.conf` 是模板，把 `api.example.com` 换成真实域名后：
+**先确认云厂商的安全组放行了 80。** 阿里云这类默认只开 22，
+而 Let's Encrypt 的 HTTP-01 验证固定从 80 发起——只开 443 是签不下证书的。
+这一步没做的话下面的 certbot 会以一个不太好懂的超时失败。
 
 ```bash
-cp nginx/yugit.conf /etc/nginx/conf.d/
-certbot --nginx -d 你的域名
+cp nginx/yugit.conf /etc/nginx/sites-available/
+ln -sf /etc/nginx/sites-available/yugit.conf /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl reload nginx
+
+certbot --nginx -d yugit.你的域名
 ```
 
-配置里这三行是流式响应的命门，**不要删**：
+配置里**只写 80**，443 交给 certbot 补：它会把 server 块就地改成 ssl、
+另建一个 80 跳转块，并原样保留 location 内容。手写 443 块反而容易和自动续期打架。
+
+location 里这三行是流式响应的命门，**不要删**：
 
 ```nginx
 proxy_buffering off;
@@ -95,7 +122,16 @@ proxy_set_header Connection '';
 ```
 
 少了它们，nginx 会把 SSE 攒在缓冲区里，用户看到的是「卡半天然后一次性蹦出全文」——
-流式的意义全没了。
+网关那边做的逐块 Flush 全白费。
+
+验证是不是真的在流式（时间戳应该是逐条递增，而不是挤在同一毫秒）：
+
+```bash
+curl -sN -X POST https://yugit.你的域名/v1/chat/completions \
+  -H "Authorization: Bearer yg_..." -H "Content-Type: application/json" \
+  -d '{"model":"yugit-standard","stream":true,"messages":[{"role":"user","content":"数到10"}]}' \
+  | while IFS= read -r l; do [ -n "$l" ] && echo "$(date +%S.%3N) $l"; done
+```
 
 ## 接口
 

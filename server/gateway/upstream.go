@@ -105,31 +105,58 @@ func loadUpstreams() map[string]Upstream {
 	return upstreams
 }
 
-// modelToUpstream 把对外的模型名映射到上游。
+// publicModels 是对外暴露的两个套餐。
 //
-// 对外只暴露 yugit-standard / yugit-pro 两个名字，不暴露底层用的是谁：
+// 对外只有 yugit-standard / yugit-pro 两个名字，不暴露底层用的是谁：
 // 换供应商时客户端不用改，涨价或降级也不影响已发布的版本。
-func modelToUpstream(model string) string {
-	switch model {
-	case "yugit-standard":
-		return envOr("STANDARD_UPSTREAM", "deepseek")
-	case "yugit-pro":
-		return envOr("PRO_UPSTREAM", "deepseek")
-	default:
-		return ""
-	}
+var publicModels = []struct{ model, upstreamEnv, modelEnv string }{
+	{"yugit-standard", "STANDARD_UPSTREAM", "STANDARD_MODEL"},
+	{"yugit-pro", "PRO_UPSTREAM", "PRO_MODEL"},
 }
 
-// upstreamModel 返回该上游实际要用的模型名。
-func upstreamModel(publicModel string) string {
-	switch publicModel {
-	case "yugit-standard":
-		return envOr("STANDARD_MODEL", "deepseek-chat")
-	case "yugit-pro":
-		return envOr("PRO_MODEL", "deepseek-reasoner")
-	default:
-		return publicModel
+// Route 是一个对外套餐的落点。
+type Route struct {
+	Upstream string // 上游名，对应 loadUpstreams 的 key
+	Model    string // 上游那边真正的模型名
+}
+
+// resolveRouting 决定两个对外套餐分别落到哪个上游的哪个模型。
+//
+// **在启动时校验，不在请求时**。配错了就拒绝启动——
+// 让它跑起来的话，用户要等到真的发请求才收到一句「不支持的模型」，
+// 那时候既看不出是服务端配置问题，也不知道该找谁。
+func resolveRouting(upstreams map[string]Upstream) (map[string]Route, error) {
+	// 只配了一个上游时不必再指定路由：那是最常见的部署形态，
+	// 逼人再配一遍只会制造「明明配了 key 却说模型不支持」的坑。
+	var only string
+	if len(upstreams) == 1 {
+		for name := range upstreams {
+			only = name
+		}
 	}
+
+	routing := make(map[string]Route, len(publicModels))
+	for _, item := range publicModels {
+		upstream := envOr(item.upstreamEnv, only)
+		if upstream == "" {
+			return nil, fmt.Errorf(
+				"配了多个上游，必须用 %s 指定 %s 走哪个", item.upstreamEnv, item.model)
+		}
+		if _, ok := upstreams[upstream]; !ok {
+			return nil, fmt.Errorf(
+				"%s 指向的上游 %q 没有配 API key", item.upstreamEnv, upstream)
+		}
+
+		// 模型名不给默认值：默认值只在「默认的那家上游」上是对的，
+		// 换一家就变成一个必然 404 的名字，而且错得很隐蔽。
+		model := os.Getenv(item.modelEnv)
+		if model == "" {
+			return nil, fmt.Errorf("必须设置 %s，指定 %s 用上游的哪个模型",
+				item.modelEnv, item.model)
+		}
+		routing[item.model] = Route{Upstream: upstream, Model: model}
+	}
+	return routing, nil
 }
 
 // Forward 把请求转给上游，并把响应流原样透传给客户端。
@@ -137,6 +164,7 @@ func (u Upstream) Forward(
 	ctx context.Context,
 	w http.ResponseWriter,
 	req *CompletionRequest,
+	upstreamModel string,
 ) (UsageResult, error) {
 	var result UsageResult
 
@@ -145,7 +173,7 @@ func (u Upstream) Forward(
 	for key, value := range req.raw {
 		payload[key] = value
 	}
-	payload["model"] = upstreamModel(req.Model)
+	payload["model"] = upstreamModel
 
 	if req.Stream {
 		// 要上游在最后一个块里报真实用量。不要的话只能按字符估，

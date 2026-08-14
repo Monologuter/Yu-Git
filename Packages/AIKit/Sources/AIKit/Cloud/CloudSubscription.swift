@@ -74,14 +74,18 @@ public struct CloudSubscription: Sendable, Equatable, Codable {
 ///   端点可配置，界面上会如实标注「服务尚未开放」而不是假装能用。
 public struct YugitCloudProvider: AIProvider {
 
-    /// 默认端点。服务上线前指向这里只会得到连接失败，这是预期行为——
-    /// 假装订阅成功再在使用时失败，比一开始就说清楚糟糕得多。
-    public static let defaultEndpoint: URL = .literal("https://api.yugit.app/v1")
+    /// 默认端点。
+    public static let defaultEndpoint: URL = .literal("https://yugit.educy.top/v1")
 
     /// 服务是否已经上线。
     ///
     /// 写成常量而不是靠探测：探测失败和网络故障长得一模一样，
     /// 用户会以为是自己的网络问题而反复重试。
+    ///
+    /// - Note: 网关本身已经部署并跑通（含流式与计费），但 TLS 还没配上——
+    ///   证书签发要求 80 端口从公网可达，而云厂商的安全组默认不放行。
+    ///   在拿到 https 之前不翻开这个开关：订阅凭据走明文 HTTP 传输，
+    ///   等于把用户的付费凭据摆在网上。宁可显示「尚未开放」。
     public static let isServiceAvailable = false
 
     public let displayName = "驭Git 云服务"
