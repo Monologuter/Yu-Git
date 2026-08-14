@@ -19,6 +19,7 @@ enum CommandRegistry {
         showConflicts: @escaping () -> Void,
         showReview: @escaping () -> Void,
         showWorktrees: @escaping () -> Void,
+        showStashes: @escaping () -> Void,
         showForge: @escaping () -> Void,
         showOnboarding: @escaping () -> Void,
         showChat: @escaping () -> Void,
@@ -258,6 +259,18 @@ enum CommandRegistry {
                 subtitle: "查看和新建，支持 GitHub、GitLab（含自建）、Gitee",
                 systemImage: "arrow.triangle.pull",
                 run: showForge
+            ))
+
+        // MARK: 储藏
+
+        commands.append(
+            PaletteCommand(
+                id: "stash.panel",
+                title: "储藏",
+                subtitle: "看栈里装了什么，应用、取回或丢弃",
+                equivalentCommand: "git stash list",
+                systemImage: "tray.full",
+                run: showStashes
             ))
 
         // MARK: 并行工作区

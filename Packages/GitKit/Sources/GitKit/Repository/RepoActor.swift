@@ -166,6 +166,59 @@ public actor RepoActor {
         return try await work.value
     }
 
+    /// 丢掉一条 stash，**先核对它现在还在不在原来那个位置**。
+    ///
+    /// `git stash drop` 只认 `stash@{N}`，不认 hash；而 N 随时会漂移——
+    /// 删掉中间一条，后面全部前移；用户在自己的终端里 `git stash` 一下，
+    /// 全部后移。拿着几秒前读到的 N 去 drop，删掉的可能是另一条，
+    /// 而**被 drop 的 stash 没有正常途径找回来**。
+    ///
+    /// 核对放在写队列**里面**：放外面的话，核对完到执行之间仍然能插进别的写操作。
+    ///
+    /// - Returns: 丢掉了就返回 true；那条 stash 已经不在了返回 false。
+    @discardableResult
+    public func dropStash(hash: String, name: String) async throws -> Bool {
+        let previous = queueTail
+
+        let work = Task { [self] in
+            await previous?.value
+
+            guard let index = try await client.stashIndex(of: hash, in: root) else {
+                return false
+            }
+            _ = try await recording(GitOperation.stashDrop(index: index, name: name)) { [self] in
+                try await client.run(["stash", "drop", "stash@{\(index)}"], in: root)
+            }
+            return true
+        }
+        queueTail = Task { _ = try? await work.value }
+
+        return try await work.value
+    }
+
+    /// 取回一条 stash（应用后删除），同样先核对位置。
+    ///
+    /// - Returns: 取回了返回 true；那条 stash 已经不在了返回 false。
+    @discardableResult
+    public func popStash(hash: String, name: String) async throws -> Bool {
+        let previous = queueTail
+
+        let work = Task { [self] in
+            await previous?.value
+
+            guard let index = try await client.stashIndex(of: hash, in: root) else {
+                return false
+            }
+            _ = try await recording(GitOperation.stashPop(index: index)) { [self] in
+                try await client.run(["stash", "pop", "stash@{\(index)}"], in: root)
+            }
+            return true
+        }
+        queueTail = Task { _ = try? await work.value }
+
+        return try await work.value
+    }
+
     /// 执行一条 git 写操作并记入时间线，**不重新排队**。
     ///
     /// 给已经在队列里跑的复合操作用（分批提交要连着做好几次 commit）。

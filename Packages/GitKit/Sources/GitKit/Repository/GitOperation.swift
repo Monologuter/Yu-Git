@@ -26,6 +26,8 @@ public struct GitOperation: Sendable, Equatable, Codable {
         case amend
         case stashPush
         case stashPop
+        case stashApply
+        case stashDrop
         case createBranch
         case switchBranch
         case deleteBranch
@@ -206,7 +208,10 @@ extension GitOperation {
         )
     }
 
-    /// 取回最近一次 stash 并从栈中移除。
+    /// 取回一条 stash 并从栈中移除。
+    ///
+    /// - Parameter index: `stash@{N}` 里的 N。**必须是刚刚查出来的**——
+    ///   索引会漂移，见 ``StashEntry/index``。
     public static func stashPop(index: Int = 0) -> GitOperation {
         GitOperation(
             kind: .stashPop,
@@ -215,6 +220,44 @@ extension GitOperation {
             explanation: "把这条 stash 的改动应用回工作区，并从 stash 栈中删除它。"
                 + "若与当前改动冲突，stash 会保留在栈中等待处理。",
             hazard: .none
+        )
+    }
+
+    /// 应用一条 stash，但**保留它**。
+    ///
+    /// 和 pop 分开给而不是加个开关：拿不准的时候应该用 apply。
+    /// 应用之后发现不对，栈里那份还在，能重来；用 pop 的话它已经没了。
+    ///
+    /// - Parameter hash: 用 hash 而不是索引——`stash apply` 认 hash，
+    ///   而索引随时可能已经不是刚才那个了。
+    public static func stashApply(hash: String, name: String) -> GitOperation {
+        GitOperation(
+            kind: .stashApply,
+            arguments: ["stash", "apply", hash],
+            summary: "应用储藏「\(name)」",
+            explanation: "把这条储藏的改动应用回工作区，**并且保留栈里的这一份**。"
+                + "拿不准要不要用它时选这个：应用之后发现不对还能重来，"
+                + "而「取回」会在应用后把它从栈里删掉。",
+            hazard: .none
+        )
+    }
+
+    /// 丢掉一条 stash。
+    ///
+    /// hazard 是 `.discardsUncommittedWork`：stash 里装的正是没提交过的改动，
+    /// 而 drop 掉之后**没有正常途径找回来**（理论上 hash 还在对象库里，
+    /// 但没有任何引用指向它，普通用户找不到，且随时会被 gc 掉）。
+    ///
+    /// - Parameter index: 必须是执行前一刻查出来的。`git stash drop` 只认
+    ///   `stash@{N}`，不认 hash——所以这里躲不开索引，只能在调用前核对。
+    public static func stashDrop(index: Int, name: String) -> GitOperation {
+        GitOperation(
+            kind: .stashDrop,
+            arguments: ["stash", "drop", "stash@{\(index)}"],
+            summary: "丢弃储藏「\(name)」",
+            explanation: "把这条储藏从栈里删掉。里面装的是**从未提交过**的改动，"
+                + "删掉之后没有正常途径找回来——reflog 管不到 stash。",
+            hazard: .discardsUncommittedWork
         )
     }
 }

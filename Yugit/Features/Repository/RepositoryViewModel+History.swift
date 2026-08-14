@@ -100,4 +100,40 @@ extension RepositoryViewModel {
             try await self.repository.perform(.pushTag(name: name))
         }
     }
+
+    // MARK: - stash
+
+    func stashEntries() async throws -> [StashEntry] {
+        try await repository.client.stashList(in: repository.root)
+    }
+
+    func stashFiles(at hash: String) async throws -> [CommitFileChange] {
+        try await repository.client.stashFiles(at: hash, in: repository.root)
+    }
+
+    /// 应用一条储藏，栈里那份保留。
+    func applyStash(_ entry: StashEntry) async {
+        await mutate {
+            try await self.repository.perform(
+                .stashApply(hash: entry.hash, name: entry.displayName))
+        }
+    }
+
+    /// 取回一条储藏（应用后删除）。
+    ///
+    /// - Returns: 取回了返回 true；那条已经不在栈里返回 false；出错返回 nil。
+    func popStash(_ entry: StashEntry) async -> Bool? {
+        await mutate {
+            try await self.repository.popStash(hash: entry.hash, name: entry.displayName)
+        }
+    }
+
+    /// 丢掉一条储藏。
+    ///
+    /// - Returns: 丢掉了返回 true；那条已经不在栈里返回 false；出错返回 nil。
+    func dropStash(_ entry: StashEntry) async -> Bool? {
+        await mutate {
+            try await self.repository.dropStash(hash: entry.hash, name: entry.displayName)
+        }
+    }
 }
