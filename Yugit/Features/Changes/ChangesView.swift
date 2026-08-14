@@ -34,14 +34,23 @@ struct ChangesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // 「变更」上带一个待处理计数。
+            //
+            // 不带的话，人得先切过去才知道有没有改动——而这恰恰是打开客户端后
+            // 最先想知道的一件事。有冲突时改成警示图标，因为冲突不是"几个文件"
+            // 的量级问题，是"现在什么都别干先解决它"的性质问题。
             Picker("", selection: $section) {
                 ForEach(Section.allCases) { section in
-                    Text(section.rawValue).tag(section)
+                    if section == .changes {
+                        Text(changesLabel).tag(section)
+                    } else {
+                        Text(section.rawValue).tag(section)
+                    }
                 }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .padding(8)
+            .padding(Theme.Spacing.regular)
 
             Divider()
 
@@ -81,6 +90,20 @@ struct ChangesView: View {
                 }
             }
         }
+    }
+
+    /// 「变更」分段上显示的文字。
+    ///
+    /// 计数用去重后的路径数，不是暂存 + 未暂存两个数组之和：
+    /// 同一个文件既有已暂存的 hunk 又有未暂存的 hunk 时会同时出现在两边，
+    /// 直接相加会把它数成两个文件，用户看到的数字对不上眼前的列表。
+    private var changesLabel: String {
+        if !repository.conflictedEntries.isEmpty {
+            return "变更 ⚠"
+        }
+        let paths = Set(
+            (repository.stagedEntries + repository.unstagedEntries).map(\.path))
+        return paths.isEmpty ? "变更" : "变更 \(paths.count)"
     }
 
     // MARK: - 变更

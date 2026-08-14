@@ -203,11 +203,17 @@ struct CommitHistoryView: NSViewRepresentable {
 }
 
 /// 单行：分支图 + 提交信息。
+///
+/// 元信息拆成三个独立 label 而不是拼成一个字符串。拼字符串省事，
+/// 但那样三样东西必然同字号同颜色——想让 hash 更淡、时间右对齐都做不到，
+/// 眼睛扫下来也就分不出哪个重要。
 final class CommitCellView: NSTableCellView {
 
     private let graphView = LaneGraphView()
     private let subjectLabel = NSTextField(labelWithString: "")
-    private let detailLabel = NSTextField(labelWithString: "")
+    private let hashLabel = NSTextField(labelWithString: "")
+    private let authorLabel = NSTextField(labelWithString: "")
+    private let dateLabel = NSTextField(labelWithString: "")
 
     /// 每条轨道的水平间距。
     static let laneWidth: CGFloat = 14
@@ -219,32 +225,60 @@ final class CommitCellView: NSTableCellView {
         self.identifier = identifier
 
         subjectLabel.lineBreakMode = .byTruncatingTail
-        subjectLabel.font = .systemFont(ofSize: NSFont.systemFontSize)
+        subjectLabel.font = Theme.NSFonts.body
 
-        detailLabel.lineBreakMode = .byTruncatingTail
-        detailLabel.font = .monospacedDigitSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
-        detailLabel.textColor = .secondaryLabelColor
+        // hash 用等宽，**只有它用**。等宽字体渲染中文（人名、提交标题）
+        // 字距会很难看：中文字形本身就是等宽的，再套一层西文等宽只会破坏节奏。
+        hashLabel.font = Theme.NSFonts.mono
+        hashLabel.textColor = .tertiaryLabelColor
 
-        for view in [graphView, subjectLabel, detailLabel] {
+        authorLabel.lineBreakMode = .byTruncatingTail
+        authorLabel.font = Theme.NSFonts.secondary
+        authorLabel.textColor = .secondaryLabelColor
+
+        // 时间右对齐：不这么做的话，每行的视觉右边界随作者名长度参差不齐，
+        // 快速扫读时间线时眼睛得来回找。
+        dateLabel.font = Theme.NSFonts.secondary
+        dateLabel.textColor = .tertiaryLabelColor
+        dateLabel.alignment = .right
+        // 时间是固定要显示完整的，作者名可以被挤掉
+        dateLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        dateLabel.setContentHuggingPriority(.required, for: .horizontal)
+        hashLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        hashLabel.setContentHuggingPriority(.required, for: .horizontal)
+
+        for view in [graphView, subjectLabel, hashLabel, authorLabel, dateLabel] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
 
         graphWidthConstraint = graphView.widthAnchor.constraint(equalToConstant: Self.minimumGraphWidth)
 
+        let inset = Theme.Spacing.regular
+
         NSLayoutConstraint.activate([
-            graphView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            graphView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Theme.Spacing.tight),
             graphView.topAnchor.constraint(equalTo: topAnchor),
             graphView.bottomAnchor.constraint(equalTo: bottomAnchor),
             graphWidthConstraint,
 
-            subjectLabel.leadingAnchor.constraint(equalTo: graphView.trailingAnchor, constant: 8),
-            subjectLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -8),
-            subjectLabel.topAnchor.constraint(equalTo: topAnchor, constant: 6),
+            subjectLabel.leadingAnchor.constraint(equalTo: graphView.trailingAnchor, constant: inset),
+            subjectLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -inset),
+            subjectLabel.topAnchor.constraint(equalTo: topAnchor, constant: Theme.Spacing.tight + 1),
 
-            detailLabel.leadingAnchor.constraint(equalTo: subjectLabel.leadingAnchor),
-            detailLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -8),
-            detailLabel.topAnchor.constraint(equalTo: subjectLabel.bottomAnchor, constant: 2),
+            hashLabel.leadingAnchor.constraint(equalTo: subjectLabel.leadingAnchor),
+            hashLabel.topAnchor.constraint(
+                equalTo: subjectLabel.bottomAnchor, constant: Theme.Spacing.hairline),
+
+            authorLabel.leadingAnchor.constraint(
+                equalTo: hashLabel.trailingAnchor, constant: Theme.Spacing.regular),
+            authorLabel.firstBaselineAnchor.constraint(equalTo: hashLabel.firstBaselineAnchor),
+
+            // 作者和时间之间留一个最小间距，作者名过长时先截断作者
+            dateLabel.leadingAnchor.constraint(
+                greaterThanOrEqualTo: authorLabel.trailingAnchor, constant: Theme.Spacing.regular),
+            dateLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -inset),
+            dateLabel.firstBaselineAnchor.constraint(equalTo: hashLabel.firstBaselineAnchor),
         ])
     }
 
@@ -255,6 +289,29 @@ final class CommitCellView: NSTableCellView {
         fatalError("不支持从 nib 加载")
     }
 
+    /// 行被选中时 AppKit 会把这个属性切到 `.emphasized`。
+    ///
+    /// 必须跟着改前景色：`secondaryLabelColor` / `tertiaryLabelColor` 这类
+    /// 语义色是为**浅色背景**调的灰阶，直接画在强调色选中背景上对比度不够，
+    /// 看起来像是"变灰了"。分支图同理，交给它自己处理。
+    override var backgroundStyle: NSView.BackgroundStyle {
+        didSet {
+            let emphasized = backgroundStyle == .emphasized
+            subjectLabel.textColor = emphasized ? Theme.Colors.onEmphasized : .labelColor
+            authorLabel.textColor =
+                emphasized
+                ? Theme.Colors.onEmphasized.withAlphaComponent(0.85) : .secondaryLabelColor
+            let faded: NSColor =
+                emphasized
+                ? Theme.Colors.onEmphasized.withAlphaComponent(0.7) : .tertiaryLabelColor
+            hashLabel.textColor = faded
+            dateLabel.textColor = faded
+
+            graphView.isEmphasized = emphasized
+            graphView.needsDisplay = true
+        }
+    }
+
     func configure(commit: Commit, graphRow: CommitGraph.Row?, laneCount: Int) {
         graphView.row = graphRow
         graphView.needsDisplay = true
@@ -262,11 +319,10 @@ final class CommitCellView: NSTableCellView {
             Self.minimumGraphWidth, CGFloat(laneCount) * Self.laneWidth)
 
         subjectLabel.stringValue = commit.subject
-        detailLabel.stringValue = [
-            commit.abbreviatedHash,
-            commit.author.name,
-            Self.relativeFormatter.localizedString(for: commit.author.date, relativeTo: Date()),
-        ].joined(separator: "  ")
+        hashLabel.stringValue = commit.abbreviatedHash
+        authorLabel.stringValue = commit.author.name
+        dateLabel.stringValue = Self.relativeFormatter.localizedString(
+            for: commit.author.date, relativeTo: Date())
     }
 
     private static let relativeFormatter: RelativeDateTimeFormatter = {
@@ -281,11 +337,13 @@ final class LaneGraphView: NSView {
 
     var row: CommitGraph.Row?
 
-    /// 轨道配色。刻意避开红绿——那两个颜色在 diff 里已经代表增删。
-    private static let palette: [NSColor] = [
-        .systemBlue, .systemPurple, .systemTeal, .systemOrange,
-        .systemIndigo, .systemPink, .systemBrown, .systemCyan,
-    ]
+    /// 这一行是否处于「选中且窗口活跃」状态。
+    ///
+    /// 影响很大：选中行的背景是系统强调色（默认蓝），
+    /// 而轨道配色的第一个颜色恰好也是 `.systemBlue`——
+    /// 不做处理的话蓝线画在蓝底上等于消失，只剩节点中间那个掏空的洞，
+    /// 看起来像界面出了 bug。
+    var isEmphasized = false
 
     override var isFlipped: Bool { true }
 
@@ -300,10 +358,18 @@ final class LaneGraphView: NSView {
             CGFloat(lane) * laneWidth + laneWidth / 2
         }
 
+        // 选中态下放弃区分轨道颜色，全部用能压住强调色背景的前景色。
+        // 丢掉的颜色信息只影响当前这一行，而这一行本来就靠背景高亮
+        // 就能一眼定位；相比之下"看不见"是更严重的问题。
+        func color(at index: Int) -> NSColor {
+            isEmphasized
+                ? Theme.Colors.onEmphasized
+                : Theme.Colors.lanes[index % Theme.Colors.lanes.count]
+        }
+
         // 先画线，节点压在线上面
         for link in row.links {
-            let color = Self.palette[link.colorIndex % Self.palette.count]
-            color.setStroke()
+            color(at: link.colorIndex).setStroke()
 
             let path = NSBezierPath()
             path.lineWidth = 1.8
@@ -328,7 +394,6 @@ final class LaneGraphView: NSView {
         }
 
         // 提交节点
-        let nodeColor = Self.palette[row.colorIndex % Self.palette.count]
         let radius: CGFloat = 4
         let nodeRect = NSRect(
             x: centerX(of: row.nodeLane) - radius,
@@ -336,11 +401,17 @@ final class LaneGraphView: NSView {
             width: radius * 2,
             height: radius * 2
         )
-        nodeColor.setFill()
+        color(at: row.colorIndex).setFill()
         NSBezierPath(ovalIn: nodeRect).fill()
 
-        // 中间掏白，让节点在密集的线里也能辨认
-        NSColor.textBackgroundColor.setFill()
+        // 中间掏空，让节点在密集的线里也能辨认。
+        // 选中态下要掏成背景的强调色而不是 textBackgroundColor（白），
+        // 否则蓝底上会出现一个刺眼的白点——正是改之前那个样子。
+        if isEmphasized {
+            NSColor.selectedContentBackgroundColor.setFill()
+        } else {
+            NSColor.textBackgroundColor.setFill()
+        }
         NSBezierPath(ovalIn: nodeRect.insetBy(dx: 1.6, dy: 1.6)).fill()
     }
 }

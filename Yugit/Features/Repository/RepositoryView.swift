@@ -54,23 +54,14 @@ struct RepositoryView: View {
                 .help("回到欢迎页")
             }
 
-            ToolbarItemGroup(placement: .principal) {
-                Button {
-                    showsCommandPalette = true
-                } label: {
-                    Label("命令", systemImage: "command")
-                }
-                .keyboardShortcut("k", modifiers: .command)
-                .help("命令面板（⌘K）——每个操作都会显示等价的 git 命令")
-
-                Button {
-                    isSearching = true
-                } label: {
-                    Label("搜索", systemImage: "magnifyingglass")
-                }
-                .keyboardShortcut("f", modifiers: [.command, .shift])
-                .help("在整个仓库中搜索（⇧⌘F）")
-            }
+            // 工具栏按功能分三组，组间用分隔线。
+            //
+            // 原先五个按钮平铺成一排，视觉上完全等权，但它们其实是三类东西：
+            // 远程传输（会联网、可能失败、可能改历史）、本地视图（无副作用）、
+            // 全局入口。分组之后，"哪些按钮点下去会动到远程"一眼就能看出来。
+            //
+            // 窗口变窄时 NSToolbar 会自动把放不下的项折进 ›› 溢出菜单，
+            // 所以不必为小窗口预先删按钮。
 
             ToolbarItemGroup(placement: .primaryAction) {
                 if repository.isTransferring {
@@ -100,7 +91,11 @@ struct RepositoryView: View {
                 }
                 .disabled(repository.isTransferring)
                 .help(repository.needsUpstreamOnPush ? "首次推送，会同时设置 upstream" : "推送到 upstream")
+            }
 
+            ToolbarItem(placement: .primaryAction) { Divider() }
+
+            ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     Task { await repository.refresh() }
                 } label: {
@@ -115,6 +110,30 @@ struct RepositoryView: View {
                     Label("时间线", systemImage: "clock.arrow.circlepath")
                 }
                 .help("查看操作记录与可恢复的时间点")
+            }
+
+            ToolbarItem(placement: .primaryAction) { Divider() }
+
+            // 搜索和命令面板挪到右侧末尾。
+            // 原先放在 .principal（工具栏正中），那个位置在 macOS 上通常留给
+            // 与当前文档强相关的分段控件，放两个全局入口会显得没着没落——
+            // 截图里那个孤零零飘在中间的放大镜就是这么来的。
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    isSearching = true
+                } label: {
+                    Label("搜索", systemImage: "magnifyingglass")
+                }
+                .keyboardShortcut("f", modifiers: [.command, .shift])
+                .help("在整个仓库中搜索（⇧⌘F）")
+
+                Button {
+                    showsCommandPalette = true
+                } label: {
+                    Label("命令", systemImage: "command")
+                }
+                .keyboardShortcut("k", modifiers: .command)
+                .help("命令面板（⌘K）——每个操作都会显示等价的 git 命令")
             }
         }
         .task {

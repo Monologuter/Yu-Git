@@ -134,17 +134,21 @@ struct CommitDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Theme.Spacing.section) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+                    // 不用 .title3（20pt）。这是侧栏面板不是页面标题，
+                    // 字号过大会让它抢走主列表的视线，而主列表才是干活的地方。
                     Text(commit.subject)
-                        .font(.title3.weight(.semibold))
+                        .font(Theme.Font.title)
                         .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     if !commit.body.isEmpty {
                         Text(commit.body)
-                            .font(.callout)
+                            .font(Theme.Font.body)
                             .foregroundStyle(.secondary)
                             .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
@@ -162,13 +166,25 @@ struct CommitDetailView: View {
 
                 Divider()
 
-                Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
-                    row("提交", value: commit.hash, monospaced: true)
+                Grid(
+                    alignment: .leading,
+                    horizontalSpacing: Theme.Spacing.loose,
+                    verticalSpacing: Theme.Spacing.regular
+                ) {
+                    // 只显示短 hash，完整的那 40 个字符交给复制按钮。
+                    //
+                    // 完整 hash 的用途是**粘贴到别处**，不是阅读——没人会一位一位
+                    // 去核对 40 个十六进制字符。而强行显示全长在这么窄的面板里
+                    // 必然折行，折成两截之后连双击选中都做不到，反而更难复制。
+                    row("提交", value: commit.abbreviatedHash, monospaced: true) {
+                        CopyButton(text: commit.hash, help: "复制完整 commit hash")
+                    }
 
                     row(
                         "作者",
-                        value: "\(commit.author.name) <\(commit.author.email)>",
-                        secondary: commit.author.date.formatted(date: .abbreviated, time: .shortened)
+                        value: commit.author.name,
+                        secondary: "\(commit.author.email) · "
+                            + commit.author.date.formatted(date: .abbreviated, time: .shortened)
                     )
 
                     // author 与 committer 不同意味着经过 rebase / cherry-pick / amend，
@@ -178,9 +194,10 @@ struct CommitDetailView: View {
                     {
                         row(
                             "提交者",
-                            value: "\(commit.committer.name) <\(commit.committer.email)>",
-                            secondary: commit.committer.date.formatted(
-                                date: .abbreviated, time: .shortened)
+                            value: commit.committer.name,
+                            secondary: "\(commit.committer.email) · "
+                                + commit.committer.date.formatted(
+                                    date: .abbreviated, time: .shortened)
                         )
                     }
 
@@ -189,41 +206,79 @@ struct CommitDetailView: View {
                     } else {
                         row(
                             commit.isMerge ? "父提交（合并）" : "父提交",
-                            value: commit.parents.map { String($0.prefix(7)) }.joined(separator: "  "),
+                            value: commit.parents.map { String($0.prefix(9)) }
+                                .joined(separator: "  "),
                             monospaced: true
                         )
                     }
                 }
             }
-            .padding(20)
+            .padding(Theme.Spacing.section)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     @ViewBuilder
-    private func row(
+    private func row<Trailing: View>(
         _ title: String,
         value: String,
         secondary: String? = nil,
-        monospaced: Bool = false
+        monospaced: Bool = false,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
     ) -> some View {
         GridRow {
             Text(title)
-                .font(.caption)
+                .font(Theme.Font.secondary)
                 .foregroundStyle(.secondary)
                 .gridColumnAlignment(.trailing)
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value)
-                    .font(monospaced ? .system(.callout, design: .monospaced) : .callout)
-                    .textSelection(.enabled)
+            VStack(alignment: .leading, spacing: Theme.Spacing.hairline) {
+                HStack(spacing: Theme.Spacing.tight) {
+                    Text(value)
+                        .font(monospaced ? Theme.Font.mono : Theme.Font.body)
+                        .textSelection(.enabled)
+                    trailing()
+                }
 
                 if let secondary {
                     Text(secondary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(.tertiary)
+                        .textSelection(.enabled)
                 }
             }
         }
+    }
+}
+
+/// 复制到剪贴板，并给一个短暂的「已复制」反馈。
+///
+/// 没有反馈的复制按钮是最让人犯嘀咕的交互之一：点完什么都没发生，
+/// 用户不知道到底复制上没有，往往会再点两下。
+private struct CopyButton: View {
+
+    let text: String
+    let help: String
+
+    @State private var justCopied = false
+
+    var body: some View {
+        Button {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(text, forType: .string)
+            justCopied = true
+            Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                justCopied = false
+            }
+        } label: {
+            Image(systemName: justCopied ? "checkmark" : "doc.on.doc")
+                .font(.system(size: 10))
+                .foregroundStyle(justCopied ? .green : .secondary)
+        }
+        .buttonStyle(.borderless)
+        .help(help)
+        // 图标切换时不做位移动画，只做淡入淡出——按钮在原地变，视线不用跟着跑
+        .animation(.easeInOut(duration: 0.15), value: justCopied)
     }
 }
