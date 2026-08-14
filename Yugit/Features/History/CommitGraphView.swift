@@ -22,7 +22,7 @@ struct CommitHistoryView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSScrollView {
-        let table = NSTableView()
+        let table = CommitTableView()
         table.style = .inset
         table.headerView = nil
         table.rowHeight = Coordinator.rowHeight
@@ -44,6 +44,18 @@ struct CommitHistoryView: NSViewRepresentable {
         let menu = NSMenu()
         menu.delegate = context.coordinator
         table.menu = menu
+
+        // ⌘C 复制选中提交的完整 hash。这是从历史里取一个 hash 拿去
+        // cherry-pick、revert、粘给同事时最常做的一步，
+        // 让人先点开右边的详情面板再找复制按钮实在绕。
+        table.onCopySelection = { [weak coordinator = context.coordinator] in
+            guard let coordinator, let table = coordinator.table else { return }
+            let row = table.selectedRow
+            guard coordinator.parent.commits.indices.contains(row) else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(
+                coordinator.parent.commits[row].hash, forType: .string)
+        }
 
         let scrollView = NSScrollView()
         scrollView.documentView = table
@@ -163,6 +175,28 @@ struct CommitHistoryView: NSViewRepresentable {
                 item.toolTip = action.explanation
                 menu.addItem(item)
             }
+
+            // 复制 hash 也放进菜单，不只是给一个藏起来的 ⌘C。
+            // 键盘快捷键不写在任何地方的话没人会知道它存在，
+            // 而菜单项自带的快捷键标注正好把它教出来。
+            menu.addItem(.separator())
+            let copyItem = NSMenuItem(
+                title: "复制完整 hash",
+                action: #selector(copyHash(_:)),
+                keyEquivalent: "c"
+            )
+            copyItem.keyEquivalentModifierMask = .command
+            copyItem.target = self
+            copyItem.toolTip = parent.commits[row].hash
+            menu.addItem(copyItem)
+        }
+
+        @objc private func copyHash(_ sender: NSMenuItem) {
+            guard let row = table?.clickedRow,
+                parent.commits.indices.contains(row)
+            else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(parent.commits[row].hash, forType: .string)
         }
 
         @objc private func runQuickAction(_ sender: NSMenuItem) {
@@ -468,5 +502,65 @@ final class LaneGraphView: NSView {
             NSColor.textBackgroundColor.setFill()
         }
         NSBezierPath(ovalIn: nodeRect.insetBy(dx: 1.6, dy: 1.6)).fill()
+    }
+}
+
+/// 带键盘操作的提交表格。
+///
+/// `NSTableView` 本身就认 ↑↓、Page Up/Down、Home/End，这些不用管也不该改——
+/// 覆盖系统已有的键只会让人重新学。这里只补两样它没有的：
+/// vim 风格的 j/k，以及 ⌘C 复制 hash。
+final class CommitTableView: NSTableView {
+
+    /// ⌘C 时调用。
+    var onCopySelection: (() -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        // 只认不带任何修饰键的 j/k。带上修饰键的组合都是别人的地盘：
+        // ⌘J、⌥K 之类可能是菜单快捷键，抢过来会让那些菜单项失灵。
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if modifiers.isEmpty {
+            switch event.charactersIgnoringModifiers {
+            case "j":
+                moveSelection(by: 1)
+                return
+            case "k":
+                moveSelection(by: -1)
+                return
+            default:
+                break
+            }
+        }
+        super.keyDown(with: event)
+    }
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if modifiers == .command, event.charactersIgnoringModifiers == "c",
+            selectedRow >= 0
+        {
+            onCopySelection?()
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+
+    /// 上下移动选中行。
+    ///
+    /// 还没有任何选中时，无论按 j 还是 k 都落到第一行——
+    /// 此时列表顶端就在眼前，从那里开始最符合预期。
+    private func moveSelection(by delta: Int) {
+        guard numberOfRows > 0 else { return }
+
+        let target: Int
+        if selectedRow < 0 {
+            target = 0
+        } else {
+            target = selectedRow + delta
+        }
+
+        guard target >= 0, target < numberOfRows else { return }
+        selectRowIndexes(IndexSet(integer: target), byExtendingSelection: false)
+        scrollRowToVisible(target)
     }
 }

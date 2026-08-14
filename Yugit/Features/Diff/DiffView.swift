@@ -23,6 +23,27 @@ struct DiffView: View {
     /// shift 连选的锚点。
     @State private var anchor: (hunk: Int, line: Int)?
 
+    /// 长行是否折行显示。
+    ///
+    /// 存在 AppStorage 而不是 @State：这是个人偏好，不是某个文件的属性，
+    /// 每换一个文件都要重设一次会很烦。
+    @AppStorage("com.chenya.yugit.diff.wrapLines") private var wrapsLines = false
+
+    /// 行号列宽度，按这个 diff 里最大的行号算。
+    ///
+    /// 固定宽度在小文件上很浪费：两列各 44pt 就是 88pt，而三位数行号
+    /// 只需要一半。diff 面板本来就窄，省下来的都是正文的宽度。
+    private var lineNumberWidth: CGFloat {
+        let widest = diff.hunks
+            .flatMap(\.lines)
+            .reduce(0) { current, line in
+                max(current, max(line.oldLineNumber ?? 0, line.newLineNumber ?? 0))
+            }
+        // 等宽数字大约 7pt 一位，最少留两位，两侧各留一点内边距
+        let digits = max(String(widest).count, 2)
+        return CGFloat(digits) * 7 + 10
+    }
+
     var body: some View {
         if diff.isBinary {
             ContentUnavailableView(
@@ -60,7 +81,9 @@ struct DiffView: View {
     }
 
     private var lineList: some View {
-        ScrollView([.vertical, .horizontal]) {
+        // 折行时关掉横向滚动。两个都开着的话，SwiftUI 会认为内容宽度不受限，
+        // 折行就永远不会发生——正文一路往右延伸，开关看着像是失灵了。
+        ScrollView(wrapsLines ? [.vertical] : [.vertical, .horizontal]) {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
                 ForEach(Array(diff.hunks.enumerated()), id: \.offset) { hunkIndex, hunk in
                     Section {
@@ -68,6 +91,8 @@ struct DiffView: View {
                             DiffLineRow(
                                 line: line,
                                 isSelected: selection[hunkIndex]?.contains(lineIndex) ?? false,
+                                wrapsLines: wrapsLines,
+                                lineNumberWidth: lineNumberWidth,
                                 onTap: { extendsSelection in
                                     toggle(hunk: hunkIndex, line: lineIndex, extending: extendsSelection)
                                 }
@@ -86,6 +111,26 @@ struct DiffView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(Color(nsColor: .textBackgroundColor))
+        .overlay(alignment: .bottomTrailing) { wrapToggle }
+    }
+
+    /// 折行开关。
+    ///
+    /// 放右下角而不是顶部工具条：diff 面板的顶部已经有文件名和暂存按钮，
+    /// 再加一条只为一个开关的工具条，会把本就不多的正文高度又挤掉一截。
+    /// 右下角是滚动内容天然的空区，也不挡任何一行的行首。
+    private var wrapToggle: some View {
+        Button {
+            wrapsLines.toggle()
+        } label: {
+            Image(systemName: wrapsLines ? "text.alignleft" : "arrow.left.and.right")
+                .font(.system(size: 11))
+                .padding(Theme.Spacing.tight + 1)
+                .background(.thinMaterial, in: .rect(cornerRadius: Theme.Radius.small))
+        }
+        .buttonStyle(.borderless)
+        .padding(Theme.Spacing.regular)
+        .help(wrapsLines ? "改为不折行（长行横向滚动）" : "折行显示长行")
     }
 
     // MARK: - 选择
@@ -215,13 +260,17 @@ struct DiffLineRow: View {
 
     let line: DiffLine
     var isSelected = false
+    var wrapsLines = false
+    var lineNumberWidth: CGFloat = 44
     /// 参数为 true 表示按住 shift 点击（连选）。
     var onTap: ((Bool) -> Void)?
 
     @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: 0) {
+        // 折行时行号要顶在第一行文字的基线上，否则一行折成五行后，
+        // 行号会飘到这五行的正中间，跟哪一行都对不上。
+        HStack(alignment: wrapsLines ? .firstTextBaseline : .center, spacing: 0) {
             lineNumber(line.oldLineNumber)
             lineNumber(line.newLineNumber)
 
@@ -233,7 +282,7 @@ struct DiffLineRow: View {
             Text(displayText)
                 .font(.system(.body, design: .monospaced))
                 .textSelection(.enabled)
-                .fixedSize(horizontal: true, vertical: false)
+                .fixedSize(horizontal: !wrapsLines, vertical: true)
 
             if line.isMissingNewline {
                 Text("↵ 无换行结尾")
@@ -274,7 +323,11 @@ struct DiffLineRow: View {
         Text(number.map(String.init) ?? "")
             .font(.system(.caption2, design: .monospaced))
             .foregroundStyle(.tertiary)
-            .frame(width: 44, alignment: .trailing)
+            // 行号绝不参与压缩：被挤掉一位数字的行号是错的行号，
+            // 比不显示还糟——正文可以横向滚动，行号没有退路。
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(width: lineNumberWidth, alignment: .trailing)
             .padding(.trailing, 6)
     }
 
