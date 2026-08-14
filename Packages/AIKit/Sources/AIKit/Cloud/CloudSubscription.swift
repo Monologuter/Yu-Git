@@ -82,11 +82,11 @@ public struct YugitCloudProvider: AIProvider {
     /// 写成常量而不是靠探测：探测失败和网络故障长得一模一样，
     /// 用户会以为是自己的网络问题而反复重试。
     ///
-    /// - Note: 网关本身已经部署并跑通（含流式与计费），但 TLS 还没配上——
-    ///   证书签发要求 80 端口从公网可达，而云厂商的安全组默认不放行。
-    ///   在拿到 https 之前不翻开这个开关：订阅凭据走明文 HTTP 传输，
-    ///   等于把用户的付费凭据摆在网上。宁可显示「尚未开放」。
-    public static let isServiceAvailable = false
+    /// - Note: 服务端已上线并跑通全链路——TLS（Let's Encrypt，自动续期已验证）、
+    ///   流式补全、按真实用量计费、额度耗尽与凭据吊销的拦截。
+    ///   翻开这个开关的前提是 **https 可用**：订阅凭据走明文 HTTP 等于
+    ///   把用户的付费凭据摆在网上，那种情况下宁可显示「尚未开放」。
+    public static let isServiceAvailable = true
 
     public let displayName = "驭Git 云服务"
 

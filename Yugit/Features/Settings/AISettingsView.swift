@@ -137,6 +137,8 @@ private struct ConfigurationEditor: View {
     @State private var apiKey = ""
     @State private var testResult: String?
     @State private var isTesting = false
+
+    private var isCloud: Bool { configuration.kind == .yugitCloud }
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -165,15 +167,33 @@ private struct ConfigurationEditor: View {
                     modelField
                 }
 
-                Section(configuration.kind == .yugitCloud ? "订阅凭据" : "API Key") {
+                Section(isCloud ? "订阅凭据" : "API Key") {
                     // SecureField：Key 不该以明文出现在屏幕上，
                     // 录屏、投屏、旁人一眼看见都是真实风险
-                    SecureField("sk-...", text: $apiKey)
+                    //
+                    // placeholder 要分开：云服务的凭据是 yg_ 开头，
+                    // 统一写 sk-... 会让人以为这里也要填一个服务商的 API Key
+                    SecureField(isCloud ? "yg_..." : "sk-...", text: $apiKey)
                         .textFieldStyle(.roundedBorder)
 
-                    Label("Key 存放在系统钥匙串，不会写进配置文件，也不参与 iCloud 同步。", systemImage: "lock")
+                    if isCloud {
+                        Label(
+                            "凭据在订阅时发放，只显示一次。丢了只能重新签发——"
+                                + "服务端只存它的哈希，找不回来。",
+                            systemImage: "key"
+                        )
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    }
+
+                    Label(
+                        isCloud
+                            ? "凭据存放在系统钥匙串，不会写进配置文件，也不参与 iCloud 同步。"
+                            : "Key 存放在系统钥匙串，不会写进配置文件，也不参与 iCloud 同步。",
+                        systemImage: "lock"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
 
                 if let result = testResult {

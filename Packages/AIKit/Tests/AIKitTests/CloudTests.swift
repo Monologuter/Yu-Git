@@ -51,8 +51,17 @@ struct CloudSubscriptionTests {
 
     @Test("服务尚未上线，明确标注而不是靠探测")
     func serviceAvailabilityIsExplicit() {
-        // 探测失败和网络故障长得一模一样，用户会以为是自己的网络问题而反复重试
-        #expect(!YugitCloudProvider.isServiceAvailable)
+        // 探测失败和网络故障长得一模一样，用户会以为是自己的网络问题而反复重试。
+        // 服务已上线，所以这里是 true；关键在于它是个**写死的常量**，
+        // 而不是启动时去 ping 一下服务端。
+        #expect(YugitCloudProvider.isServiceAvailable)
+    }
+
+    @Test("端点必须是 https")
+    func endpointMustBeSecure() {
+        // 订阅凭据是能直接花钱的东西，走明文 HTTP 等于把它摆在网上。
+        // 这条断言防的是"临时改成 http 调试完忘了改回来"。
+        #expect(YugitCloudProvider.defaultEndpoint.scheme == "https")
     }
 
     @Test("解析订阅响应")
