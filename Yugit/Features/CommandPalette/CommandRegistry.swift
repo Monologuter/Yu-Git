@@ -20,6 +20,7 @@ enum CommandRegistry {
         showReview: @escaping () -> Void,
         showWorktrees: @escaping () -> Void,
         showStashes: @escaping () -> Void,
+        showRemotes: @escaping () -> Void,
         showForge: @escaping () -> Void,
         showOnboarding: @escaping () -> Void,
         showChat: @escaping () -> Void,
@@ -259,6 +260,18 @@ enum CommandRegistry {
                 subtitle: "查看和新建，支持 GitHub、GitLab（含自建）、Gitee",
                 systemImage: "arrow.triangle.pull",
                 run: showForge
+            ))
+
+        // MARK: 远程
+
+        commands.append(
+            PaletteCommand(
+                id: "remote.panel",
+                title: "远程管理",
+                subtitle: "添加、改名、改地址、删除",
+                equivalentCommand: "git remote -v",
+                systemImage: "cloud",
+                run: showRemotes
             ))
 
         // MARK: 储藏

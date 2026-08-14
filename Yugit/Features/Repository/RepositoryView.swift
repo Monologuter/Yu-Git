@@ -19,6 +19,7 @@ struct RepositoryView: View {
     @State private var reviewModel: ReviewViewModel?
     @State private var worktreeModel: WorktreeViewModel?
     @State private var stashModel: StashViewModel?
+    @State private var remoteModel: RemoteViewModel?
     @State private var forgeModel: ForgeViewModel?
     @State private var chatModel: ChatViewModel?
     @State private var showsOnboarding = false
@@ -157,6 +158,7 @@ struct RepositoryView: View {
                     showReview: { reviewModel = ReviewViewModel(repository: repository) },
                     showWorktrees: { worktreeModel = WorktreeViewModel(repository: repository) },
                     showStashes: { stashModel = StashViewModel(repository: repository) },
+                    showRemotes: { remoteModel = RemoteViewModel(repository: repository) },
                     showForge: { forgeModel = ForgeViewModel(repository: repository) },
                     showOnboarding: { showsOnboarding = true },
                     showChat: { chatModel = ChatViewModel(repository: repository) },
@@ -187,6 +189,9 @@ struct RepositoryView: View {
         }
         .sheet(item: $stashModel) { model in
             StashView(model: model) { stashModel = nil }
+        }
+        .sheet(item: $remoteModel) { model in
+            RemoteView(model: model) { remoteModel = nil }
         }
         .sheet(item: $reviewModel) { model in
             ReviewView(model: model) { reviewModel = nil }

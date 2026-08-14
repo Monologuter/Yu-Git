@@ -136,4 +136,28 @@ extension RepositoryViewModel {
             try await self.repository.dropStash(hash: entry.hash, name: entry.displayName)
         }
     }
+
+    // MARK: - remote
+
+    func remoteList() async throws -> [Remote] {
+        try await repository.client.remotes(in: repository.root)
+    }
+
+    func addRemote(name: String, url: String) async {
+        await mutate { try await self.repository.perform(.addRemote(name: name, url: url)) }
+    }
+
+    func setRemoteURL(name: String, url: String) async {
+        await mutate { try await self.repository.perform(.setRemoteURL(name: name, url: url)) }
+    }
+
+    func renameRemote(from oldName: String, to newName: String) async {
+        await mutate {
+            try await self.repository.perform(.renameRemote(from: oldName, to: newName))
+        }
+    }
+
+    func removeRemote(named name: String) async {
+        await mutate { try await self.repository.perform(.removeRemote(name: name)) }
+    }
 }
