@@ -161,10 +161,20 @@ struct SystemTheme: ThemePalette {
     var accent: Color { .accentColor }
     var onAccent: Color { Color(nsColor: .alternateSelectedControlTextColor) }
 
-    var brand: Color { .theme(light: 0x01_7272, dark: 0x5C_C6B9) }
-    var brandHover: Color { .theme(light: 0x00_5F5F, dark: 0x7B_D6CB) }
-    var brandWash: Color { .theme(light: 0xDC_F9F8, dark: 0x0A_3535) }
-    var onBrand: Color { .theme(light: 0xFF_FFFF, dark: 0x08_211F) }
+    // 品牌靛。**不跟色相跑，跟明度跑。**
+    //
+    // 去掉被 diff 独占的绿色系之后，色相圈上最宽的空隙只有 43°——
+    // 任何饱和色相都不可能同时离 8 条轨道都 ≥25°。第一版的青 `#017272`
+    // 就栽在这里：它和 lane-1 只差 5°，界面上「这是品牌标记还是某条分支」
+    // 要多判断一次。
+    //
+    // 解法是从明度上跳出去：轨道活在 OKLCH L 0.554/0.645，品牌色走 L 0.42
+    // （深色模式 L 0.62），比任何一条轨道都深。离最近的 lane-7 靛 ΔE 16.4，
+    // 红色弱下 15.3。
+    var brand: Color { .theme(light: 0x4A_3D8B, dark: 0x93_8BDA) }
+    var brandHover: Color { .theme(light: 0x3C_2E7A, dark: 0xA8_A1F2) }
+    var brandWash: Color { .theme(light: 0xF2_F2FF, dark: 0x28_2642) }
+    var onBrand: Color { .theme(light: 0xFF_FFFF, dark: 0x12_101F) }
 
     var contentBackground: Color { .theme(light: 0xFF_FFFF, dark: 0x18_1A1C) }
     var sunkenBackground: Color { .theme(light: 0xF7_F8F9, dark: 0x0F_1113) }
@@ -192,16 +202,25 @@ struct SystemTheme: ThemePalette {
     /// 正常视力看不出「脏」。相邻 colorIndex 永远跨明度档。
     ///
     /// 全部避开红绿——那两个色相被 diff 独占。
+    ///
+    /// 6 号原来是「碧 `#00A86E`」okH 160°，离 diff 绿 152° 只差 8°。
+    /// 左边分支图、右边 diff 面板同屏摆着，用户会把两种绿关联起来，
+    /// 而它们语义上毫无关系。换成 okH 103° 的「柘」（黄褐），离 diff 绿 47°。
+    /// 8 条轨道少一个绿色系不损失任何东西。
+    ///
+    /// 深色一组也严格走两档明度（奇数 L 0.68 / 偶数 L 0.80）。第一版这里有
+    /// 三个明度值，4 与 5 还落在同一档——那是一对相邻 colorIndex，
+    /// 红色弱下 ΔE 只有 2.2，等于两条挨着的线糊成一条。
     var lanes: [NSColor] {
         [
-            .theme(light: 0x00_857A, dark: 0x0C_B6A8),  // 1 青 185°
+            .theme(light: 0x00_857A, dark: 0x00_B0A2),  // 1 靛青 185°，主线默认落这轨
             .theme(light: 0xA6_65E5, dark: 0xD1_A9FF),  // 2 紫 305°
-            .theme(light: 0x9A_6704, dark: 0xFC_AB05),  // 3 琥 75°
-            .theme(light: 0x08_9DC1, dark: 0x0B_AFD7),  // 4 蓝 222°
-            .theme(light: 0xB6_3795, dark: 0xF6_7BD1),  // 5 玫 340°
-            .theme(light: 0x00_A86E, dark: 0x0D_CD88),  // 6 碧 160°
-            .theme(light: 0x3A_68E0, dark: 0x6E_9AFF),  // 7 靛 265°
-            .theme(light: 0xE8_5A0E, dark: 0xFE_8959),  // 8 赭 42°
+            .theme(light: 0x9A_6704, dark: 0xCB_8900),  // 3 琥 75°
+            .theme(light: 0x08_9DC1, dark: 0x47_D0F9),  // 4 蓝 222°
+            .theme(light: 0xB6_3795, dark: 0xDE_65BA),  // 5 玫 340°
+            .theme(light: 0x9C_9023, dark: 0xD1_C12A),  // 6 柘 103°
+            .theme(light: 0x3A_68E0, dark: 0x68_94F8),  // 7 靛 265°
+            .theme(light: 0xE8_5A0E, dark: 0xFF_A37E),  // 8 赭 42°
         ]
     }
     var laneOnSelection: NSColor { .white }
