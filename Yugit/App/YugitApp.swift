@@ -47,7 +47,14 @@ struct YugitApp: App {
         }
 
         Settings {
-            AISettingsView(store: aiSettings)
+            // 分标签页而不是把所有设置堆在一页：AI 那页已经很满了，
+            // 主题选项挤进去会被淹没
+            TabView {
+                AISettingsView(store: aiSettings)
+                    .tabItem { Label("AI", systemImage: "sparkles") }
+                AppearanceSettingsView()
+                    .tabItem { Label("外观", systemImage: "paintpalette") }
+            }
         }
     }
 }

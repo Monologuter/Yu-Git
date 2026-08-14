@@ -133,7 +133,7 @@ struct DiffView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color(nsColor: .textBackgroundColor))
+        .background(Theme.Colors.contentBackground)
         .overlay(alignment: .bottomTrailing) { wrapToggle }
     }
 
@@ -356,7 +356,8 @@ struct DiffLineRow: View {
 
         // 行内底色比整行底色更深一档：整行已经是浅红/浅绿，
         // 变化的那几段要在这个背景上再压一层才看得出来。
-        let emphasis: Color = line.kind == .addition ? .green : .red
+        let emphasis: Color =
+            line.kind == .addition ? Theme.Colors.diffAddedWord : Theme.Colors.diffDeletedWord
         let characters = Array(displayText)
 
         for range in changedRanges {
@@ -369,7 +370,7 @@ struct DiffLineRow: View {
                 let end = result.index(
                     result.startIndex, offsetByCharacters: range.upperBound)
             else { continue }
-            result[start..<end].backgroundColor = emphasis.opacity(0.28)
+            result[start..<end].backgroundColor = emphasis
         }
         return result
     }
@@ -413,12 +414,12 @@ struct DiffLineRow: View {
     /// 那两个在 diff 里已经稳定表示增删，再用来标语法会混淆两套含义。
     private func color(for kind: SyntaxToken.Kind) -> Color {
         switch kind {
-        case .keyword: .purple
-        case .string: .brown
-        case .comment: .secondary
-        case .number: .orange
-        case .type: .teal
-        case .plain: .primary
+        case .keyword: Theme.Colors.syntaxKeyword
+        case .string: Theme.Colors.syntaxString
+        case .comment: Theme.Colors.syntaxComment
+        case .number: Theme.Colors.syntaxNumber
+        case .type: Theme.Colors.syntaxType
+        case .plain: Theme.Colors.primaryText
         }
     }
 
@@ -437,22 +438,22 @@ struct DiffLineRow: View {
 
     private var markerColor: Color {
         switch line.kind {
-        case .addition: .green
-        case .deletion: .red
-        case .context: .secondary
+        case .addition: Theme.Colors.diffAddedText
+        case .deletion: Theme.Colors.diffDeletedText
+        case .context: Theme.Colors.secondaryText
         }
     }
 
     private var backgroundColor: Color {
         if isSelected {
-            return Color.accentColor.opacity(0.22)
+            return Theme.Colors.accent.opacity(0.22)
         }
         if isHovering && isSelectable {
             return Color.primary.opacity(0.06)
         }
         switch line.kind {
-        case .addition: return Color.green.opacity(0.12)
-        case .deletion: return Color.red.opacity(0.12)
+        case .addition: return Theme.Colors.diffAddedLine
+        case .deletion: return Theme.Colors.diffDeletedLine
         case .context: return .clear
         }
     }

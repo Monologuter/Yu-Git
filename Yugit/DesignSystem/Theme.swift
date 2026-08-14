@@ -78,24 +78,60 @@ enum Theme {
 
     // MARK: - 颜色
     //
-    // 全部是语义色。想加新颜色时先问一句：系统有没有现成的语义色表达这个意思？
-    // 十有八九是有的。
+    // 全部转发给当前主题（``ThemeManager/palette``），这里不放任何具体色值。
+    //
+    // 保持 `Theme.Colors.xxx` 这个静态访问路径是刻意的：界面代码一个字都不用改，
+    // 就从「写死系统色」变成了「跟随主题」。换主题时 SwiftUI 会自动重绘，
+    // 因为 `@Observable` 的依赖追踪看的是属性访问，不看调用栈有多深。
+    //
+    // 加新颜色的规矩：先加进 ``ThemePalette`` 协议，再在这里开一个转发。
+    // 直接在视图里写死颜色，等于让那一处永远不受主题控制。
 
+    @MainActor
     enum Colors {
-        /// 分支图的轨道配色。
-        ///
-        /// 刻意避开红绿——那两个颜色在 diff 里已经稳定表示增删，
-        /// 在分支图里再用一次，读者会下意识以为它们有关联。
-        static let lanes: [NSColor] = [
-            .systemBlue, .systemPurple, .systemTeal, .systemOrange,
-            .systemIndigo, .systemPink, .systemBrown, .systemCyan,
-        ]
 
-        /// 选中且窗口是活跃状态时，画在强调色背景上的前景色。
+        private static var palette: any ThemePalette { ThemeManager.shared.palette }
+
+        // ── 品牌 ──
+        static var accent: Color { palette.accent }
+        static var onAccent: Color { palette.onAccent }
+
+        // ── 界面 ──
+        static var contentBackground: Color { palette.contentBackground }
+        static var primaryText: Color { palette.primaryText }
+        static var secondaryText: Color { palette.secondaryText }
+        static var tertiaryText: Color { palette.tertiaryText }
+        static var separator: Color { palette.separator }
+
+        // ── 分支图 ──
+        static var lanes: [NSColor] { palette.lanes }
+        static var laneOnSelection: NSColor { palette.laneOnSelection }
+        static var laneNodeCore: NSColor { palette.laneNodeCore }
+        static var laneNodeCoreOnSelection: NSColor { palette.laneNodeCoreOnSelection }
+        static var laneLineWidth: CGFloat { palette.laneLineWidth }
+        static var laneNodeRadius: CGFloat { palette.laneNodeRadius }
+
+        /// 旧名，等同于 ``laneOnSelection``。
         ///
-        /// 分支图的节点在这种情况下必须换成它。
-        /// 否则蓝色节点画在蓝色选中背景上等于消失——
-        /// 那正是这一版界面里"选中行的圆点变成一个白洞"的原因。
-        static let onEmphasized: NSColor = .alternateSelectedControlTextColor
+        /// 留着是因为它在 AppKit 那两处被反复使用，改名的收益抵不上
+        /// 全部改一遍的风险。新代码用 `laneOnSelection`。
+        static var onEmphasized: NSColor { palette.laneOnSelection }
+
+        // ── diff ──
+        static var diffAddedText: Color { palette.diffAddedText }
+        static var diffDeletedText: Color { palette.diffDeletedText }
+        static var diffAddedLine: Color { palette.diffAddedLine }
+        static var diffDeletedLine: Color { palette.diffDeletedLine }
+        static var diffAddedWord: Color { palette.diffAddedWord }
+        static var diffDeletedWord: Color { palette.diffDeletedWord }
+        static var conflict: Color { palette.conflict }
+        static var danger: Color { palette.danger }
+
+        // ── 语法高亮 ──
+        static var syntaxKeyword: Color { palette.syntaxKeyword }
+        static var syntaxString: Color { palette.syntaxString }
+        static var syntaxComment: Color { palette.syntaxComment }
+        static var syntaxNumber: Color { palette.syntaxNumber }
+        static var syntaxType: Color { palette.syntaxType }
     }
 }

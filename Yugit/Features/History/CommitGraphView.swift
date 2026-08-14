@@ -65,6 +65,7 @@ struct CommitHistoryView: NSViewRepresentable {
 
         context.coordinator.table = table
         context.coordinator.observeScrolling(in: scrollView)
+        context.coordinator.observeThemeChanges()
         return scrollView
     }
 
@@ -207,6 +208,26 @@ struct CommitHistoryView: NSViewRepresentable {
             else { return }
 
             parent.onQuickAction(action, parent.commits[row])
+        }
+
+        // MARK: - 主题
+
+        /// 换主题时重绘整张表。
+        ///
+        /// AppKit 不在 SwiftUI 的依赖追踪里：`Theme.Colors` 的值变了，
+        /// 已经画在屏幕上的行不会自己知道。SwiftUI 那边靠 @Observable 自动重绘，
+        /// 这边只能收到通知后自己 reload。
+        func observeThemeChanges() {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(themeDidChange),
+                name: ThemeManager.themeDidChange,
+                object: nil
+            )
+        }
+
+        @objc private func themeDidChange() {
+            table?.reloadData()
         }
 
         // MARK: - 增量加载
@@ -461,7 +482,7 @@ final class LaneGraphView: NSView {
             color(at: link.colorIndex).setStroke()
 
             let path = NSBezierPath()
-            path.lineWidth = 1.8
+            path.lineWidth = Theme.Colors.laneLineWidth
             path.lineCapStyle = .round
 
             let fromX = centerX(of: link.fromLane)
@@ -483,7 +504,7 @@ final class LaneGraphView: NSView {
         }
 
         // 提交节点
-        let radius: CGFloat = 4
+        let radius = Theme.Colors.laneNodeRadius
         let nodeRect = NSRect(
             x: centerX(of: row.nodeLane) - radius,
             y: middle - radius,
@@ -497,9 +518,9 @@ final class LaneGraphView: NSView {
         // 选中态下要掏成背景的强调色而不是 textBackgroundColor（白），
         // 否则蓝底上会出现一个刺眼的白点——正是改之前那个样子。
         if isEmphasized {
-            NSColor.selectedContentBackgroundColor.setFill()
+            Theme.Colors.laneNodeCoreOnSelection.setFill()
         } else {
-            NSColor.textBackgroundColor.setFill()
+            Theme.Colors.laneNodeCore.setFill()
         }
         NSBezierPath(ovalIn: nodeRect.insetBy(dx: 1.6, dy: 1.6)).fill()
     }
