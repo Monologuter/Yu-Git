@@ -215,10 +215,25 @@ final class CommitCellView: NSTableCellView {
     private let authorLabel = NSTextField(labelWithString: "")
     private let dateLabel = NSTextField(labelWithString: "")
 
-    /// 每条轨道的水平间距。
+    /// 每条轨道的水平间距（轨道不多时用这个值）。
     static let laneWidth: CGFloat = 14
     /// 图形区最窄宽度，避免线性历史时信息贴着左边缘。
     static let minimumGraphWidth: CGFloat = 24
+
+    /// 图形区最宽多少。
+    ///
+    /// **必须有上限**，否则提交标题会被挤没。轨道数取的是整个已加载历史的
+    /// 最大并行数，不是当前这一屏的——一个有几十个分支的仓库里，只要历史中
+    /// 某处并行过八条轨道，每一行都会留出 112pt 图形区，哪怕眼前这一屏
+    /// 全是单线提交。中间栏总共才 260pt 上下，扣掉之后标题只剩几十 pt，
+    /// 整列就会变成「fix(proj...」「Merge...」这种读不出内容的样子。
+    ///
+    /// 84pt 是权衡的结果：够画 6 条等宽轨道，覆盖绝大多数仓库的日常形态；
+    /// 再多就靠压缩轨道间距容纳，宁可线挤一点，也不能让标题看不见——
+    /// 分支图是辅助信息，提交标题才是这个列表存在的理由。
+    static let maximumGraphWidth: CGFloat = 84
+    /// 轨道再挤也不能细过这个值，否则相邻两条线会糊成一条。
+    static let minimumLaneWidth: CGFloat = 5
 
     init(identifier: NSUserInterfaceItemIdentifier) {
         super.init(frame: .zero)
@@ -226,6 +241,14 @@ final class CommitCellView: NSTableCellView {
 
         subjectLabel.lineBreakMode = .byTruncatingTail
         subjectLabel.font = Theme.NSFonts.body
+        // 标题该截断就截断，不许它反过来把图形区挤窄。
+        //
+        // 默认的压缩阻力是 750，和图形区宽度约束打平——打平时 Auto Layout
+        // 的取舍就取决于标题长短，结果是标题长的行把图形区挤扁、短的不挤，
+        // 整列的左边界会一行一个样，在滚动时看着像在左右抖。
+        // 图形区宽度必须是全列一致的，那是"同一条轨道在相邻行要能连上"的前提。
+        subjectLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        authorLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         // hash 用等宽，**只有它用**。等宽字体渲染中文（人名、提交标题）
         // 字距会很难看：中文字形本身就是等宽的，再套一层西文等宽只会破坏节奏。
@@ -252,9 +275,22 @@ final class CommitCellView: NSTableCellView {
             addSubview(view)
         }
 
-        graphWidthConstraint = graphView.widthAnchor.constraint(equalToConstant: Self.minimumGraphWidth)
+        graphWidthConstraint = graphView.widthAnchor.constraint(
+            equalToConstant: Self.minimumGraphWidth)
+        // 比标题的压缩阻力高，比下面那条「不超过三分之一行宽」的硬上限低。
+        // 夹在中间：正常情况下宽度说一不二，只有窄到超过三分之一时才让步。
+        graphWidthConstraint.priority = NSLayoutConstraint.Priority(900)
 
         let inset = Theme.Spacing.regular
+
+        NSLayoutConstraint.activate([
+            // 无论轨道多少，图形区都不许吃掉超过三分之一的行宽。
+            // 用约束而不是在 configure 里按宽度算：栏宽是可以被用户随手拖的，
+            // 靠计算的话每拖一次都得 reloadData 才能生效，而这条约束
+            // 是 Auto Layout 自己实时算的，拖动过程中就跟着让位。
+            graphView.widthAnchor.constraint(
+                lessThanOrEqualTo: widthAnchor, multiplier: 0.34)
+        ])
 
         NSLayoutConstraint.activate([
             graphView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Theme.Spacing.tight),
@@ -314,9 +350,21 @@ final class CommitCellView: NSTableCellView {
 
     func configure(commit: Commit, graphRow: CommitGraph.Row?, laneCount: Int) {
         graphView.row = graphRow
+
+        // 轨道多到放不下时压缩间距，而不是把图形区一路撑宽去挤占标题。
+        // 间距对所有行必须一致，否则同一条轨道在相邻两行会错位、连不上线。
+        let lanes = max(laneCount, 1)
+        let laneWidth = max(
+            Self.minimumLaneWidth,
+            min(Self.laneWidth, Self.maximumGraphWidth / CGFloat(lanes))
+        )
+        graphView.laneWidth = laneWidth
         graphView.needsDisplay = true
-        graphWidthConstraint.constant = max(
-            Self.minimumGraphWidth, CGFloat(laneCount) * Self.laneWidth)
+
+        graphWidthConstraint.constant = min(
+            max(Self.minimumGraphWidth, CGFloat(lanes) * laneWidth),
+            Self.maximumGraphWidth
+        )
 
         subjectLabel.stringValue = commit.subject
         hashLabel.stringValue = commit.abbreviatedHash
@@ -345,12 +393,19 @@ final class LaneGraphView: NSView {
     /// 看起来像界面出了 bug。
     var isEmphasized = false
 
+    /// 轨道间距。由 cell 按当前轨道总数算好后传进来——
+    /// 轨道多时会被压缩，所以不能在这里读那个常量。
+    var laneWidth: CGFloat = CommitCellView.laneWidth
+
     override var isFlipped: Bool { true }
 
     override func draw(_ dirtyRect: NSRect) {
         guard let row else { return }
 
-        let laneWidth = CommitCellView.laneWidth
+        // 轨道数超出上限时，多出来的部分会落在 bounds 之外。
+        // 显式裁剪，免得线画到标题上去。
+        NSBezierPath(rect: bounds).setClip()
+
         let height = bounds.height
         let middle = height / 2
 

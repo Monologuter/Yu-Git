@@ -54,15 +54,18 @@ struct RepositoryView: View {
                 .help("回到欢迎页")
             }
 
-            // 工具栏按功能分三组，组间用分隔线。
+            // 工具栏只留四项：远程三件套 + 一个「更多」菜单。
             //
-            // 原先五个按钮平铺成一排，视觉上完全等权，但它们其实是三类东西：
-            // 远程传输（会联网、可能失败、可能改历史）、本地视图（无副作用）、
-            // 全局入口。分组之后，"哪些按钮点下去会动到远程"一眼就能看出来。
+            // 上一版按功能分了三组、组间加 Divider，结果在三栏都展开的窗口下
+            // 空间不够，NSToolbar 把大半按钮折进了 ›› 溢出菜单，
+            // 还把「获取」「拉取」甩到了窗口左上角红绿灯旁边——比不分组更糟。
             //
-            // 窗口变窄时 NSToolbar 会自动把放不下的项折进 ›› 溢出菜单，
-            // 所以不必为小窗口预先删按钮。
-
+            // 教训是：在 NavigationSplitView 里，工具栏可用宽度是被三栏分掉的
+            // 剩余空间，比看上去的窗口宽度小得多。与其让系统在空间不足时
+            // 替我们做取舍（它的取舍很难看），不如自己先收敛到放得下的数量。
+            //
+            // 留在外面的是每天要点很多次的远程操作；收进菜单的那几个都有快捷键，
+            // 而且菜单会把快捷键显示出来，反倒帮用户记住它们。
             ToolbarItemGroup(placement: .primaryAction) {
                 if repository.isTransferring {
                     TransferIndicator(progress: repository.transferProgress)
@@ -91,49 +94,40 @@ struct RepositoryView: View {
                 }
                 .disabled(repository.isTransferring)
                 .help(repository.needsUpstreamOnPush ? "首次推送，会同时设置 upstream" : "推送到 upstream")
-            }
 
-            ToolbarItem(placement: .primaryAction) { Divider() }
+                Menu {
+                    Button {
+                        showsCommandPalette = true
+                    } label: {
+                        Label("命令面板", systemImage: "command")
+                    }
+                    .keyboardShortcut("k", modifiers: .command)
 
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button {
-                    Task { await repository.refresh() }
+                    Button {
+                        isSearching = true
+                    } label: {
+                        Label("搜索仓库", systemImage: "magnifyingglass")
+                    }
+                    .keyboardShortcut("f", modifiers: [.command, .shift])
+
+                    Divider()
+
+                    Button {
+                        showsTimeline.toggle()
+                    } label: {
+                        Label("时间线", systemImage: "clock.arrow.circlepath")
+                    }
+
+                    Button {
+                        Task { await repository.refresh() }
+                    } label: {
+                        Label("刷新", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(repository.isRefreshing)
                 } label: {
-                    Label("刷新", systemImage: "arrow.clockwise")
+                    Label("更多", systemImage: "ellipsis.circle")
                 }
-                .disabled(repository.isRefreshing)
-                .help("重新读取仓库状态（⌘R）")
-
-                Button {
-                    showsTimeline.toggle()
-                } label: {
-                    Label("时间线", systemImage: "clock.arrow.circlepath")
-                }
-                .help("查看操作记录与可恢复的时间点")
-            }
-
-            ToolbarItem(placement: .primaryAction) { Divider() }
-
-            // 搜索和命令面板挪到右侧末尾。
-            // 原先放在 .principal（工具栏正中），那个位置在 macOS 上通常留给
-            // 与当前文档强相关的分段控件，放两个全局入口会显得没着没落——
-            // 截图里那个孤零零飘在中间的放大镜就是这么来的。
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button {
-                    isSearching = true
-                } label: {
-                    Label("搜索", systemImage: "magnifyingglass")
-                }
-                .keyboardShortcut("f", modifiers: [.command, .shift])
-                .help("在整个仓库中搜索（⇧⌘F）")
-
-                Button {
-                    showsCommandPalette = true
-                } label: {
-                    Label("命令", systemImage: "command")
-                }
-                .keyboardShortcut("k", modifiers: .command)
-                .help("命令面板（⌘K）——每个操作都会显示等价的 git 命令")
+                .help("命令面板、搜索、时间线、刷新")
             }
         }
         .task {

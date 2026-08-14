@@ -212,9 +212,56 @@ struct CommitDetailView: View {
                         )
                     }
                 }
+
+                Divider()
+
+                changedFiles
             }
             .padding(Theme.Spacing.section)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // 换一条提交就重新取文件列表
+        .task(id: commit.hash) {
+            await repository.reloadSelectedCommitFiles()
+        }
+    }
+
+    /// 这次提交改了哪些文件。
+    ///
+    /// 这是点开一条提交后最想知道的事，却是原先整个面板里唯一没有的东西——
+    /// 那时右边三分之二的屏幕只用来显示 hash、作者、父提交这四行元信息。
+    @ViewBuilder
+    private var changedFiles: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+            HStack(spacing: Theme.Spacing.tight) {
+                Text("改动的文件")
+                    .font(Theme.Font.title)
+                if !repository.selectedCommitFiles.isEmpty {
+                    Text("\(repository.selectedCommitFiles.count)")
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, Theme.Spacing.tight + 1)
+                        .padding(.vertical, 1)
+                        .background(.quaternary, in: .capsule)
+                }
+                if repository.isLoadingCommitFiles {
+                    ProgressView().controlSize(.small)
+                }
+            }
+
+            if repository.selectedCommitFiles.isEmpty {
+                if !repository.isLoadingCommitFiles {
+                    Text(commit.isMerge ? "这次合并相对第一个父提交没有改动" : "列不出改动的文件")
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(repository.selectedCommitFiles) { change in
+                        CommitFileRow(change: change)
+                    }
+                }
+            }
         }
     }
 
@@ -247,6 +294,59 @@ struct CommitDetailView: View {
                         .textSelection(.enabled)
                 }
             }
+        }
+    }
+}
+
+/// 提交详情里的一行文件。
+private struct CommitFileRow: View {
+
+    let change: CommitFileChange
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.regular) {
+            // 状态字母用固定宽度且等宽字体，好让路径的左边界对齐成一列。
+            // 不固定的话 A/M/D 宽度不同，整列会呈锯齿状。
+            Text(change.kind.letter)
+                .font(Theme.Font.mono)
+                .foregroundStyle(color)
+                .frame(width: 14, alignment: .center)
+                .help(change.kind.displayName)
+
+            VStack(alignment: .leading, spacing: 1) {
+                // 路径从中间截断：两头都是有信息的（开头是模块，结尾是文件名），
+                // 尾部截断会把最该看的文件名切掉。
+                Text(change.path)
+                    .font(Theme.Font.body)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .textSelection(.enabled)
+
+                if let source = change.sourcePath {
+                    Text("原名 \(source)")
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, Theme.Spacing.tight)
+        .help(change.path)
+    }
+
+    /// 状态字母的颜色。
+    ///
+    /// 增删沿用 diff 里的绿红，这两个颜色在这个 app 里已经稳定表示增删，
+    /// 换一套反而要让人重新学。
+    private var color: Color {
+        switch change.kind {
+        case .added: .green
+        case .deleted: .red
+        case .renamed, .copied: .blue
+        default: .secondary
         }
     }
 }

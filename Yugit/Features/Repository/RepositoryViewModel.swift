@@ -47,6 +47,10 @@ final class RepositoryViewModel {
     private(set) var selectedDiff: FileDiff?
     private(set) var isLoadingDiff = false
 
+    /// 当前选中提交改动了哪些文件。
+    private(set) var selectedCommitFiles: [CommitFileChange] = []
+    private(set) var isLoadingCommitFiles = false
+
     /// 提交框里的内容。
     var commitMessage = ""
     var isAmending = false
@@ -180,6 +184,31 @@ final class RepositoryViewModel {
         } catch {
             selectedDiff = nil
             failure = FailurePresentation(from: error)
+        }
+    }
+
+    /// 加载当前选中提交改动了哪些文件。
+    ///
+    /// 单独一个方法而不是并进 `reloadSelectedDiff`：选中提交和选中文件是
+    /// 两条互斥的路径（选了提交就不会有选中文件），混在一起只会让两边都多一层判断。
+    func reloadSelectedCommitFiles() async {
+        guard let id = selectedCommit,
+            let commit = commits.first(where: { $0.id == id })
+        else {
+            selectedCommitFiles = []
+            return
+        }
+
+        isLoadingCommitFiles = true
+        defer { isLoadingCommitFiles = false }
+
+        do {
+            selectedCommitFiles = try await repository.client.filesChanged(
+                inCommit: commit.hash, in: root)
+        } catch {
+            // 列不出文件不该弹错误打断人——提交信息本身还是有用的，
+            // 静默留空即可，界面上会显示「列不出改动的文件」。
+            selectedCommitFiles = []
         }
     }
 
