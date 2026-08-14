@@ -59,6 +59,11 @@ struct SidebarView: View {
 
             list
         }
+        // 侧栏是整个窗口唯一半透明的一栏。
+        //
+        // 材质要盖住**整栏**，包括顶部的过滤框——只给列表加的话，
+        // 过滤框那一条会落在不透明的窗口底色上，接缝一眼就看得出来。
+        .background(VisualEffectBackground())
     }
 
     private var list: some View {
@@ -122,6 +127,8 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
+        // 列表自己那层底要撤掉，否则它会盖在材质上，半透明就白做了
+        .scrollContentBackground(.hidden)
         .alert("新建分支", isPresented: $isCreatingBranch) {
             TextField("分支名", text: $newBranchName)
             Button("创建并切换") {
