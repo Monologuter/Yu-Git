@@ -160,4 +160,16 @@ extension RepositoryViewModel {
     func removeRemote(named name: String) async {
         await mutate { try await self.repository.perform(.removeRemote(name: name)) }
     }
+
+    // MARK: - 只读查询
+
+    func fileHistory(of path: String, follow: Bool) async throws -> [Commit] {
+        try await repository.client.fileHistory(
+            of: path, in: repository.root, follow: follow, maxCount: 500)
+    }
+
+    func compareBranches(base: String, target: String) async throws -> BranchComparison {
+        try await repository.client.compareBranches(
+            base: base, target: target, in: repository.root)
+    }
 }

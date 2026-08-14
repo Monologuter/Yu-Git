@@ -5,6 +5,8 @@ import SwiftUI
 struct SidebarView: View {
 
     @Bindable var repository: RepositoryViewModel
+    /// 右键某个分支时选了「和当前分支比较」。
+    let onCompare: (String) -> Void
 
     @State private var newBranchName = ""
     @State private var isCreatingBranch = false
@@ -216,6 +218,10 @@ struct SidebarView: View {
             Divider()
         }
 
+        Button("和当前分支比较…") { onCompare(branch.name) }
+
+        Divider()
+
         Button("重命名…") {
             renamedName = branch.name
             renaming = branch
@@ -252,6 +258,8 @@ struct SidebarView: View {
         Button("合并到当前分支") {
             Task { await repository.merge(branch.name) }
         }
+        Divider()
+        Button("和当前分支比较…") { onCompare(branch.name) }
     }
 }
 

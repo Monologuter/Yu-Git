@@ -20,6 +20,8 @@ struct RepositoryView: View {
     @State private var worktreeModel: WorktreeViewModel?
     @State private var stashModel: StashViewModel?
     @State private var remoteModel: RemoteViewModel?
+    @State private var fileHistoryModel: FileHistoryViewModel?
+    @State private var compareModel: BranchCompareViewModel?
     @State private var forgeModel: ForgeViewModel?
     @State private var chatModel: ChatViewModel?
     @State private var showsOnboarding = false
@@ -27,13 +29,18 @@ struct RepositoryView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            SidebarView(repository: repository)
-                .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
+            SidebarView(repository: repository) { branch in
+                compareModel = BranchCompareViewModel(repository: repository, target: branch)
+            }
+            .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
         } content: {
             ChangesView(
                 repository: repository,
                 onResolveConflicts: { conflictModel = ConflictViewModel(repository: repository) },
-                onReview: { reviewModel = ReviewViewModel(repository: repository) }
+                onReview: { reviewModel = ReviewViewModel(repository: repository) },
+                onShowFileHistory: { path in
+                    fileHistoryModel = FileHistoryViewModel(repository: repository, path: path)
+                }
             )
             .navigationSplitViewColumnWidth(min: 260, ideal: 320, max: 460)
         } detail: {
@@ -192,6 +199,12 @@ struct RepositoryView: View {
         }
         .sheet(item: $remoteModel) { model in
             RemoteView(model: model) { remoteModel = nil }
+        }
+        .sheet(item: $fileHistoryModel) { model in
+            FileHistoryView(model: model) { fileHistoryModel = nil }
+        }
+        .sheet(item: $compareModel) { model in
+            BranchCompareView(model: model) { compareModel = nil }
         }
         .sheet(item: $reviewModel) { model in
             ReviewView(model: model) { reviewModel = nil }

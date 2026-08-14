@@ -21,6 +21,8 @@ struct ChangesView: View {
     @Bindable var repository: RepositoryViewModel
     let onResolveConflicts: () -> Void
     let onReview: () -> Void
+    /// 右键某个文件时选了「查看历史」。
+    let onShowFileHistory: (String) -> Void
     @State private var section = Section.changes
     @State private var pendingDiscard: [String]?
     @State private var fileFilter = ""
