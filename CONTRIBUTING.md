@@ -178,6 +178,17 @@ config resolution, hooks that don't fire, credential helpers that don't work.
 - If you find a security issue, don't open a public issue. Reach the maintainer
   privately first.
 
+## Licensing of contributions
+
+This project is [AGPL-3.0](./LICENSE). By opening a pull request you agree that your
+contribution is licensed under the same terms.
+
+Note that copyright is not assigned — you keep it. The maintainer retains the right
+to offer the project under separate commercial terms, which is only possible because
+contributions come in under a license compatible with that. If you're not comfortable
+with that arrangement, say so in the PR and we'll work it out before merging rather
+than after.
+
 ## Questions
 
 Open an issue. If you're unsure whether something is a bug or intended behaviour,

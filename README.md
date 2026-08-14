@@ -6,10 +6,17 @@
 
 *AI writes your code — Yugit helps you command it.*
 
+[![Stars](https://img.shields.io/github/stars/Monologuter/Yu-Git?style=flat&logo=github)](https://github.com/Monologuter/Yu-Git/stargazers)
+[![Forks](https://img.shields.io/github/forks/Monologuter/Yu-Git?style=flat&logo=github)](https://github.com/Monologuter/Yu-Git/network/members)
+[![Issues](https://img.shields.io/github/issues/Monologuter/Yu-Git)](https://github.com/Monologuter/Yu-Git/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/Monologuter/Yu-Git)](https://github.com/Monologuter/Yu-Git/pulls)
+[![Last commit](https://img.shields.io/github/last-commit/Monologuter/Yu-Git)](https://github.com/Monologuter/Yu-Git/commits/main)
+
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-black?logo=apple)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-blue)](https://developer.apple.com/xcode/swiftui/)
 [![Tests](https://img.shields.io/badge/tests-561%20passing-brightgreen)](#testing)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue)](./LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-success)](#why-zero-dependencies)
 
 [English](./README.md) · [简体中文](./README.zh-CN.md)
@@ -207,6 +214,20 @@ as long-term. Current version is **v2.2.0**.
 Remaining work is release engineering: code signing and notarization, performance
 benchmarking on very large repositories, and end-to-end verification with real
 provider keys.
+
+## License
+
+[GNU AGPL-3.0](./LICENSE).
+
+You may use, study, modify and redistribute this software. If you modify it, your
+changes must be released under the same license — **including when you run the
+modified version as a network service**. That last clause is the reason AGPL was
+chosen over MIT or GPL: the cloud gateway in `server/` is exactly the kind of thing
+someone could fork, point at their own paid backend, and never publish. AGPL closes
+that path while leaving every legitimate use open.
+
+Copyright remains with the author, so commercial licensing on different terms is
+available on request.
 
 ## Acknowledgements
 

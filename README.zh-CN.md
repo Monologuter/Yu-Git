@@ -6,10 +6,17 @@
 
 *AI 帮你写代码，驭Git 帮你驾驭它*
 
+[![Stars](https://img.shields.io/github/stars/Monologuter/Yu-Git?style=flat&logo=github)](https://github.com/Monologuter/Yu-Git/stargazers)
+[![Forks](https://img.shields.io/github/forks/Monologuter/Yu-Git?style=flat&logo=github)](https://github.com/Monologuter/Yu-Git/network/members)
+[![Issues](https://img.shields.io/github/issues/Monologuter/Yu-Git)](https://github.com/Monologuter/Yu-Git/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/Monologuter/Yu-Git)](https://github.com/Monologuter/Yu-Git/pulls)
+[![Last commit](https://img.shields.io/github/last-commit/Monologuter/Yu-Git)](https://github.com/Monologuter/Yu-Git/commits/main)
+
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-black?logo=apple)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6.0-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![UI](https://img.shields.io/badge/UI-SwiftUI%20%2B%20AppKit-blue)](https://developer.apple.com/xcode/swiftui/)
 [![Tests](https://img.shields.io/badge/tests-561%20passing-brightgreen)](#测试)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue)](./LICENSE)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero-success)](#为什么零第三方依赖)
 
 [English](./README.md) · [简体中文](./README.zh-CN.md)
@@ -177,6 +184,17 @@ credential helper 不工作。解析 porcelain 输出更琐碎，但这意味着
 当前版本 **v2.2.0**。
 
 剩下的是发布工程：签名与公证、超大仓库的性能实测、用真实 key 的端到端验证。
+
+## 许可证
+
+[GNU AGPL-3.0](./LICENSE)。
+
+你可以使用、研究、修改、再分发这份软件。如果你修改了它，改动必须以同样的许可证
+发布——**包括把修改版拿去做网络服务的情况**。最后这一条正是选 AGPL 而不是 MIT
+或 GPL 的原因：`server/` 里的云服务网关恰好是那种可以被 fork 之后接上自己的付费
+后端、然后永不公开的东西。AGPL 堵住这条路，同时不妨碍任何正当使用。
+
+版权仍归作者所有，因此可以另行商谈其他条款的商业授权。
 
 ## 致谢
 
