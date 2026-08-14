@@ -12,13 +12,62 @@ struct SidebarView: View {
     @State private var renamedName = ""
     @State private var pendingDelete: Branch?
 
+    @State private var filter = ""
+    @AppStorage("com.chenya.yugit.sidebar.remoteExpanded") private var isRemoteExpanded = false
+    @AppStorage("com.chenya.yugit.sidebar.tagsExpanded") private var isTagsExpanded = false
+
+    // MARK: - 过滤
+
+    /// 本地分支：当前分支永远置顶，其余保持仓库给的顺序（按最后提交时间倒序）。
+    ///
+    /// 置顶是因为「我现在在哪个分支上」是侧栏里最高频要确认的一件事。
+    /// 光靠时间排序不够：切到一个很久没动的分支后，它会沉到几十个分支的末尾，
+    /// 而那恰恰是你此刻正站着的地方。
+    private var filteredLocalBranches: [Branch] {
+        let matched = repository.localBranches.filter { matches($0.name) }
+        guard let currentIndex = matched.firstIndex(where: \.isCurrent) else { return matched }
+        var reordered = matched
+        reordered.insert(reordered.remove(at: currentIndex), at: 0)
+        return reordered
+    }
+
+    private var filteredRemoteBranches: [Branch] {
+        repository.remoteBranches.filter { matches($0.name) }
+    }
+
+    private var filteredTags: [Tag] {
+        repository.tags.filter { matches($0.name) }
+    }
+
+    /// 子串匹配，忽略大小写与变音符号。
+    ///
+    /// 不做模糊匹配（fuzzy）：分支名里的 `-` `/` 本身有结构含义，
+    /// 模糊匹配会让 `dev` 命中 `d-e-v` 这类无关的名字，反而更难找。
+    private func matches(_ name: String) -> Bool {
+        let query = filter.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return true }
+        return name.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+    }
+
     var body: some View {
+        VStack(spacing: 0) {
+            FilterField(text: $filter, placeholder: "过滤分支与标签")
+                .padding(.horizontal, Theme.Spacing.regular)
+                .padding(.vertical, Theme.Spacing.tight + 2)
+
+            Divider()
+
+            list
+        }
+    }
+
+    private var list: some View {
         List {
             Section {
-                if repository.localBranches.isEmpty {
-                    EmptyHint("尚无分支")
+                if filteredLocalBranches.isEmpty {
+                    EmptyHint(repository.localBranches.isEmpty ? "尚无分支" : "没有匹配的分支")
                 } else {
-                    ForEach(repository.localBranches) { branch in
+                    ForEach(filteredLocalBranches) { branch in
                         BranchRow(branch: branch)
                             .contextMenu { localBranchMenu(for: branch) }
                     }
@@ -38,19 +87,36 @@ struct SidebarView: View {
                 }
             }
 
-            if !repository.remoteBranches.isEmpty {
-                Section("远程分支") {
-                    ForEach(repository.remoteBranches) { branch in
+            if !filteredRemoteBranches.isEmpty {
+                // 远程分支常有几十个，默认折叠起来。
+                // 展开状态记在 @AppStorage 里——每次打开仓库都要重新收一次，
+                // 那种小烦躁累积起来很伤。
+                Section(isExpanded: $isRemoteExpanded) {
+                    ForEach(filteredRemoteBranches) { branch in
                         BranchRow(branch: branch)
                             .contextMenu { remoteBranchMenu(for: branch) }
+                    }
+                } header: {
+                    HStack {
+                        Text("远程分支")
+                        Text("\(filteredRemoteBranches.count)")
+                            .font(Theme.Font.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
 
-            if !repository.tags.isEmpty {
-                Section("标签") {
-                    ForEach(repository.tags) { tag in
+            if !filteredTags.isEmpty {
+                Section(isExpanded: $isTagsExpanded) {
+                    ForEach(filteredTags) { tag in
                         TagRow(tag: tag)
+                    }
+                } header: {
+                    HStack {
+                        Text("标签")
+                        Text("\(filteredTags.count)")
+                            .font(Theme.Font.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -267,4 +333,58 @@ struct CompactLabelStyle: LabelStyle {
 
 extension LabelStyle where Self == CompactLabelStyle {
     static var compact: CompactLabelStyle { CompactLabelStyle() }
+}
+
+// MARK: - 过滤框
+
+/// 侧栏顶部的过滤输入框。
+///
+/// 用自绘的输入框而不是 `.searchable`：后者在 macOS 上会把搜索框放进工具栏，
+/// 而工具栏是全窗口共用的——过滤的明明只是侧栏这一列，控件却跑到了顶上，
+/// 作用范围看不出来。放在它所影响的列的顶部，位置本身就说明了它管什么。
+struct FilterField: View {
+
+    @Binding var text: String
+    let placeholder: String
+
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.tight + 2) {
+            Image(systemName: "line.3.horizontal.decrease")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+
+            TextField(placeholder, text: $text)
+                .textFieldStyle(.plain)
+                .font(Theme.Font.secondary)
+                .focused($isFocused)
+                // 回车不该做任何事，但也不该让系统"咚"一声——
+                // 输入框里没有默认动作可以触发
+                .onSubmit {}
+
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                    isFocused = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.borderless)
+                .help("清空")
+            }
+        }
+        .padding(.horizontal, Theme.Spacing.regular)
+        .padding(.vertical, Theme.Spacing.tight + 1)
+        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: Theme.Radius.medium))
+        .overlay {
+            // 聚焦时描一圈强调色。系统的 .roundedBorder 在侧栏背景上太重，
+            // 但完全没有焦点提示又会让人不确定键盘输入去了哪里。
+            RoundedRectangle(cornerRadius: Theme.Radius.medium)
+                .strokeBorder(isFocused ? Color.accentColor : .clear, lineWidth: 2)
+        }
+        .animation(.easeInOut(duration: 0.12), value: isFocused)
+    }
 }

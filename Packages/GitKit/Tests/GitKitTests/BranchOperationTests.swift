@@ -17,6 +17,32 @@ struct BranchOperationTests {
         return (repository, try await makeActor(on: repository))
     }
 
+    @Test("分支默认按最后提交时间倒序，不是名称序")
+    func branchesSortByRecency() async throws {
+        let repository = try await TemporaryRepository()
+        try repository.write("初始\n", to: "a.txt")
+        try await repository.commitAll("base")
+
+        // 名字刻意让字母序和时间序相反：按名称排是 aaa、mmm、zzz，
+        // 按时间排是 zzz、mmm、aaa。
+        for name in ["zzz-最早", "mmm-中间", "aaa-最新"] {
+            try await repository.git("checkout", "--quiet", "-b", name)
+            try repository.write("\(name)\n", to: "\(name).txt")
+            try await repository.commitAll("在 \(name) 上提交")
+        }
+
+        let byDate = try await repository.client.branches(
+            in: repository.url, includingRemote: false)
+        let dated = byDate.map(\.name).filter { $0 != "main" }
+        #expect(dated == ["aaa-最新", "mmm-中间", "zzz-最早"])
+
+        // 名称序仍然可选。分支名常共享前缀，字母序会把几十个长得差不多的
+        // 名字堆在一起，正在用的那几个反而找不到——所以它不该是默认。
+        let byName = try await repository.client.branches(
+            in: repository.url, includingRemote: false, sortedByDate: false)
+        #expect(byName.map(\.name) == ["aaa-最新", "main", "mmm-中间", "zzz-最早"])
+    }
+
     @Test("新建并切换分支")
     func createsAndSwitches() async throws {
         let (repository, actor) = try await seeded()

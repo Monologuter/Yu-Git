@@ -4,9 +4,25 @@ extension GitClient {
 
     /// 列出分支。
     ///
-    /// - Parameter includingRemote: 为 `true` 时一并列出远程跟踪分支。
-    public func branches(in repository: URL, includingRemote: Bool = true) async throws -> [Branch] {
-        var arguments = ["for-each-ref", "--format=\(RefParser.branchFormat)", "refs/heads"]
+    /// - Parameters:
+    ///   - includingRemote: 为 `true` 时一并列出远程跟踪分支。
+    ///   - sortedByDate: 默认按最后提交时间倒序。
+    ///
+    /// 默认按时间而不是名称排序，是因为**名称序对人几乎没有用**：
+    /// 一个仓库里的分支常常共享同一个前缀（`feature/…`、`origin/项目名-…`），
+    /// 字母序会把三十个长得差不多的名字堆在一起，而你正在用的那两三个
+    /// 混在中间完全找不到。按最后提交时间排，手头在做的事自然浮到最上面。
+    public func branches(
+        in repository: URL,
+        includingRemote: Bool = true,
+        sortedByDate: Bool = true
+    ) async throws -> [Branch] {
+        var arguments = [
+            "for-each-ref",
+            "--format=\(RefParser.branchFormat)",
+            "--sort=\(sortedByDate ? "-committerdate" : "refname")",
+            "refs/heads",
+        ]
         if includingRemote {
             arguments.append("refs/remotes")
         }
