@@ -23,6 +23,17 @@ struct FailurePresentation: Identifiable, Sendable {
     /// 做成 failable init 而不是在每个 catch 里各判一次：调用点全都是
     /// `failure = FailurePresentation(from:)`，而 `failure` 本就是可选的，
     /// 于是这一处改动让所有调用点自动获得正确行为，将来新增的也不会漏。
+    /// 直接给一段说明。
+    ///
+    /// 用在「我们主动拒绝执行」的情况：git 根本没被调用，所以没有错误可转换，
+    /// 但用户仍然需要知道为什么什么都没发生。
+    init(title: String, message: String, suggestion: String? = nil) {
+        self.title = title
+        self.message = message
+        self.suggestion = suggestion
+        self.details = nil
+    }
+
     init?(from error: Error) {
         guard !error.isCancellation else { return nil }
 

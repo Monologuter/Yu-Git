@@ -383,10 +383,14 @@ final class RepositoryViewModel {
     ///
     /// 这里手动 suspend/resume 而不用 `whileSuspended`：闭包是 MainActor 隔离的，
     /// 交给非隔离的 watcher 去调用会跨越隔离边界，Swift 6 会判定有数据竞争风险。
-    func mutate(_ work: () async throws -> Void) async {
+    /// - Returns: 闭包的返回值；失败时为 nil。多数写操作没有返回值，
+    ///   但 cherry-pick 与 revert 要把「完成了还是停在冲突上」带回给界面。
+    @discardableResult
+    func mutate<Value>(_ work: () async throws -> Value) async -> Value? {
         watcher?.suspend()
+        var value: Value?
         do {
-            try await work()
+            value = try await work()
             failure = nil
         } catch {
             failure = FailurePresentation(from: error)
@@ -394,6 +398,7 @@ final class RepositoryViewModel {
         watcher?.resume()
 
         await refresh()
+        return value
     }
 
     /// 执行网络操作：进度实时更新，失败转成带建议的中文提示。

@@ -121,6 +121,51 @@ public actor RepoActor {
         return try await work.value
     }
 
+    /// 执行一个**可能停在冲突上**的写操作。
+    ///
+    /// cherry-pick 与 revert 遇到冲突时会返回退出码 1 并停在半路等人处理。
+    /// 走 ``perform(_:standardInput:)`` 的话那会被当成失败抛出去，用户看到一句
+    /// 「操作失败」，而实际上仓库正停在一个需要他动手的中间状态里——
+    /// 这时候最该做的是把他领到三方合并编辑器前面，不是弹个错误框。
+    ///
+    /// 判据是**仓库里有没有未合并的文件**，而不是退出码或 stderr 的字样：
+    /// 退出码 1 也可能是别的原因（比如挑取的提交是空的），
+    /// 而 stderr 的措辞随 git 版本变，拿它匹配迟早会失效。
+    ///
+    /// 时间线上这一次记成失败：它确实没走完，用户在时间线上看到「停在这里了」
+    /// 比看到「成功」更符合事实。
+    public func performAllowingConflict(_ operation: GitOperation) async throws -> ReplayOutcome {
+        let previous = queueTail
+
+        let work = Task { [self] in
+            await previous?.value
+            return try await recording(
+                operation,
+                resultOf: { (outcome: ReplayOutcome) in
+                    outcome == .completed
+                }
+            ) { [self] in
+                let result = try await client.runReturningResult(operation.arguments, in: root)
+                if result.isSuccess {
+                    return ReplayOutcome.completed
+                }
+
+                let conflicted = try await client.conflictedPaths(in: root)
+                guard !conflicted.isEmpty else {
+                    throw GitError.commandFailed(
+                        arguments: operation.arguments,
+                        exitCode: result.exitCode,
+                        standardError: result.standardErrorText
+                    )
+                }
+                return .conflicted(paths: conflicted)
+            }
+        }
+        queueTail = Task { _ = try? await work.value }
+
+        return try await work.value
+    }
+
     /// 执行一条 git 写操作并记入时间线，**不重新排队**。
     ///
     /// 给已经在队列里跑的复合操作用（分批提交要连着做好几次 commit）。

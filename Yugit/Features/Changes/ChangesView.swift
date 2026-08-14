@@ -29,6 +29,7 @@ struct ChangesView: View {
     @State private var collapsedDirectories: Set<String> = []
     @AppStorage("com.chenya.yugit.changes.treeView") private var usesTreeView = true
     @State private var pendingQuickAction: PendingQuickAction?
+    @State private var pendingCommitAction: PendingCommitAction?
 
     enum Section: String, CaseIterable, Identifiable {
         case changes = "变更"
@@ -74,6 +75,17 @@ struct ChangesView: View {
                 commit: pending.commit,
                 repository: repository,
                 onDismiss: { pendingQuickAction = nil }
+            )
+        }
+        .sheet(item: $pendingCommitAction) { pending in
+            CommitActionSheet(
+                pending: pending,
+                repository: repository,
+                onDismiss: { pendingCommitAction = nil },
+                // 停在冲突上时切回「变更」——冲突文件就列在那一栏的最上面，
+                // 旁边就是「解决…」。留在历史列表里的话，用户看到的是
+                // 一个什么都没发生的界面。
+                onConflict: { section = .changes }
             )
         }
         // 危险操作走统一的预警对话框：会发生什么、能不能撤销、怎么撤销，
@@ -459,6 +471,18 @@ struct ChangesView: View {
                 },
                 onQuickAction: { action, commit in
                     pendingQuickAction = PendingQuickAction(action: action, commit: commit)
+                },
+                onCommitAction: { action, commit in
+                    // 挑取不弹确认：它只往历史上加一条新提交，后悔了删掉就行。
+                    // 为它多设一道确认，只会让人对真正需要确认的那几个也麻木。
+                    guard action.needsConfirmation else {
+                        Task {
+                            let outcome = await repository.cherryPick(commit)
+                            if case .conflicted = outcome { section = .changes }
+                        }
+                        return
+                    }
+                    pendingCommitAction = PendingCommitAction(action: action, commit: commit)
                 }
             )
         }

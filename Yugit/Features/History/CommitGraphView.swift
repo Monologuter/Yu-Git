@@ -16,6 +16,8 @@ struct CommitHistoryView: NSViewRepresentable {
     let onReachEnd: () -> Void
     /// 右键某一行时选了 Quick Action。
     let onQuickAction: (QuickAction, Commit) -> Void
+    /// 右键某一行时选了挑取 / 撤销 / 重置 / 打标签。
+    let onCommitAction: (CommitAction, Commit) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -284,6 +286,28 @@ struct CommitHistoryView: NSViewRepresentable {
                 menu.addItem(item)
             }
 
+            // 挑取 / 撤销 / 重置 / 打标签。按 group 分段——
+            // 「往历史上加东西」和「把指针往回挪」的后果完全不是一回事，
+            // 排在一起会让人以为它们是同一类操作。
+            var previousGroup = -1
+            for action in CommitAction.allCases {
+                if action.group != previousGroup {
+                    menu.addItem(.separator())
+                    previousGroup = action.group
+                }
+                let item = NSMenuItem(
+                    title: action.title,
+                    action: #selector(runCommitAction(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = action
+                item.image = NSImage(
+                    systemSymbolName: action.systemImage, accessibilityDescription: nil)
+                item.toolTip = action.explanation
+                menu.addItem(item)
+            }
+
             // 复制 hash 也放进菜单，不只是给一个藏起来的 ⌘C。
             // 键盘快捷键不写在任何地方的话没人会知道它存在，
             // 而菜单项自带的快捷键标注正好把它教出来。
@@ -312,6 +336,15 @@ struct CommitHistoryView: NSViewRepresentable {
             else { return }
 
             parent.onQuickAction(action, commit)
+        }
+
+        @objc private func runCommitAction(_ sender: NSMenuItem) {
+            guard
+                let action = sender.representedObject as? CommitAction,
+                let commit = commit(atRow: table?.clickedRow ?? -1)
+            else { return }
+
+            parent.onCommitAction(action, commit)
         }
 
         // MARK: - 主题

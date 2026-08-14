@@ -13,7 +13,12 @@ extension GitOperation {
         summary: String,
         backupTag: String?
     ) -> GitOperation {
-        var explanation = "把 \(base) 之后的提交按你排的顺序重新走一遍，生成新的提交。"
+        // 「会得到新的 commit hash」这句话属于这里，不属于 `.rewritesHistory` 的通用文案：
+        // 同一档 hazard 下的 reset 只是挪分支指针，被跳过的提交一个字没改。
+        // 把只对某一类成立的话写进通用文案，等于对另一类说了假话。
+        var explanation =
+            "把 \(base) 之后的提交按你排的顺序重新走一遍，生成新的提交——"
+            + "内容可能一样，但它们会得到新的 commit hash。"
         if let backupTag {
             explanation += "原来的历史已经用 tag `\(backupTag)` 标住，随时可以退回去。"
         }

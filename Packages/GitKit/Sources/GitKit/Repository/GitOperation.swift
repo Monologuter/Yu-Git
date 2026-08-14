@@ -33,6 +33,18 @@ public struct GitOperation: Sendable, Equatable, Codable {
         case merge
         case setUpstream
         case interactiveRebase
+        case cherryPick
+        case revert
+        // reset 的三种模式各占一个 kind 而不是共用一个带参数的。
+        // 它们的后果差得太远——`--soft` 什么都不丢，`--hard` 会丢掉未提交的改动，
+        // 而时间线是按 kind 决定要不要拍快照的。
+        case resetSoft
+        case resetMixed
+        case resetHard
+        case createTag
+        case deleteTag
+        case pushTag
+        case deleteRemoteTag
     }
 
     /// 操作的危险程度。时间线据此决定执行前是否必须打快照。

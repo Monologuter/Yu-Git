@@ -11,6 +11,7 @@ struct SidebarView: View {
     @State private var renaming: Branch?
     @State private var renamedName = ""
     @State private var pendingDelete: Branch?
+    @State private var pendingTagDelete: Tag?
 
     @State private var filter = ""
     @AppStorage("com.chenya.yugit.sidebar.remoteExpanded") private var isRemoteExpanded = false
@@ -115,6 +116,7 @@ struct SidebarView: View {
                 Section(isExpanded: $isTagsExpanded) {
                     ForEach(filteredTags) { tag in
                         TagRow(tag: tag)
+                            .contextMenu { tagMenu(for: tag) }
                     }
                 } header: {
                     HStack {
@@ -180,6 +182,24 @@ struct SidebarView: View {
         } message: { _ in
             Text("普通删除会在分支还有未合并提交时被 git 拒绝；强制删除后那些提交只能靠 reflog 找回。")
         }
+        .confirmationDialog(
+            "确定删除标签？",
+            isPresented: Binding(
+                get: { pendingTagDelete != nil },
+                set: { if !$0 { pendingTagDelete = nil } }
+            ),
+            presenting: pendingTagDelete
+        ) { tag in
+            Button("删除 \(tag.name)", role: .destructive) {
+                Task { await repository.deleteTag(named: tag.name) }
+                pendingTagDelete = nil
+            }
+            Button("取消", role: .cancel) { pendingTagDelete = nil }
+        } message: { _ in
+            Text(
+                "只删掉本地这个标签名，它指向的提交不受影响。如果这个标签已经推送过，"
+                    + "远程那边还留着，下次 fetch 会把它拉回来。")
+        }
     }
 
     // MARK: - 菜单
@@ -203,6 +223,20 @@ struct SidebarView: View {
 
         if !branch.isCurrent {
             Button("删除…", role: .destructive) { pendingDelete = branch }
+        }
+    }
+
+    @ViewBuilder
+    private func tagMenu(for tag: Tag) -> some View {
+        Button("推送 \(tag.name) 到 origin") {
+            Task { await repository.pushTag(named: tag.name) }
+        }
+        Divider()
+        // 只删本地。删远程 tag 影响的是别人——已经拉过的人本地那份不会消失，
+        // 之后同名 tag 就会在不同人手上指向不同的东西。那一步不放在这个
+        // 顺手就能点到的菜单里。
+        Button("删除本地的 \(tag.name)", role: .destructive) {
+            pendingTagDelete = tag
         }
     }
 

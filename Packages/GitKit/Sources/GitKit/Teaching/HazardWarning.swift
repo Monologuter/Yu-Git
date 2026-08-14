@@ -61,8 +61,13 @@ extension GitOperation {
         case .rewritesHistory:
             return HazardWarning(
                 title: summary,
-                consequence: "\(explanation)\n\n改写之后，这些提交会得到新的 commit hash。"
-                    + "如果它们已经推送过，别人手上的版本会和你的对不上。",
+                // 这一段要对 amend、rebase、reset 三者同时成立。
+                // 说「这些提交会得到新的 hash」就只对前两个成立——reset 挪的是
+                // 分支指针，被跳过的提交本身一个字没改，只是不再有分支指向它们。
+                // 三者共同的真相是「分支指向的东西变了」，以及由此带来的后果。
+                consequence: "\(explanation)\n\n做完之后，这条分支指向的历史和现在不一样了。"
+                    + "如果这些提交已经推送过，别人手上的版本会和你的对不上，"
+                    + "再推送就需要 force——而那会覆盖掉别人的工作。",
                 recovery: hasSnapshot
                     ? "驭Git 会先记下当前状态，随时可以从时间线退回来。"
                     : "原来的提交仍然留在 reflog 里，可以用 git reflog 找回，但需要手动操作。",
