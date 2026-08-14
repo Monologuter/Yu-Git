@@ -241,12 +241,21 @@ struct ChangesView: View {
         }
     }
 
+    /// 这个文件是不是当前选中的那个。
+    ///
+    /// 要单独算是因为 `List` 只把选中态用在**背景**上，行内容显式设过的颜色
+    /// 它一概不管。状态字母正好有一个是强调色，落在强调色背景上会消失。
+    private func isSelected(_ path: String, isStaged: Bool) -> Bool {
+        repository.selectedFile
+            == RepositoryViewModel.FileSelection(path: path, isStaged: isStaged)
+    }
+
     private var entryList: some View {
         List(selection: $repository.selectedFile) {
             if !filteredConflicted.isEmpty {
                 SwiftUI.Section {
                     ForEach(filteredConflicted, id: \.path) { entry in
-                        FileRow(entry: entry)
+                        FileRow(entry: entry, isSelected: isSelected(entry.path, isStaged: false))
                             .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
                     }
                 } header: {
@@ -264,13 +273,18 @@ struct ChangesView: View {
             if !filteredStaged.isEmpty {
                 SwiftUI.Section {
                     entryRows(filteredStaged, isStaged: true) { entry in
-                        FileRow(entry: entry, showsIndexStatus: true, showsFullPath: !usesTreeView)
-                            .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: true))
-                            .contextMenu {
-                                Button("取消暂存") {
-                                    Task { await repository.unstage([entry.path]) }
-                                }
+                        FileRow(
+                            entry: entry,
+                            showsIndexStatus: true,
+                            showsFullPath: !usesTreeView,
+                            isSelected: isSelected(entry.path, isStaged: true)
+                        )
+                        .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: true))
+                        .contextMenu {
+                            Button("取消暂存") {
+                                Task { await repository.unstage([entry.path]) }
                             }
+                        }
                     }
                 } header: {
                     sectionHeader("已暂存", count: filteredStaged.count) {
@@ -286,18 +300,22 @@ struct ChangesView: View {
             if !filteredUnstaged.isEmpty {
                 SwiftUI.Section {
                     entryRows(filteredUnstaged, isStaged: false) { entry in
-                        FileRow(entry: entry, showsFullPath: !usesTreeView)
-                            .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
-                            .contextMenu {
-                                Button("暂存") {
-                                    Task { await repository.stage([entry.path]) }
-                                }
-                                if entry.kind != .untracked {
-                                    Button("丢弃改动…", role: .destructive) {
-                                        pendingDiscard = [entry.path]
-                                    }
+                        FileRow(
+                            entry: entry,
+                            showsFullPath: !usesTreeView,
+                            isSelected: isSelected(entry.path, isStaged: false)
+                        )
+                        .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
+                        .contextMenu {
+                            Button("暂存") {
+                                Task { await repository.stage([entry.path]) }
+                            }
+                            if entry.kind != .untracked {
+                                Button("丢弃改动…", role: .destructive) {
+                                    pendingDiscard = [entry.path]
                                 }
                             }
+                        }
                     }
                 } header: {
                     sectionHeader("未暂存", count: filteredUnstaged.count) {

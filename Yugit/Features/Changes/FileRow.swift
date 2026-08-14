@@ -8,30 +8,45 @@ struct FileRow: View {
     var showsIndexStatus = false
     /// 平铺模式下要显示所在目录；树里目录已经由缩进表达了，再显示一遍是噪音。
     var showsFullPath = true
+    /// 这一行是不是选中行。
+    ///
+    /// 必须知道：选中行的背景是强调色，而「修改」的状态字母恰好也是强调色——
+    /// 不换色的话 `M` 画在选中行上等于消失。分支图上踩过一模一样的坑。
+    var isSelected = false
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Theme.Spacing.regular) {
+            // 等宽 + 固定 14pt 宽，好让后面的路径左边界对齐成一列。
+            // 不固定的话 A/M/D 各自宽度不同，整列会呈锯齿状。
             Text(statusLetter)
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(statusColor)
+                .font(Theme.Font.mono)
+                .foregroundStyle(isSelected ? Theme.Colors.onAccent : statusColor)
                 .frame(width: 14)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(fileName)
+                    .font(Theme.Font.body)
                     .lineLimit(1)
+                    // 文件名从中间截断：开头是模块，结尾是文件名，两头都有信息
                     .truncationMode(.middle)
 
                 if showsFullPath, let directory {
                     Text(directory)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(
+                            isSelected
+                                ? Theme.Colors.onAccent.opacity(0.78) : Theme.Colors.secondaryText
+                        )
                         .lineLimit(1)
+                        // 目录从头部截断：最后一段离文件最近，最能说明这是哪个目录
                         .truncationMode(.head)
                 }
             }
 
             Spacer(minLength: 0)
         }
+        .padding(.vertical, Theme.Spacing.tight)
+        .frame(minHeight: showsFullPath && directory != nil ? 38 : 30)
         .help(helpText)
     }
 
@@ -59,18 +74,24 @@ struct FileRow: View {
         }
     }
 
+    /// 状态**永远同时由字母和颜色表达**。
+    ///
+    /// 只靠颜色的话色盲用户什么都读不到，而这一列传的是「这个文件被怎么了」——
+    /// 读不到就等于这一列不存在。字母才是主信息，颜色只是让它扫得更快。
     private var statusColor: Color {
         switch entry.kind {
-        case .untracked: .secondary
-        case .unmerged: .orange
-        case .ignored: Color(nsColor: .tertiaryLabelColor)
-        case .renamed, .copied: .purple
+        case .untracked: Theme.Colors.secondaryText
+        case .unmerged: Theme.Colors.warning
+        case .ignored: Theme.Colors.decorativeText
+        // 改名和复制归到合并色：它们和新增/删除不是一回事，
+        // 内容其实没变，变的是这个文件在树里的位置
+        case .renamed, .copied: Theme.Colors.mergeAccent
         case .ordinary:
             switch status {
-            case .added: .green
-            case .deleted: .red
-            case .modified, .fileTypeChanged: .blue
-            default: .secondary
+            case .added: Theme.Colors.success
+            case .deleted: Theme.Colors.danger
+            case .modified, .fileTypeChanged: Theme.Colors.accent
+            default: Theme.Colors.secondaryText
             }
         }
     }

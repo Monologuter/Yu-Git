@@ -306,12 +306,12 @@ struct DiffLineRow: View {
             lineNumber(line.newLineNumber)
 
             Text(String(line.kind.prefix))
-                .font(.system(.body, design: .monospaced))
+                .font(Theme.Font.mono)
                 .foregroundStyle(markerColor)
                 .frame(width: 14)
 
             Text(styled)
-                .font(.system(.body, design: .monospaced))
+                .font(Theme.Font.mono)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: !wrapsLines, vertical: true)
 
@@ -325,6 +325,10 @@ struct DiffLineRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 1)
+        // 折行的行会更高，所以是 minHeight 不是 height。
+        // 定这个下限是为了让**没折行的**行全部等高——高度参差不齐的话，
+        // 左边行号列的数字间距会一行一个样，扫读时很难对上。
+        .frame(minHeight: wrapsLines ? 0 : 18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(backgroundColor)
         .overlay(alignment: .leading) {
@@ -429,8 +433,8 @@ struct DiffLineRow: View {
     @ViewBuilder
     private func lineNumber(_ number: Int?) -> some View {
         Text(number.map(String.init) ?? "")
-            .font(.system(.caption2, design: .monospaced))
-            .foregroundStyle(.tertiary)
+            .font(Theme.Font.mono)
+            .foregroundStyle(Theme.Colors.tertiaryText)
             // 行号绝不参与压缩：被挤掉一位数字的行号是错的行号，
             // 比不显示还糟——正文可以横向滚动，行号没有退路。
             .lineLimit(1)

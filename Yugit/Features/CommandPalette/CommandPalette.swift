@@ -161,10 +161,14 @@ struct CommandRow: View {
 
             if let equivalent = command.equivalentCommand {
                 Text(equivalent)
-                    .font(.system(.caption2, design: .monospaced))
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.mono)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
                     .lineLimit(1)
+                    // 从头部截断并封到 200pt：等价命令是给人对照的，不是主信息。
+                    // 不封宽度的话一条长命令会把左边的标题挤到只剩几个字，
+                    // 而标题才是用来在列表里找到这一条的东西。
                     .truncationMode(.head)
+                    .frame(maxWidth: 200, alignment: .trailing)
             }
         }
         .padding(.vertical, 3)

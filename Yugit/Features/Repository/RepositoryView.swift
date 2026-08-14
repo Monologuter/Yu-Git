@@ -43,7 +43,7 @@ struct RepositoryView: View {
             RebaseBanner(repository: repository)
         }
         .navigationTitle(repository.displayName)
-        .navigationSubtitle(subtitle)
+        .navigationSubtitle(subtitleText)
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button {
@@ -211,6 +211,21 @@ struct RepositoryView: View {
         .sheet(item: $repository.failure) { failure in
             FailureSheet(failure: failure) { repository.failure = nil }
         }
+    }
+
+    /// 副标题：一个品牌色的分支图标 + 分支名与领先/落后。
+    ///
+    /// 用 `Text` 拼接而不是换成自绘的 `ToolbarItem`：那样才能带上颜色，
+    /// 又不动工具栏的结构。这里的可用宽度是被三栏分剩下的，比窗口看着窄得多，
+    /// 上一版正是因为往工具栏里塞了太多东西，被 `NSToolbar` 折进了 `››` 溢出菜单。
+    ///
+    /// 图标用品牌色：整个工具栏只有这一处是产品自己的颜色，其余都跟随系统。
+    private var subtitleText: Text {
+        let text = subtitle
+        guard !text.isEmpty else { return Text("") }
+        return Text(Image(systemName: "arrow.triangle.branch"))
+            .foregroundStyle(Theme.Colors.brand)
+            + Text(" ") + Text(text)
     }
 
     private var subtitle: String {
