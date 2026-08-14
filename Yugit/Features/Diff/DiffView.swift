@@ -29,6 +29,9 @@ struct DiffView: View {
     /// 每换一个文件都要重设一次会很烦。
     @AppStorage("com.chenya.yugit.diff.wrapLines") private var wrapsLines = false
 
+    /// 这个文件的语言，按路径判定一次。
+    private var language: Language { Language.detect(fromPath: diff.path) }
+
     /// 行号列宽度，按这个 diff 里最大的行号算。
     ///
     /// 固定宽度在小文件上很浪费：两列各 44pt 就是 88pt，而三位数行号
@@ -93,6 +96,7 @@ struct DiffView: View {
                                 isSelected: selection[hunkIndex]?.contains(lineIndex) ?? false,
                                 wrapsLines: wrapsLines,
                                 lineNumberWidth: lineNumberWidth,
+                                language: language,
                                 onTap: { extendsSelection in
                                     toggle(hunk: hunkIndex, line: lineIndex, extending: extendsSelection)
                                 }
@@ -262,6 +266,9 @@ struct DiffLineRow: View {
     var isSelected = false
     var wrapsLines = false
     var lineNumberWidth: CGFloat = 44
+    /// 这个文件是什么语言。由 DiffView 按路径判定一次后传下来——
+    /// 每行各判一次的话，一个几千行的 diff 要重复几千次同样的扩展名匹配。
+    var language: Language = .plain
     /// 参数为 true 表示按住 shift 点击（连选）。
     var onTap: ((Bool) -> Void)?
 
@@ -279,7 +286,7 @@ struct DiffLineRow: View {
                 .foregroundStyle(markerColor)
                 .frame(width: 14)
 
-            Text(displayText)
+            Text(highlighted)
                 .font(.system(.body, design: .monospaced))
                 .textSelection(.enabled)
                 .fixedSize(horizontal: !wrapsLines, vertical: true)
@@ -316,6 +323,54 @@ struct DiffLineRow: View {
     /// 行尾的 \r 在等宽字体里不可见，但它是 CRLF 文件的真实内容，显式标出来。
     private var displayText: String {
         line.text.hasSuffix("\r") ? String(line.text.dropLast()) + "␍" : line.text
+    }
+
+    /// 上过色的行。
+    ///
+    /// 选中时不上色：选中背景是强调色，语法色画在上面对比度全乱，
+    /// 而此刻用户关心的是"我选了哪些行"，不是这行的语法结构。
+    private var highlighted: AttributedString {
+        let text = displayText
+        guard !isSelected, language != .plain else { return AttributedString(text) }
+
+        let tokens = SyntaxHighlighter.tokenize(text, language: language)
+        guard !tokens.isEmpty else { return AttributedString(text) }
+
+        // 按 token 顺序拼：token 之间的空隙原样补上纯文本。
+        // 扫描器保证 token 不重叠且递增（有测试锁着），所以这里能一遍走完。
+        var result = AttributedString()
+        let characters = Array(text)
+        var cursor = 0
+
+        for token in tokens {
+            if token.range.lowerBound > cursor {
+                result += AttributedString(String(characters[cursor..<token.range.lowerBound]))
+            }
+            var piece = AttributedString(String(characters[token.range]))
+            piece.foregroundColor = color(for: token.kind)
+            result += piece
+            cursor = token.range.upperBound
+        }
+        if cursor < characters.count {
+            result += AttributedString(String(characters[cursor...]))
+        }
+        return result
+    }
+
+    /// 语法配色。
+    ///
+    /// 全部走系统色而不是自选一套色板：系统色在深浅模式下各有一份，
+    /// 也跟随「增强对比度」辅助功能。刻意避开纯红纯绿——
+    /// 那两个在 diff 里已经稳定表示增删，再用来标语法会混淆两套含义。
+    private func color(for kind: SyntaxToken.Kind) -> Color {
+        switch kind {
+        case .keyword: .purple
+        case .string: .brown
+        case .comment: .secondary
+        case .number: .orange
+        case .type: .teal
+        case .plain: .primary
+        }
     }
 
     @ViewBuilder
