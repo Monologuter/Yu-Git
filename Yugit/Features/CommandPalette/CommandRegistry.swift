@@ -22,6 +22,7 @@ enum CommandRegistry {
         showStashes: @escaping () -> Void,
         showRemotes: @escaping () -> Void,
         showSigning: @escaping () -> Void,
+        showSubmodules: @escaping () -> Void,
         showForge: @escaping () -> Void,
         showOnboarding: @escaping () -> Void,
         showChat: @escaping () -> Void,
@@ -261,6 +262,18 @@ enum CommandRegistry {
                 subtitle: "查看和新建，支持 GitHub、GitLab（含自建）、Gitee",
                 systemImage: "arrow.triangle.pull",
                 run: showForge
+            ))
+
+        // MARK: 子模块
+
+        commands.append(
+            PaletteCommand(
+                id: "submodule.panel",
+                title: "子模块",
+                subtitle: "看状态、更新到父仓库记录的版本",
+                equivalentCommand: "git submodule status",
+                systemImage: "shippingbox",
+                run: showSubmodules
             ))
 
         // MARK: 签名

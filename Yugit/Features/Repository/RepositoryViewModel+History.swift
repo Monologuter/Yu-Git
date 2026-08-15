@@ -196,4 +196,16 @@ extension RepositoryViewModel {
     func signature(of hash: String) async -> CommitSignature {
         (try? await repository.client.signature(of: hash, in: repository.root)) ?? .unsigned
     }
+
+    // MARK: - 子模块
+
+    func submodules() async throws -> [Submodule] {
+        try await repository.client.submodules(in: repository.root)
+    }
+
+    func updateSubmodules(path: String?) async {
+        await mutate {
+            try await self.repository.perform(.updateSubmodules(path: path))
+        }
+    }
 }
