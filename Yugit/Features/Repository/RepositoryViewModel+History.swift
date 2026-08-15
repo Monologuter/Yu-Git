@@ -208,4 +208,34 @@ extension RepositoryViewModel {
             try await self.repository.perform(.updateSubmodules(path: path))
         }
     }
+
+    // MARK: - 外部工具
+
+    /// 用户配了外部 diff 工具没有。没配就不显示那个菜单项——
+    /// 摆一个点了没反应的入口比没有更糟。
+    func hasDiffTool() async -> Bool {
+        await repository.client.configuredDiffTool(in: repository.root) != nil
+    }
+
+    func hasMergeTool() async -> Bool {
+        await repository.client.configuredMergeTool(in: repository.root) != nil
+    }
+
+    /// 用外部工具打开某个文件。
+    ///
+    /// **不走 `mutate`。** 那会挂起文件监听并在结束后刷新，而外部工具会一直
+    /// 开着到用户关掉——监听挂起期间的所有外部改动都看不见了。
+    /// 让它自己跑，改动由文件监听器发现，和用户在终端里跑 git 是同一条路。
+    func openInDiffTool(_ path: String) {
+        Task {
+            try? await repository.client.launchDiffTool(path: path, in: repository.root)
+        }
+    }
+
+    func openInMergeTool(_ path: String) {
+        Task {
+            try? await repository.client.launchMergeTool(path: path, in: repository.root)
+            await refresh()
+        }
+    }
 }

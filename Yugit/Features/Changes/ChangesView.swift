@@ -32,6 +32,10 @@ struct ChangesView: View {
     @AppStorage("com.chenya.yugit.changes.treeView") private var usesTreeView = true
     @State private var pendingQuickAction: PendingQuickAction?
     @State private var pendingCommitAction: PendingCommitAction?
+    /// 用户配了外部工具没有。没配就不显示那些菜单项——
+    /// 摆一个点了没反应的入口比没有更糟。
+    @State private var hasExternalDiffTool = false
+    @State private var hasExternalMergeTool = false
 
     enum Section: String, CaseIterable, Identifiable {
         case changes = "变更"
@@ -70,6 +74,10 @@ struct ChangesView: View {
             case .history:
                 historyList
             }
+        }
+        .task {
+            hasExternalDiffTool = await repository.hasDiffTool()
+            hasExternalMergeTool = await repository.hasMergeTool()
         }
         .sheet(item: $pendingQuickAction) { pending in
             QuickActionSheet(
@@ -271,6 +279,15 @@ struct ChangesView: View {
                     ForEach(filteredConflicted, id: \.path) { entry in
                         FileRow(entry: entry, isSelected: isSelected(entry.path, isStaged: false))
                             .tag(RepositoryViewModel.FileSelection(path: entry.path, isStaged: false))
+                            .contextMenu {
+                                // 尊重用户已经配好的工具。冲突这种场合，
+                                // 手上那把用了多年的三方合并器往往比我们的好使
+                                if hasExternalMergeTool {
+                                    Button("用外部工具解决") {
+                                        repository.openInMergeTool(entry.path)
+                                    }
+                                }
+                            }
                     }
                 } header: {
                     HStack {
@@ -298,6 +315,7 @@ struct ChangesView: View {
                             Button("取消暂存") {
                                 Task { await repository.unstage([entry.path]) }
                             }
+                            fileMenuExtras(for: entry)
                         }
                     }
                 } header: {
@@ -329,6 +347,7 @@ struct ChangesView: View {
                                     pendingDiscard = [entry.path]
                                 }
                             }
+                            fileMenuExtras(for: entry)
                         }
                     }
                 } header: {
@@ -338,6 +357,26 @@ struct ChangesView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /// 暂存与未暂存两处右键菜单共有的那几项。
+    ///
+    /// 抽出来是因为两边必须一致：只在一边加了「查看历史」，用户会以为
+    /// 这个功能取决于文件暂存没暂存，而那毫无道理。
+    @ViewBuilder
+    private func fileMenuExtras(for entry: StatusEntry) -> some View {
+        Divider()
+
+        Button("查看这个文件的历史…") {
+            onShowFileHistory(entry.path)
+        }
+
+        // 没配外部工具就不显示这一项——摆一个点了没反应的入口比没有更糟
+        if hasExternalDiffTool {
+            Button("用外部工具比较") {
+                repository.openInDiffTool(entry.path)
             }
         }
     }
