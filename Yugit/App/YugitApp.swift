@@ -36,6 +36,11 @@ struct YugitApp: App {
                     model.presentOpenPanel()
                 }
                 .keyboardShortcut("o", modifiers: .command)
+
+                Button("切换仓库…") {
+                    model.showsSwitcher = true
+                }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
             }
 
             CommandGroup(replacing: .undoRedo) {

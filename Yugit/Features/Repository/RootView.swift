@@ -13,6 +13,9 @@ struct RootView: View {
                 WelcomeView(model: model)
             }
         }
+        .sheet(isPresented: $model.showsSwitcher) {
+            RepositorySwitcher(model: model) { model.showsSwitcher = false }
+        }
         .sheet(
             item: Binding(
                 get: { model.pendingInit },

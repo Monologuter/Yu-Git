@@ -16,6 +16,9 @@ final class AppModel {
     /// 打不开仓库这类需要用户知晓的错误。
     var errorMessage: String?
 
+    /// 多仓库切换器开着没有。⌘⇧O 唤起。
+    var showsSwitcher = false
+
     private let recentsKey = "com.chenya.yugit.recentRepositories"
     private let maximumRecents = 10
 
