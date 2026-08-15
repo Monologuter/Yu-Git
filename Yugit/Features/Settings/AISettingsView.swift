@@ -20,8 +20,8 @@ struct AISettingsView: View {
                     "AI 是可选增强。不配置也能使用全部本地 Git 功能。",
                     systemImage: "info.circle"
                 )
-                .foregroundStyle(.secondary)
-                .font(.callout)
+                .foregroundStyle(Theme.Colors.secondaryText)
+                .font(Theme.Font.callout)
             }
 
             Section("服务商") {
@@ -51,8 +51,8 @@ struct AISettingsView: View {
             if let error = store.lastError {
                 Section {
                     Label(error, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
-                        .font(.callout)
+                        .foregroundStyle(Theme.Colors.warning)
+                        .font(Theme.Font.callout)
                 }
             }
 
@@ -106,14 +106,14 @@ private struct ConfigurationRow: View {
     var body: some View {
         HStack {
             Image(systemName: isActive ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(isActive ? Color.accentColor : .secondary)
+                .foregroundStyle(isActive ? Theme.Colors.accent : Theme.Colors.secondaryText)
                 .onTapGesture(perform: onSelect)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(configuration.name)
                 Text("\(configuration.kind.displayName) · \(configuration.model)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             Spacer()
@@ -152,8 +152,8 @@ private struct ConfigurationEditor: View {
                                 + "但请求会连接失败。在此之前请用自带 Key 的方式。",
                             systemImage: "clock.badge.exclamationmark"
                         )
-                        .foregroundStyle(.orange)
-                        .font(.callout)
+                        .foregroundStyle(Theme.Colors.warning)
+                        .font(Theme.Font.callout)
                     }
                 }
 
@@ -183,8 +183,8 @@ private struct ConfigurationEditor: View {
                                 + "服务端只存它的哈希，找不回来。",
                             systemImage: "key"
                         )
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                     }
 
                     Label(
@@ -193,8 +193,8 @@ private struct ConfigurationEditor: View {
                             : "Key 存放在系统钥匙串，不会写进配置文件，也不参与 iCloud 同步。",
                         systemImage: "lock"
                     )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                 }
 
                 if let result = testResult {
@@ -204,8 +204,8 @@ private struct ConfigurationEditor: View {
                             systemImage: result.isEmpty
                                 ? "checkmark.circle" : "exclamationmark.triangle"
                         )
-                        .foregroundStyle(result.isEmpty ? .green : .orange)
-                        .font(.callout)
+                        .foregroundStyle(result.isEmpty ? Theme.Colors.success : Theme.Colors.warning)
+                        .font(Theme.Font.callout)
                     }
                 }
             }
@@ -248,7 +248,7 @@ private struct ConfigurationEditor: View {
                 }
             }
             .menuStyle(.borderlessButton)
-            .font(.caption)
+            .font(Theme.Font.secondary)
         }
     }
 
@@ -279,7 +279,7 @@ private struct ConfigurationEditor: View {
                 }
             }
             .menuStyle(.borderlessButton)
-            .font(.caption)
+            .font(Theme.Font.secondary)
         }
     }
 
@@ -328,8 +328,8 @@ private struct PrivacyNotice: View {
             row("每次发送前会告诉你哪些文件被排除了")
             row("本地 Git 全功能永久免费，不配 AI 也能用全部功能")
         }
-        .font(.callout)
-        .foregroundStyle(.secondary)
+        .font(Theme.Font.callout)
+        .foregroundStyle(Theme.Colors.secondaryText)
     }
 
     private func row(_ text: String) -> some View {

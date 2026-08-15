@@ -109,7 +109,7 @@ struct SidebarView: View {
                         Text("远程分支")
                         Text("\(filteredRemoteBranches.count)")
                             .font(Theme.Font.secondary)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                     }
                 }
             }
@@ -125,7 +125,7 @@ struct SidebarView: View {
                         Text("标签")
                         Text("\(filteredTags.count)")
                             .font(Theme.Font.secondary)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                     }
                 }
             }
@@ -270,18 +270,19 @@ struct BranchRow: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: branch.isRemote ? "cloud" : "arrow.triangle.branch")
-                .font(.caption)
+                .font(.system(size: 12))
                 .foregroundStyle(branch.isCurrent ? Theme.Colors.brand : Theme.Colors.secondaryText)
                 .frame(width: 14)
 
             Text(branch.name)
+                .font(Theme.Font.body)
                 .fontWeight(branch.isCurrent ? .semibold : .regular)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
             Spacer(minLength: 4)
 
-            trackingBadge
+            TrackingBadge(tracking: branch.tracking)
         }
         // 当前分支：图标换品牌靛 + 左侧一根竖标。
         //
@@ -299,29 +300,6 @@ struct BranchRow: View {
             }
         }
         .help(tooltip)
-    }
-
-    @ViewBuilder
-    private var trackingBadge: some View {
-        let tracking = branch.tracking
-        if tracking.isGone {
-            // upstream 被删了还留着配置，push 会失败，值得显眼提示
-            Image(systemName: "exclamationmark.triangle")
-                .font(.caption2)
-                .foregroundStyle(.orange)
-        } else if tracking.ahead > 0 || tracking.behind > 0 {
-            HStack(spacing: 3) {
-                if tracking.ahead > 0 {
-                    Label("\(tracking.ahead)", systemImage: "arrow.up")
-                }
-                if tracking.behind > 0 {
-                    Label("\(tracking.behind)", systemImage: "arrow.down")
-                }
-            }
-            .labelStyle(.compact)
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-        }
     }
 
     private var tooltip: String {
@@ -348,11 +326,12 @@ struct TagRow: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "tag")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.Colors.secondaryText)
                 .frame(width: 14)
 
             Text(tag.name)
+                .font(Theme.Font.body)
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -361,8 +340,8 @@ struct TagRow: View {
             if !tag.isAnnotated {
                 // 工程规范要求发布用附注 tag，轻量 tag 标出来便于发现
                 Text("轻量")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.decorativeText)
             }
         }
         .help(tag.message ?? tag.name)
@@ -380,8 +359,8 @@ struct EmptyHint: View {
 
     var body: some View {
         Text(text)
-            .font(.callout)
-            .foregroundStyle(.tertiary)
+            .font(Theme.Font.callout)
+            .foregroundStyle(Theme.Colors.tertiaryText)
     }
 }
 
@@ -417,7 +396,7 @@ struct FilterField: View {
         HStack(spacing: Theme.Spacing.tight + 2) {
             Image(systemName: "line.3.horizontal.decrease")
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             TextField(placeholder, text: $text)
                 .textFieldStyle(.plain)
@@ -434,7 +413,7 @@ struct FilterField: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
                 }
                 .buttonStyle(.borderless)
                 .help("清空")
@@ -447,7 +426,7 @@ struct FilterField: View {
             // 聚焦时描一圈强调色。系统的 .roundedBorder 在侧栏背景上太重，
             // 但完全没有焦点提示又会让人不确定键盘输入去了哪里。
             RoundedRectangle(cornerRadius: Theme.Radius.medium)
-                .strokeBorder(isFocused ? Color.accentColor : .clear, lineWidth: 2)
+                .strokeBorder(isFocused ? Theme.Colors.accent : .clear, lineWidth: 2)
         }
         .animation(.easeInOut(duration: 0.12), value: isFocused)
     }

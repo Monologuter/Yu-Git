@@ -249,7 +249,7 @@ struct SelectionBar: View {
     var body: some View {
         HStack(spacing: 10) {
             Text("已选 \(count) 行")
-                .font(.callout)
+                .font(Theme.Font.callout)
 
             Spacer(minLength: 8)
 
@@ -259,7 +259,7 @@ struct SelectionBar: View {
             Button(isStaged ? "取消暂存选中的行" : "暂存选中的行", action: onApply)
                 .keyboardShortcut("s", modifiers: [.command, .shift])
         }
-        .font(.callout)
+        .font(Theme.Font.callout)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(.thinMaterial)
@@ -279,8 +279,8 @@ struct HunkHeaderRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(hunk.header)
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.mono)
+                .foregroundStyle(Theme.Colors.secondaryText)
                 .lineLimit(1)
 
             Spacer(minLength: 8)
@@ -291,13 +291,13 @@ struct HunkHeaderRow: View {
                     isStaged ? onUnstage() : onStage()
                 }
                 .buttonStyle(.borderless)
-                .font(.caption)
+                .font(Theme.Font.secondary)
             }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(nsColor: .underPageBackgroundColor))
+        .background(Theme.Colors.sunkenBackground)
         .contentShape(.rect)
         .onHover { isHovering = $0 }
     }
@@ -339,8 +339,8 @@ struct DiffLineRow: View {
 
             if line.isMissingNewline {
                 Text("↵ 无换行结尾")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
                     .padding(.leading, 8)
             }
 
@@ -355,7 +355,7 @@ struct DiffLineRow: View {
         .background(backgroundColor)
         .overlay(alignment: .leading) {
             if isSelected {
-                Rectangle().fill(Color.accentColor).frame(width: 3)
+                Rectangle().fill(Theme.Colors.accent).frame(width: 3)
             }
         }
         .contentShape(.rect)

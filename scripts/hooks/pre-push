@@ -37,7 +37,15 @@ for package in "$root"/Packages/*/; do
     # stdin，但不切断的话它会一路传给 swift test、再传给测试里成百上千个 git
     # 子进程——任何一个去读 stdin 都会永远等下去。目前没有观察到这种情况，
     # 加上只是不给它发生的机会。
-    if ! run_swift test --package-path "$package" < /dev/null; then
+    # `--no-parallel`：swift-testing 默认并行跑，而并行下这套测试会**间歇性挂死**——
+    # 停在 0% CPU，没有超时、没有输出、没有报错，只能人工 kill。已多次重现，
+    # 每次都在跑到接近尾声时冻住，此时只剩主线程停在空的 run loop 上，
+    # 所有任务都 await 在不会触发的 continuation 上。根因还没查清
+    # （见 docs/05 的「已知问题」）。
+    #
+    # 串行跑要 220 秒，比并行的 46 秒慢，但它每次都会结束。
+    # 一个稳定慢的门禁胜过一个通常快、偶尔永远卡住的。
+    if ! run_swift test --no-parallel --package-path "$package" < /dev/null; then
         printf '\n❌ %s 测试未通过，推送已取消\n' "$name"
         printf '如确需跳过：git push --no-verify\n'
         exit 1

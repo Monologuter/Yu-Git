@@ -32,7 +32,7 @@ struct RepositorySwitcher: View {
                     .foregroundStyle(Theme.Colors.brand)
                 TextField("切换到哪个仓库", text: $query)
                     .textFieldStyle(.plain)
-                    .font(.title3)
+                    .font(Theme.Font.sheetTitle)
                     .onChange(of: query) { _, _ in selectionIndex = 0 }
                     .onSubmit(openSelected)
             }

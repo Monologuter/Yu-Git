@@ -32,8 +32,8 @@ struct ExplanationPanel: View {
                     content
                 }
             }
-            .padding(12)
-            .background(Color(nsColor: .underPageBackgroundColor), in: .rect(cornerRadius: 8))
+            .padding(Theme.Spacing.loose)
+            .background(Theme.Colors.sunkenBackground, in: .rect(cornerRadius: 8))
             .onDisappear {
                 // 切走就别再烧 token 了
                 task?.cancel()
@@ -53,14 +53,14 @@ struct ExplanationPanel: View {
                 Image(systemName: "sparkles")
                     .foregroundStyle(Theme.Colors.brand)
                 Text(title)
-                    .font(.callout.weight(.medium))
+                    .font(Theme.Font.callout.weight(.medium))
                 Spacer()
                 if isLoading {
                     ProgressView().controlSize(.small)
                 } else {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.Colors.secondaryText)
                 }
             }
             .contentShape(.rect)
@@ -73,21 +73,21 @@ struct ExplanationPanel: View {
         if let errorMessage {
             VStack(alignment: .leading, spacing: 6) {
                 Label(errorMessage, systemImage: "exclamationmark.triangle")
-                    .font(.callout)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.callout)
+                    .foregroundStyle(Theme.Colors.warning)
                     .textSelection(.enabled)
                 Button("重试") { start() }
                     .buttonStyle(.borderless)
-                    .font(.caption)
+                    .font(Theme.Font.secondary)
             }
         } else if text.isEmpty && isLoading {
             Text("正在阅读改动…")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.callout)
+                .foregroundStyle(Theme.Colors.secondaryText)
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 Text(text)
-                    .font(.callout)
+                    .font(Theme.Font.callout)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -95,8 +95,8 @@ struct ExplanationPanel: View {
                     // AI 会出错，这句提醒必须一直在——不是免责声明，是让用户
                     // 保持「以代码为准」的习惯
                     Label("AI 生成的解释可能有误，请以代码为准", systemImage: "info.circle")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
                 }
             }
         }

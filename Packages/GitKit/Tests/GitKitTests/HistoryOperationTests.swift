@@ -57,13 +57,21 @@ struct HistoryOperationTests {
         try await repo.commitAll("side 加了新文件")
         let sideHead = try await head(of: repo)
         try await repo.git("switch", "--quiet", "main")
+        // main 自己往前走一步，两条分支就此分叉。
+        //
+        // **不走这一步的话这条测试是错的**：main 停在 side 的父提交上时，
+        // 挑过来的提交拥有相同的树、相同的父、相同的作者与信息——
+        // 只要落在同一秒，git 生成的就是字节相同的 commit，hash 也一样。
+        // 那不是 bug 是 git 的定义，而断言会随机器快慢时红时绿。
+        try repo.write("main 的改动\n", to: "h.txt")
+        try await repo.commitAll("main 加了别的文件")
 
         let outcome = try await actor(for: repo).performAllowingConflict(
             .cherryPick(hash: sideHead, subject: "side 加了新文件"))
 
         #expect(outcome == .completed)
         #expect(try await subjects(of: repo).first == "side 加了新文件")
-        // 内容一样，但这是一条新提交
+        // 内容一样，但父不同，所以是一条 hash 不同的新提交
         #expect(try await head(of: repo) != sideHead)
         #expect(FileManager.default.fileExists(atPath: repo.url.appendingPathComponent("g.txt").path))
     }

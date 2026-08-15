@@ -169,4 +169,73 @@ struct ProcessRunnerTests {
             _ = try await runner.run(executable: URL(fileURLWithPath: "/nonexistent/yugit-not-here"))
         }
     }
+
+    /// 大量并发调用不能把线程池耗干。
+    ///
+    /// 早先每路管道读取都用 `DispatchQueue.global().async` 循环阻塞在
+    /// `availableData` 上——一条 git 调用占两条线程，而全局队列的线程数有硬上限。
+    /// 并发一多，新提交的 block 拿不到线程，里面的 `continuation.resume`
+    /// 就永远不执行：**整个进程停在 0% CPU，没有超时也没有报错**。
+    ///
+    /// 这条测试并发发起远超线程上限的调用。挂死的话它会卡在时间限制上，
+    /// 而不是失败得莫名其妙。
+    @Test("并发上百个进程不会耗尽线程池而挂死", .timeLimit(.minutes(1)))
+    func survivesHighConcurrency() async throws {
+        let runner = ProcessRunner()
+        let count = 120
+
+        let results = await withTaskGroup(of: Int32?.self) { group in
+            for index in 0..<count {
+                group.addTask {
+                    let result = try? await runner.run(
+                        executable: URL(fileURLWithPath: "/bin/echo"),
+                        arguments: ["第 \(index) 个"],
+                        timeout: .seconds(30)
+                    )
+                    return result?.exitCode
+                }
+            }
+            var collected: [Int32?] = []
+            for await value in group { collected.append(value) }
+            return collected
+        }
+
+        #expect(results.count == count)
+        #expect(results.allSatisfy { $0 == 0 })
+    }
+
+    /// 同上，但每个子进程都往两路管道写不少内容——读取路径承压时更容易暴露问题。
+    @Test("并发进程同时写满两路管道也不挂死", .timeLimit(.minutes(1)))
+    func survivesConcurrentPipePressure() async throws {
+        let runner = ProcessRunner()
+        let script = """
+            for i in $(seq 1 200); do
+              echo "标准输出第 $i 行"
+              echo "标准错误第 $i 行" >&2
+            done
+            """
+
+        let results = await withTaskGroup(of: Bool.self) { group in
+            for _ in 0..<40 {
+                group.addTask {
+                    guard
+                        let result = try? await runner.run(
+                            executable: URL(fileURLWithPath: "/bin/sh"),
+                            arguments: ["-c", script],
+                            timeout: .seconds(30)
+                        )
+                    else { return false }
+                    return result.exitCode == 0
+                        && result.standardOutputText.contains("标准输出第 200 行")
+                        && result.standardErrorText.contains("标准错误第 200 行")
+                }
+            }
+            var collected: [Bool] = []
+            for await value in group { collected.append(value) }
+            return collected
+        }
+
+        #expect(results.count == 40)
+        #expect(results.allSatisfy { $0 })
+    }
 }

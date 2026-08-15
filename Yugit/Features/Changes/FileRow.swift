@@ -16,12 +16,8 @@ struct FileRow: View {
 
     var body: some View {
         HStack(spacing: Theme.Spacing.regular) {
-            // 等宽 + 固定 14pt 宽，好让后面的路径左边界对齐成一列。
-            // 不固定的话 A/M/D 各自宽度不同，整列会呈锯齿状。
-            Text(statusLetter)
-                .font(Theme.Font.mono)
-                .foregroundStyle(isSelected ? Theme.Colors.onAccent : statusColor)
-                .frame(width: 14)
+            StatusLetter(
+                entry: entry, showsIndexStatus: showsIndexStatus, isEmphasized: isSelected)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(fileName)
@@ -57,43 +53,6 @@ struct FileRow: View {
     private var directory: String? {
         let parent = (entry.path as NSString).deletingLastPathComponent
         return parent.isEmpty ? nil : parent
-    }
-
-    private var status: FileStatus {
-        showsIndexStatus ? entry.indexStatus : entry.workTreeStatus
-    }
-
-    private var statusLetter: String {
-        switch entry.kind {
-        case .untracked: "?"
-        case .unmerged: "!"
-        case .ignored: "·"
-        case .renamed: "R"
-        case .copied: "C"
-        case .ordinary: String(status.rawValue)
-        }
-    }
-
-    /// 状态**永远同时由字母和颜色表达**。
-    ///
-    /// 只靠颜色的话色盲用户什么都读不到，而这一列传的是「这个文件被怎么了」——
-    /// 读不到就等于这一列不存在。字母才是主信息，颜色只是让它扫得更快。
-    private var statusColor: Color {
-        switch entry.kind {
-        case .untracked: Theme.Colors.secondaryText
-        case .unmerged: Theme.Colors.warning
-        case .ignored: Theme.Colors.decorativeText
-        // 改名和复制归到合并色：它们和新增/删除不是一回事，
-        // 内容其实没变，变的是这个文件在树里的位置
-        case .renamed, .copied: Theme.Colors.mergeAccent
-        case .ordinary:
-            switch status {
-            case .added: Theme.Colors.success
-            case .deleted: Theme.Colors.danger
-            case .modified, .fileTypeChanged: Theme.Colors.accent
-            default: Theme.Colors.secondaryText
-            }
-        }
     }
 
     private var helpText: String {
@@ -136,13 +95,13 @@ struct DirectoryRow: View {
         HStack(spacing: Theme.Spacing.tight + 2) {
             Image(systemName: "chevron.right")
                 .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
                 .rotationEffect(.degrees(isCollapsed ? 0 : 90))
                 .frame(width: 10)
 
             Image(systemName: isCollapsed ? "folder.fill" : "folder")
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             Text(node.name)
                 .font(Theme.Font.body)
@@ -153,7 +112,8 @@ struct DirectoryRow: View {
 
             Text("\(node.leafCount)")
                 .font(Theme.Font.secondary)
-                .foregroundStyle(.tertiary)
+                .monospacedDigit()
+                .foregroundStyle(Theme.Colors.decorativeText)
 
             Spacer(minLength: 0)
 
@@ -169,7 +129,7 @@ struct DirectoryRow: View {
             }
         }
         .padding(.leading, CGFloat(depth) * 12)
-        .padding(.vertical, 1)
+        .frame(minHeight: 24)
         .contentShape(.rect)
         .onHover { isHovering = $0 }
         .onTapGesture(perform: onToggle)

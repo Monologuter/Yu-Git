@@ -23,8 +23,8 @@ struct AppearanceSettingsView: View {
                     "深色模式跟随系统设置，不在这里切换——每套主题都自带深浅两版。",
                     systemImage: "circle.lefthalf.filled"
                 )
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.callout)
+                .foregroundStyle(Theme.Colors.secondaryText)
             }
         }
         .formStyle(.grouped)
@@ -42,13 +42,13 @@ private struct ThemeRow: View {
     var body: some View {
         HStack(spacing: Theme.Spacing.loose) {
             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                .foregroundStyle(isSelected ? Theme.Colors.accent : Theme.Colors.secondaryText)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(theme.displayName)
                 Text(theme.summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
 

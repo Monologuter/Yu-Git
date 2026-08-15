@@ -297,10 +297,10 @@ struct FailureSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.title2)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.sheetTitle)
+                    .foregroundStyle(Theme.Colors.warning)
                 Text(failure.title)
-                    .font(.headline)
+                    .font(Theme.Font.title)
             }
 
             Text(failure.message)
@@ -308,25 +308,25 @@ struct FailureSheet: View {
 
             if let suggestion = failure.suggestion {
                 Text(suggestion)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.callout)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                     .textSelection(.enabled)
                     .padding(10)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(nsColor: .underPageBackgroundColor), in: .rect(cornerRadius: 6))
+                    .background(Theme.Colors.sunkenBackground, in: .rect(cornerRadius: 6))
             }
 
             if let details = failure.details, !details.isEmpty {
                 DisclosureGroup("git 的原始输出", isExpanded: $showsDetails) {
                     ScrollView {
                         Text(details)
-                            .font(.system(.caption, design: .monospaced))
+                            .font(Theme.Font.mono)
                             .textSelection(.enabled)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .frame(maxHeight: 160)
                 }
-                .font(.callout)
+                .font(Theme.Font.callout)
             }
 
             HStack {
@@ -351,8 +351,8 @@ struct TransferIndicator: View {
                 .controlSize(.small)
             if let progress {
                 Text(progress.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                     .monospacedDigit()
             }
         }

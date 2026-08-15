@@ -15,17 +15,18 @@ struct RebaseBanner: View {
 
     var body: some View {
         if let progress = repository.rebaseProgress {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+                HStack(spacing: Theme.Spacing.regular) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.Colors.warning)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(headline(progress))
-                            .font(.callout.weight(.medium))
+                            .font(Theme.Font.callout.weight(.medium))
                         Text(detail(progress))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(Theme.Font.secondary)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                     }
 
                     Spacer()
@@ -53,21 +54,25 @@ struct RebaseBanner: View {
                         "放弃后仍可用备份 tag `\(backupTag)` 回到整理之前的状态",
                         systemImage: "shield"
                     )
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                     .textSelection(.enabled)
                 }
 
                 if let errorMessage {
                     Label(errorMessage, systemImage: "xmark.circle")
-                        .font(.caption2)
-                        .foregroundStyle(.red)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.danger)
                         .textSelection(.enabled)
                 }
             }
-            .padding(10)
-            .background(Color.orange.opacity(0.12))
-            .overlay(alignment: .bottom) { Divider() }
+            .padding(Theme.Spacing.regular)
+            // 用主题的警示浅底，不是 orange 加透明度：后者叠在不同主题的
+            // 底色上会得到四种不同的结果，而 warn-wash 是每套主题各自量过的
+            .background(Theme.Colors.warningWash)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Theme.Colors.separator).frame(height: 1)
+            }
         }
     }
 

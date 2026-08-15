@@ -64,6 +64,11 @@ protocol ThemePalette: Sendable {
     var raisedBackground: Color { get }
     /// 行与按钮的悬停底。
     var hoverBackground: Color { get }
+    /// 最淡的一层填充：计数胶囊、过滤框底。
+    ///
+    /// 比 `hoverBackground` 更淡——那是「鼠标在这儿」的反馈，
+    /// 而这个是静态的容器底，两者同色的话悬停就没有反馈了。
+    var fillQuaternary: Color { get }
 
     var primaryText: Color { get }
     var secondaryText: Color { get }
@@ -177,6 +182,7 @@ struct SystemTheme: ThemePalette {
     var sunkenBackground: Color { .theme(light: 0xF7_F8F9, dark: 0x0F_1113) }
     var raisedBackground: Color { .theme(light: 0xFD_FDFE, dark: 0x23_2528) }
     var hoverBackground: Color { .theme(light: 0xEE_F0F3, dark: 0x2C_2E31) }
+    var fillQuaternary: Color { .theme(light: 0xE9_EBEE, dark: 0x2E_3033) }
 
     // ink 三级比系统的 tertiaryLabelColor 深一档：hash 和时间是要读的信息，
     // 系统那一档在浅色下只有 3.3:1，够不上 AA

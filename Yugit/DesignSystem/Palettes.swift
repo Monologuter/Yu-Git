@@ -37,6 +37,7 @@ struct InkTheme: ThemePalette {
     var sunkenBackground: Color { .theme(light: 0xF2_EEE7, dark: 0x14_100B) }
     var raisedBackground: Color { .theme(light: 0xFE_FBF6, dark: 0x26_231F) }
     var hoverBackground: Color { .theme(light: 0xE9_E4DC, dark: 0x31_2B24) }
+    var fillQuaternary: Color { .theme(light: 0xEC_E7DF, dark: 0x33_2D26) }
 
     var primaryText: Color { .theme(light: 0x3C_3730, dark: 0xCB_C3BB) }
     var secondaryText: Color { .theme(light: 0x68_625A, dark: 0x97_9189) }
@@ -108,6 +109,7 @@ struct DaylightTheme: ThemePalette {
     var sunkenBackground: Color { .theme(light: 0xF1_F3F5, dark: 0x03_0405) }
     var raisedBackground: Color { .theme(light: 0xFF_FFFF, dark: 0x16_1718) }
     var hoverBackground: Color { .theme(light: 0xDC_DEE0, dark: 0x20_2224) }
+    var fillQuaternary: Color { .theme(light: 0xE0_E2E4, dark: 0x23_2527) }
 
     var primaryText: Color { .theme(light: 0x0F_1112, dark: 0xE5_E7EA) }
     var secondaryText: Color { .theme(light: 0x4E_5153, dark: 0xA3_A6A8) }
@@ -178,6 +180,7 @@ struct SpectrumTheme: ThemePalette {
     var sunkenBackground: Color { .theme(light: 0xF1_F2F6, dark: 0x0A_0D13) }
     var raisedBackground: Color { .theme(light: 0xFF_FFFF, dark: 0x20_2227) }
     var hoverBackground: Color { .theme(light: 0xE0_E2E6, dark: 0x28_2C34) }
+    var fillQuaternary: Color { .theme(light: 0xE3_E5E9, dark: 0x29_2D36) }
 
     var primaryText: Color { .theme(light: 0x1C_2027, dark: 0xDC_E3EF) }
     var secondaryText: Color { .theme(light: 0x53_5861, dark: 0x9C_A2AD) }

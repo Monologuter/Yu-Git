@@ -123,11 +123,11 @@ struct SearchView: View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
 
                 TextField("搜索仓库", text: $model.query)
                     .textFieldStyle(.plain)
-                    .font(.title3)
+                    .font(Theme.Font.sheetTitle)
 
                 if model.isSearching {
                     ProgressView().controlSize(.small)
@@ -136,7 +136,7 @@ struct SearchView: View {
                         model.clear()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                     }
                     .buttonStyle(.borderless)
                 }
@@ -216,18 +216,18 @@ struct ContentMatchRow: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
                 Text(match.path)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                     .lineLimit(1)
                     .truncationMode(.head)
 
                 Text("第 \(match.lineNumber) 行")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
             }
 
             Text(highlighted)
-                .font(.system(.callout, design: .monospaced))
+                .font(Theme.Font.mono)
                 .lineLimit(1)
         }
         .padding(.vertical, 2)

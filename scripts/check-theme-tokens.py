@@ -22,7 +22,7 @@ SWIFT_DEFAULT = ROOT / "Yugit/DesignSystem/ThemePalette.swift"
 SWIFT_THEMES = ROOT / "Yugit/DesignSystem/Palettes.swift"
 
 # CSS 变量名 → ThemePalette 的属性名。
-# 没列进来的（--accent 一族、--surface-press、--fill-quaternary、
+# 没列进来的（--accent 一族、--surface-press、
 # --brand-wash-strong）是刻意的：强调色跟随系统不落死值，其余几个
 # 还没有对应的 token，等用到时再加。
 TOKENS = {
@@ -34,6 +34,7 @@ TOKENS = {
     "surface-sunken": "sunkenBackground",
     "surface-raised": "raisedBackground",
     "surface-hover": "hoverBackground",
+    "fill-quaternary": "fillQuaternary",
     "ink-1": "primaryText",
     "ink-2": "secondaryText",
     "ink-3": "tertiaryText",

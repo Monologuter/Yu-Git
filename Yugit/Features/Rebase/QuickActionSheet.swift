@@ -20,17 +20,17 @@ struct QuickActionSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Label(action.title, systemImage: action.systemImage)
-                    .font(.headline)
+                    .font(Theme.Font.title)
                 Text(action.explanation)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.callout)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             GroupBox {
                 HStack(spacing: 8) {
                     Text(commit.abbreviatedHash)
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.mono)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                     Text(commit.subject)
                         .lineLimit(2)
                     Spacer(minLength: 0)
@@ -41,25 +41,25 @@ struct QuickActionSheet: View {
             if action.needsMessage {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("新的提交信息")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                     TextEditor(text: $message)
-                        .font(.system(.callout, design: .monospaced))
+                        .font(Theme.Font.mono)
                         .frame(height: 100)
                         .scrollContentBackground(.hidden)
-                        .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 4))
+                        .background(Theme.Colors.contentBackground, in: .rect(cornerRadius: 4))
                         .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(.separator) }
                 }
             }
 
             Label("开始前会自动打一个备份 tag，随时可以退回来", systemImage: "shield")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             if let errorMessage {
                 Label(errorMessage, systemImage: "xmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.danger)
                     .textSelection(.enabled)
             }
 

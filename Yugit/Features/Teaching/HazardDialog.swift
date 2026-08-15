@@ -15,10 +15,10 @@ struct HazardDialog: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Image(systemName: warning.isDestructive ? "trash.circle.fill" : "pencil.circle.fill")
-                    .font(.title2)
+                    .font(Theme.Font.sheetTitle)
                     .foregroundStyle(warning.isDestructive ? .red : .purple)
                 Text(warning.title)
-                    .font(.headline)
+                    .font(Theme.Font.title)
             }
 
             section("会发生什么", text: warning.consequence)
@@ -31,14 +31,14 @@ struct HazardDialog: View {
             // 越是危险的一步，越该让人看清它到底等价于哪条命令
             VStack(alignment: .leading, spacing: 4) {
                 Text("等价的 git 命令")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary.weight(.medium))
+                    .foregroundStyle(Theme.Colors.secondaryText)
                 Text(warning.equivalentCommand)
-                    .font(.system(.caption, design: .monospaced))
+                    .font(Theme.Font.mono)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
-                    .background(Color(nsColor: .underPageBackgroundColor), in: .rect(cornerRadius: 4))
+                    .background(Theme.Colors.sunkenBackground, in: .rect(cornerRadius: 4))
             }
 
             HStack {
@@ -60,10 +60,10 @@ struct HazardDialog: View {
     private func section(_ title: String, text: String, tint: Color = .primary) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary.weight(.medium))
+                .foregroundStyle(Theme.Colors.secondaryText)
             Text(markdown(text))
-                .font(.callout)
+                .font(Theme.Font.callout)
                 .foregroundStyle(tint)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)

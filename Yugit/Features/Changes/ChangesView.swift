@@ -296,7 +296,7 @@ struct ChangesView: View {
                         // 冲突文件就在眼前时给个直达入口，比让人去翻命令面板顺手
                         Button("解决…") { onResolveConflicts() }
                             .buttonStyle(.borderless)
-                            .font(.caption)
+                            .font(Theme.Font.secondary)
                     }
                 }
             }
@@ -391,7 +391,7 @@ struct ChangesView: View {
             Spacer()
             action()
                 .buttonStyle(.borderless)
-                .font(.caption)
+                .font(Theme.Font.secondary)
         }
     }
 
@@ -450,7 +450,7 @@ struct ChangesView: View {
 
             Text("在整个历史中找到 \(repository.commits.count) 条")
                 .font(Theme.Font.secondary)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             Spacer(minLength: 0)
 
@@ -561,14 +561,14 @@ struct CommitPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             TextEditor(text: $repository.commitMessage)
-                .font(.body)
+                .font(Theme.Font.body)
                 .frame(height: 72)
                 .scrollContentBackground(.hidden)
-                .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 6))
+                .background(Theme.Colors.contentBackground, in: .rect(cornerRadius: 6))
                 .overlay(alignment: .topLeading) {
                     if repository.commitMessage.isEmpty {
                         Text("提交说明")
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.Colors.tertiaryText)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 8)
                             .allowsHitTesting(false)
@@ -582,7 +582,7 @@ struct CommitPanel: View {
             HStack {
                 Toggle("修改上一条提交", isOn: $repository.isAmending)
                     .toggleStyle(.checkbox)
-                    .font(.caption)
+                    .font(Theme.Font.secondary)
                     .onChange(of: repository.isAmending) { _, isOn in
                         // 勾上就把上一条的说明带出来，省得用户重打一遍
                         if isOn && repository.commitMessage.isEmpty {
@@ -615,22 +615,22 @@ struct CommitPanel: View {
             if let summary = repository.aiState.redactionSummary {
                 // 脱敏做了什么必须说出来，否则用户以为 AI 看到了全部改动
                 Label(summary, systemImage: "eye.slash")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             if let error = repository.aiState.errorMessage {
                 Label(error, systemImage: "exclamationmark.triangle")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.warning)
                     .textSelection(.enabled)
             }
 
             if repository.isAmending {
                 // amend 会生成新的 commit hash，已推送的提交再推就需要 force
                 Label("修改后 commit hash 会变，若已推送则需要 force push", systemImage: "exclamationmark.triangle")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.warning)
             }
         }
         .padding(10)

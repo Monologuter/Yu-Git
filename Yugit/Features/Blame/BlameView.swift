@@ -73,12 +73,12 @@ struct BlameView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.path)
-                        .font(.headline)
+                        .font(Theme.Font.title)
                         .lineLimit(1)
                         .truncationMode(.head)
                     Text("每一行是谁写的")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                 }
 
                 Spacer()
@@ -128,10 +128,10 @@ struct BlameView: View {
                 Spacer()
                 if result.aiLineCount > 0 {
                     Text("AI 参与 \(Int((result.aiRatio * 100).rounded()))%")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                 }
             }
-            .font(.caption2)
+            .font(Theme.Font.caption)
         }
     }
 
@@ -177,8 +177,8 @@ struct BlameView: View {
                 "归因依据是提交信息里的署名（Co-authored-by 等）。认不出的一律算人工。",
                 systemImage: "info.circle"
             )
-            .font(.caption2)
-            .foregroundStyle(.tertiary)
+            .font(Theme.Font.caption)
+            .foregroundStyle(Theme.Colors.tertiaryText)
 
             Spacer()
 
@@ -221,14 +221,14 @@ private struct BlameRow: View {
 
             HStack(alignment: .top, spacing: 8) {
                 Text("\(line.finalLineNumber)")
-                    .font(.system(.caption2, design: .monospaced))
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.mono)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
                     .frame(width: 44, alignment: .trailing)
 
                 VStack(alignment: .leading, spacing: 0) {
                     Text(commit?.summary ?? String(line.commit.prefix(7)))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                         .lineLimit(1)
 
                     HStack(spacing: 4) {
@@ -241,15 +241,15 @@ private struct BlameRow: View {
                             Text(commit.authorDate, format: .relative(presentation: .named))
                         }
                     }
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
 
                     // 记过来历的才显示。「这行是 Claude 写的」只答了一半，
                     // 人真正想知道的是「当初为什么这么写」——那个答案在对话里。
                     if let session {
                         Label(session.summary, systemImage: "text.bubble")
                             .labelStyle(.compact)
-                            .font(.caption2)
+                            .font(Theme.Font.caption)
                             .foregroundStyle(Theme.Colors.brand)
                             .lineLimit(1)
                             .help(session.prompt)
@@ -258,7 +258,7 @@ private struct BlameRow: View {
                 .frame(width: 260, alignment: .leading)
 
                 Text(line.content.isEmpty ? " " : line.content)
-                    .font(.system(.caption, design: .monospaced))
+                    .font(Theme.Font.mono)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: true, vertical: false)
             }

@@ -48,10 +48,10 @@ struct CommandPaletteView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: "command")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                 TextField("输入命令", text: $query)
                     .textFieldStyle(.plain)
-                    .font(.title3)
+                    .font(Theme.Font.sheetTitle)
                     .onChange(of: query) { _, _ in selectionIndex = 0 }
                     .onSubmit(runSelected)
             }
@@ -142,17 +142,17 @@ struct CommandRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: command.systemImage)
-                .foregroundStyle(command.isEnabled ? Color.accentColor : .secondary)
+                .foregroundStyle(command.isEnabled ? Theme.Colors.accent : Theme.Colors.secondaryText)
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(command.title)
-                    .foregroundStyle(command.isEnabled ? .primary : .secondary)
+                    .foregroundStyle(command.isEnabled ? Theme.Colors.primaryText : Theme.Colors.secondaryText)
 
                 if let subtitle = command.subtitle {
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                         .lineLimit(1)
                 }
             }
@@ -173,7 +173,7 @@ struct CommandRow: View {
         }
         .padding(.vertical, 3)
         .listRowBackground(
-            isSelected ? Color.accentColor.opacity(0.15) : Color.clear
+            isSelected ? Theme.Colors.accent.opacity(0.15) : Color.clear
         )
     }
 }

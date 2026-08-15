@@ -44,10 +44,10 @@ struct ComposeView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("拆分提交")
-                    .font(.headline)
+                    .font(Theme.Font.title)
                 Text("按「做的是哪件事」把改动分组，每组提交一次。AI 给的是草稿，可以随便改。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             Spacer()
@@ -84,7 +84,7 @@ struct ComposeView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("待分配（\(model.unassigned.count)）")
-                    .font(.subheadline.weight(.medium))
+                    .font(Theme.Font.secondary.weight(.medium))
                 Spacer()
             }
             .padding(10)
@@ -116,11 +116,11 @@ struct ComposeView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("分组（\(model.commits.count)）")
-                    .font(.subheadline.weight(.medium))
+                    .font(Theme.Font.secondary.weight(.medium))
                 Spacer()
                 Button("新建分组", action: model.addEmptyCommit)
                     .buttonStyle(.borderless)
-                    .font(.caption)
+                    .font(Theme.Font.secondary)
             }
             .padding(10)
 
@@ -154,20 +154,20 @@ struct ComposeView: View {
         VStack(alignment: .leading, spacing: 8) {
             if let summary = model.redactionSummary {
                 Label(summary, systemImage: "eye.slash")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             ForEach(model.problems, id: \.self) { problem in
                 Label(problem, systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.warning)
             }
 
             if let error = model.errorMessage {
                 Label(error, systemImage: "xmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.danger)
                     .textSelection(.enabled)
             }
 
@@ -179,8 +179,8 @@ struct ComposeView: View {
                 if !model.unassigned.isEmpty {
                     // 未分配的不会被提交，说清楚免得用户以为全提交了
                     Text("\(model.unassigned.count) 块改动没有分组，会留在工作区")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                 }
 
                 Spacer()
@@ -212,15 +212,15 @@ struct ComposeView: View {
     private func resultLabel(_ result: BatchCommitResult) -> some View {
         if result.isComplete {
             Label("已提交 \(result.committed) 组", systemImage: "checkmark.circle")
-                .font(.caption)
-                .foregroundStyle(.green)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.success)
         } else {
             Label(
                 result.errorMessage ?? "提交中断",
                 systemImage: "exclamationmark.triangle"
             )
-            .font(.caption)
-            .foregroundStyle(.orange)
+            .font(Theme.Font.secondary)
+            .foregroundStyle(Theme.Colors.warning)
             .textSelection(.enabled)
         }
     }
@@ -241,7 +241,7 @@ private struct BlockRow: View {
             HStack(spacing: 6) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(block.path)
-                        .font(.callout)
+                        .font(Theme.Font.callout)
                         .lineLimit(1)
                         .truncationMode(.head)
 
@@ -251,12 +251,12 @@ private struct BlockRow: View {
                                 .lineLimit(1)
                         }
                         Text("+\(block.hunk.addedLines)")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Theme.Colors.success)
                         Text("−\(block.hunk.deletedLines)")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Theme.Colors.danger)
                     }
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                 }
 
                 Spacer(minLength: 4)
@@ -283,19 +283,19 @@ private struct BlockRow: View {
                 isExpanded.toggle()
             } label: {
                 Label(isExpanded ? "收起" : "看看改了什么", systemImage: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption2)
+                    .font(Theme.Font.caption)
             }
             .buttonStyle(.borderless)
 
             if isExpanded {
                 ScrollView(.horizontal) {
                     Text(block.hunk.patchText)
-                        .font(.system(.caption2, design: .monospaced))
+                        .font(Theme.Font.mono)
                         .textSelection(.enabled)
                 }
                 .frame(maxHeight: 140)
                 .padding(6)
-                .background(Color(nsColor: .underPageBackgroundColor), in: .rect(cornerRadius: 4))
+                .background(Theme.Colors.sunkenBackground, in: .rect(cornerRadius: 4))
             }
         }
         .padding(.vertical, 2)
@@ -328,8 +328,8 @@ private struct GroupCard: View {
             // 要判断分组对不对，得知道它是怎么想的
             if !commit.reason.isEmpty {
                 Label(commit.reason, systemImage: "sparkles")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             TextField("正文（可选）", text: $commit.body, axis: .vertical)
@@ -338,23 +338,23 @@ private struct GroupCard: View {
 
             if commit.hunkIDs.isEmpty {
                 Text("这一组还是空的，从左边挪些改动进来")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
             } else {
                 ForEach(commit.hunkIDs, id: \.self) { id in
                     if let block = blocksByID[id] {
                         HStack(spacing: 6) {
                             Image(systemName: "text.alignleft")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .font(Theme.Font.caption)
+                                .foregroundStyle(Theme.Colors.tertiaryText)
                             Text(block.path)
-                                .font(.caption)
+                                .font(Theme.Font.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.head)
                             if !block.hunk.heading.isEmpty {
                                 Text(block.hunk.heading)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .font(Theme.Font.caption)
+                                    .foregroundStyle(Theme.Colors.secondaryText)
                                     .lineLimit(1)
                             }
                             Spacer(minLength: 4)

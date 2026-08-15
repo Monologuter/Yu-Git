@@ -64,7 +64,7 @@ struct TimelineView: View {
     private var header: some View {
         HStack {
             Label("时间线", systemImage: "clock.arrow.circlepath")
-                .font(.headline)
+                .font(Theme.Font.title)
             Spacer()
             Button {
                 Task { await repository.reloadTimeline() }
@@ -116,7 +116,7 @@ struct TimelineEntryRow: View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.caption)
+                    .font(Theme.Font.secondary)
                     .foregroundStyle(iconColor)
                     .frame(width: 14)
 
@@ -128,25 +128,25 @@ struct TimelineEntryRow: View {
                 if isHovering && entry.canUndo {
                     Button("撤销", action: onUndo)
                         .buttonStyle(.borderless)
-                        .font(.caption)
+                        .font(Theme.Font.secondary)
                 }
             }
 
             HStack(spacing: 6) {
                 Text(entry.timestamp, format: .relative(presentation: .named))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
 
                 if !entry.record.outcome.isSuccess {
                     Text("失败")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.warning)
                 }
 
                 if entry.canUndo {
                     Label("可撤销", systemImage: "arrow.uturn.backward")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                         .labelStyle(.compact)
                 }
             }
@@ -154,15 +154,15 @@ struct TimelineEntryRow: View {
             // 透明命令层：随时能看到这一步等价于哪条 git 命令（差异化设计 ⑦）
             if showsCommand {
                 Text(entry.record.operation.equivalentCommand)
-                    .font(.system(.caption2, design: .monospaced))
+                    .font(Theme.Font.mono)
                     .textSelection(.enabled)
                     .padding(6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(nsColor: .underPageBackgroundColor), in: .rect(cornerRadius: 4))
+                    .background(Theme.Colors.sunkenBackground, in: .rect(cornerRadius: 4))
 
                 Text(entry.record.operation.explanation)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
         }
         .padding(.vertical, 2)
@@ -199,17 +199,18 @@ struct SnapshotRow: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            // 快照是驭Git 独有的东西，系统色里没有对应语义，用品牌色
             Image(systemName: "camera.fill")
-                .font(.caption)
-                .foregroundStyle(.blue)
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.Colors.brand)
                 .frame(width: 14)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(snapshot.summary)
                     .lineLimit(1)
                 Text(snapshot.timestamp, format: .relative(presentation: .named))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
             }
 
             Spacer(minLength: 4)
@@ -217,7 +218,7 @@ struct SnapshotRow: View {
             if isHovering {
                 Button("恢复", action: onRestore)
                     .buttonStyle(.borderless)
-                    .font(.caption)
+                    .font(Theme.Font.secondary)
             }
         }
         .padding(.vertical, 2)

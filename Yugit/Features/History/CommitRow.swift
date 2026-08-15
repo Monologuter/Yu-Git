@@ -15,8 +15,8 @@ struct CommitRow: View {
                 HStack(spacing: 6) {
                     if commit.isMerge {
                         Image(systemName: "arrow.triangle.merge")
-                            .font(.caption2)
-                            .foregroundStyle(.purple)
+                            .font(Theme.Font.caption)
+                            .foregroundStyle(Theme.Colors.mergeAccent)
                             .help("合并提交")
                     }
 
@@ -27,17 +27,17 @@ struct CommitRow: View {
 
                 HStack(spacing: 6) {
                     Text(commit.abbreviatedHash)
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.mono)
+                        .foregroundStyle(Theme.Colors.secondaryText)
 
                     Text(commit.author.name)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                         .lineLimit(1)
 
                     Text(commit.author.date, format: .relative(presentation: .named))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
                 }
 
                 if !commit.refs.isEmpty {
@@ -48,37 +48,5 @@ struct CommitRow: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 2)
-    }
-}
-
-/// commit 上的分支/tag 徽章。
-struct RefBadges: View {
-
-    let refs: [CommitRef]
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(Array(refs.enumerated()), id: \.offset) { _, ref in
-                if let label = label(for: ref) {
-                    Text(label.text)
-                        .font(.caption2)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(label.color.opacity(0.15), in: .capsule)
-                        .foregroundStyle(label.color)
-                }
-            }
-        }
-    }
-
-    private func label(for ref: CommitRef) -> (text: String, color: Color)? {
-        switch ref {
-        // HEAD 总是和它指向的分支一起出现，单独画一个徽章只是噪音
-        case .head: nil
-        case let .localBranch(name): (name, .accentColor)
-        case let .remoteBranch(name): (name, .gray)
-        case let .tag(name): (name, .orange)
-        case .other: nil
-        }
     }
 }

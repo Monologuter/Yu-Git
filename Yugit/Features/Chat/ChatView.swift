@@ -39,10 +39,10 @@ struct ChatView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("说一句话")
-                .font(.headline)
+                .font(Theme.Font.title)
             Text("例如「把 README 的改动单独提交」「新建一个 feature/登录 分支并切过去」。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -96,14 +96,14 @@ struct ChatView: View {
     private var inputBox: some View {
         VStack(alignment: .leading, spacing: 6) {
             TextEditor(text: $model.request)
-                .font(.body)
+                .font(Theme.Font.body)
                 .frame(height: 64)
                 .scrollContentBackground(.hidden)
-                .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 6))
+                .background(Theme.Colors.contentBackground, in: .rect(cornerRadius: 6))
                 .overlay(alignment: .topLeading) {
                     if model.request.isEmpty {
                         Text("想让它做什么？")
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.Colors.tertiaryText)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 8)
                             .allowsHitTesting(false)
@@ -125,7 +125,7 @@ struct ChatView: View {
     private var planPreview: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("它打算这么做（共 \(model.steps.count) 步）")
-                .font(.subheadline.weight(.medium))
+                .font(Theme.Font.secondary.weight(.medium))
 
             ForEach(Array(model.steps.enumerated()), id: \.element.id) { index, step in
                 StepCard(index: index + 1, step: step)
@@ -133,18 +133,18 @@ struct ChatView: View {
 
             // 每一步都走同一个写入口，所以事后能逐步退回来
             Label("执行后每一步都会记在时间线上，可以逐步撤销。", systemImage: "clock.arrow.circlepath")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Colors.tertiaryText)
         }
     }
 
     private func calloutCard(_ title: String, text: String, icon: String, tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Label(title, systemImage: icon)
-                .font(.caption.weight(.medium))
+                .font(Theme.Font.secondary.weight(.medium))
                 .foregroundStyle(tint)
             Text(text)
-                .font(.callout)
+                .font(Theme.Font.callout)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -157,8 +157,8 @@ struct ChatView: View {
         HStack {
             if model.hasDestructiveStep {
                 Label("含会丢东西的步骤", systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.danger)
             }
 
             Spacer()
@@ -193,41 +193,41 @@ private struct StepCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             Text("\(index)")
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.caption.monospacedDigit())
+                .foregroundStyle(Theme.Colors.secondaryText)
                 .frame(width: 18, height: 18)
                 .background(Color.secondary.opacity(0.15), in: .circle)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(step.operation.summary)
-                        .font(.callout)
+                        .font(Theme.Font.callout)
                     if step.isDestructive {
                         Text("会丢东西")
-                            .font(.caption2)
+                            .font(Theme.Font.caption)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
-                            .background(Color.red.opacity(0.15), in: .capsule)
-                            .foregroundStyle(.red)
+                            .background(Theme.Colors.danger.opacity(0.15), in: .capsule)
+                            .foregroundStyle(Theme.Colors.danger)
                     }
                 }
 
                 if !step.reason.isEmpty {
                     Text(step.reason)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                 }
 
                 // 透明命令层贯穿到这里：看得懂计划本身就是在学 Git
                 Text(step.operation.equivalentCommand)
-                    .font(.system(.caption2, design: .monospaced))
+                    .font(Theme.Font.mono)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(5)
-                    .background(Color(nsColor: .underPageBackgroundColor), in: .rect(cornerRadius: 4))
+                    .background(Theme.Colors.sunkenBackground, in: .rect(cornerRadius: 4))
             }
         }
         .padding(8)
-        .background(Color(nsColor: .controlBackgroundColor), in: .rect(cornerRadius: 6))
+        .background(Theme.Colors.raisedBackground, in: .rect(cornerRadius: 6))
     }
 }

@@ -92,7 +92,7 @@ struct DiffToolbar: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "doc.text")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             Text(selection.path)
                 .lineLimit(1)
@@ -101,10 +101,10 @@ struct DiffToolbar: View {
 
             if let diff = repository.selectedDiff, !diff.isBinary {
                 HStack(spacing: 4) {
-                    Text("+\(diff.addedLineCount)").foregroundStyle(.green)
-                    Text("−\(diff.deletedLineCount)").foregroundStyle(.red)
+                    Text("+\(diff.addedLineCount)").foregroundStyle(Theme.Colors.diffAddedText)
+                    Text("−\(diff.deletedLineCount)").foregroundStyle(Theme.Colors.diffDeletedText)
                 }
-                .font(.system(.caption, design: .monospaced))
+                .font(Theme.Font.mono)
             }
 
             Spacer(minLength: 8)
@@ -123,7 +123,7 @@ struct DiffToolbar: View {
             }
         }
         .buttonStyle(.borderless)
-        .font(.callout)
+        .font(Theme.Font.callout)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
     }
@@ -198,7 +198,7 @@ struct CommitDetailView: View {
                     if !commit.body.isEmpty {
                         CommitMessageText(text: commit.body, remoteURL: issueRemoteURL)
                             .font(Theme.Font.body)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                     }
                 }
 
@@ -293,7 +293,7 @@ struct CommitDetailView: View {
                 if !repository.selectedCommitFiles.isEmpty {
                     Text("\(repository.selectedCommitFiles.count)")
                         .font(Theme.Font.secondary)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                         .padding(.horizontal, Theme.Spacing.tight + 1)
                         .padding(.vertical, 1)
                         .background(.quaternary, in: .capsule)
@@ -307,7 +307,7 @@ struct CommitDetailView: View {
                 if !repository.isLoadingCommitFiles {
                     Text(commit.isMerge ? "这次合并相对第一个父提交没有改动" : "列不出改动的文件")
                         .font(Theme.Font.secondary)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 0) {
@@ -341,8 +341,8 @@ struct CommitDetailView: View {
 
                     if let diff = repository.commitFileDiff, !diff.isBinary {
                         HStack(spacing: Theme.Spacing.tight) {
-                            Text("+\(diff.addedLineCount)").foregroundStyle(.green)
-                            Text("−\(diff.deletedLineCount)").foregroundStyle(.red)
+                            Text("+\(diff.addedLineCount)").foregroundStyle(Theme.Colors.diffAddedText)
+                            Text("−\(diff.deletedLineCount)").foregroundStyle(Theme.Colors.diffDeletedText)
                         }
                         .font(Theme.Font.mono)
                     }
@@ -409,7 +409,7 @@ struct CommitDetailView: View {
         GridRow {
             Text(title)
                 .font(Theme.Font.secondary)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
                 .gridColumnAlignment(.trailing)
 
             VStack(alignment: .leading, spacing: Theme.Spacing.hairline) {
@@ -423,7 +423,7 @@ struct CommitDetailView: View {
                 if let secondary {
                     Text(secondary)
                         .font(Theme.Font.secondary)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
                         .textSelection(.enabled)
                 }
             }
@@ -503,7 +503,7 @@ private struct CommitFileRow: View {
     private var sourceColor: Color {
         isSelected
             ? Color(nsColor: .alternateSelectedControlTextColor).opacity(0.75)
-            : Color(nsColor: .tertiaryLabelColor)
+            : Theme.Colors.tertiaryText
     }
 }
 

@@ -31,29 +31,29 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     Text("第 \(index + 1) / \(steps.count) 步")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                     Spacer()
                     Button("跳过") { finish() }
                         .buttonStyle(.borderless)
-                        .font(.caption)
+                        .font(Theme.Font.secondary)
                 }
 
                 Text(step.title)
-                    .font(.title3.weight(.semibold))
+                    .font(Theme.Font.sheetTitle)
 
                 Text(step.detail)
-                    .font(.callout)
+                    .font(Theme.Font.callout)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let concept = step.concept {
                     VStack(alignment: .leading, spacing: 4) {
                         Label("顺带一提", systemImage: "lightbulb")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
+                            .font(Theme.Font.secondary.weight(.medium))
+                            .foregroundStyle(Theme.Colors.secondaryText)
                         Text(concept)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
+                            .font(Theme.Font.callout)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(10)

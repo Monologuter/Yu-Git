@@ -132,7 +132,18 @@ public struct ProcessRunner: Sendable {
 
     // MARK: - 管道读写
 
-    /// 在专用后台线程上把句柄读到 EOF。
+    /// 把句柄读到 EOF。
+    ///
+    /// **事件驱动，不占线程。** 早先的写法是 `DispatchQueue.global().async` 里
+    /// 循环 `availableData`——那会让一整条线程阻塞在 `read()` 上，直到子进程退出。
+    /// 一个 git 调用要占两条（stdout 与 stderr），而 libdispatch 全局队列的
+    /// 线程数有硬上限（默认 64）。并发跑满之后，新提交的 block 再也拿不到线程，
+    /// 里面的 `continuation.resume` 就永远不会执行——**整个进程停在 0% CPU 上，
+    /// 没有超时、没有报错、什么都不动**。这在并行跑测试时反复出现过，
+    /// 而 app 里同样会发生：刷新一次要并发发好几条 git 命令。
+    ///
+    /// `readabilityHandler` 走的是 dispatch source，只在真有数据时才短暂占用线程，
+    /// 等待期间一条都不占。
     ///
     /// - Parameter onChunk: 每读到一段就回调一次，用于实时进度。git 的 fetch / push
     ///   把进度写在 stderr 并用 `\r` 原地刷新，等到 EOF 再读就只剩最后一行了。
@@ -144,17 +155,19 @@ public struct ProcessRunner: Sendable {
         onChunk: (@Sendable (Data) -> Void)? = nil
     ) async -> Data {
         await withCheckedContinuation { (continuation: CheckedContinuation<Data, Never>) in
-            DispatchQueue.global(qos: .userInitiated).async {
-                var accumulated = Data()
-                while true {
-                    // availableData 会阻塞到有数据可读；返回空即 EOF
-                    let chunk = handle.value.availableData
-                    guard !chunk.isEmpty else { break }
-                    accumulated.append(chunk)
-                    onChunk?(chunk)
+            let buffer = DataBuffer()
+            handle.value.readabilityHandler = { fileHandle in
+                let chunk = fileHandle.availableData
+                guard !chunk.isEmpty else {
+                    // 空数据即 EOF。先摘掉 handler 再 resume——
+                    // 不摘的话它还会被调用，而 continuation 只能 resume 一次。
+                    fileHandle.readabilityHandler = nil
+                    try? fileHandle.close()
+                    continuation.resume(returning: buffer.take())
+                    return
                 }
-                try? handle.value.close()
-                continuation.resume(returning: accumulated)
+                buffer.append(chunk)
+                onChunk?(chunk)
             }
         }
     }
@@ -176,6 +189,29 @@ public struct ProcessRunner: Sendable {
 }
 
 // MARK: - 并发辅助
+
+/// 分段累积管道数据。
+///
+/// `readabilityHandler` 会被调用很多次，而每次都在 dispatch 的私有队列上——
+/// 虽然对同一个句柄是串行的，Swift 6 的并发检查仍然要求跨边界共享的状态
+/// 自己保证安全。加锁的代价可以忽略：一次 git 调用的回调次数是个位数到几十次。
+private final class DataBuffer: @unchecked Sendable {
+
+    private var storage = Data()
+    private let lock = NSLock()
+
+    func append(_ chunk: Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        storage.append(chunk)
+    }
+
+    func take() -> Data {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+}
 
 /// 把非 `Sendable` 的值送过并发边界。
 ///

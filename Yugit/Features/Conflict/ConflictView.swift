@@ -46,10 +46,10 @@ struct ConflictView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("解决冲突")
-                    .font(.headline)
+                    .font(Theme.Font.title)
                 Text("「我方」是当前分支上的内容，「对方」是正在合进来的内容。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             Spacer()
@@ -116,17 +116,17 @@ struct ConflictView: View {
         HStack {
             if let error = model.errorMessage {
                 Label(error, systemImage: "xmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.danger)
                     .textSelection(.enabled)
             } else if model.unresolvedCount > 0 {
                 Text("还有 \(model.unresolvedCount) 处没有处理")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             } else if model.file?.hasConflicts == true {
                 Label("都处理完了，可以保存", systemImage: "checkmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.green)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.success)
             }
 
             Spacer()
@@ -178,18 +178,18 @@ private struct ConflictBlockCard: View {
 
             if let error = state.errorMessage {
                 Label(error, systemImage: "exclamationmark.triangle")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.warning)
                     .textSelection(.enabled)
             }
 
             if isEditing { editor }
         }
         .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor), in: .rect(cornerRadius: 8))
+        .background(Theme.Colors.raisedBackground, in: .rect(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(state.isResolved ? Color.green.opacity(0.4) : Color.separator)
+                .strokeBorder(state.isResolved ? Theme.Colors.success.opacity(0.4) : Theme.Colors.separator)
         }
     }
 
@@ -199,13 +199,13 @@ private struct ConflictBlockCard: View {
                 .foregroundStyle(state.isResolved ? .green : .secondary)
 
             Text("第 \(block.id + 1) 处冲突")
-                .font(.subheadline.weight(.medium))
+                .font(Theme.Font.secondary.weight(.medium))
 
             if block.base == nil {
                 // 没有共同祖先时判断难度陡增，值得显式提醒
                 Label("没有共同祖先可参考", systemImage: "questionmark.circle")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.warning)
             }
 
             Spacer()
@@ -215,13 +215,13 @@ private struct ConflictBlockCard: View {
             } else if canUseAI && state.suggestion == nil {
                 Button("让 AI 分析", action: onSuggest)
                     .buttonStyle(.borderless)
-                    .font(.caption)
+                    .font(Theme.Font.secondary)
             }
 
             if state.isResolved {
                 Button("重新选", action: onReset)
                     .buttonStyle(.borderless)
-                    .font(.caption)
+                    .font(Theme.Font.secondary)
             }
         }
     }
@@ -239,19 +239,19 @@ private struct ConflictBlockCard: View {
     private func pane(_ title: String, lines: [String], tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.caption2.weight(.medium))
+                .font(Theme.Font.caption.weight(.medium))
                 .foregroundStyle(tint)
 
             ScrollView(.horizontal) {
                 Text(lines.isEmpty ? "（空）" : lines.joined(separator: "\n"))
-                    .font(.system(.caption, design: .monospaced))
+                    .font(Theme.Font.mono)
                     .foregroundStyle(lines.isEmpty ? .tertiary : .primary)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxHeight: 160)
             .padding(6)
-            .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 4))
+            .background(Theme.Colors.contentBackground, in: .rect(cornerRadius: 4))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -275,29 +275,29 @@ private struct ConflictBlockCard: View {
     private var resolvedPreview: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("采用的内容")
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.green)
+                .font(Theme.Font.caption.weight(.medium))
+                .foregroundStyle(Theme.Colors.success)
 
             Text(
                 (state.resolvedLines ?? []).isEmpty
                     ? "（这一段整块删掉）" : (state.resolvedLines ?? []).joined(separator: "\n")
             )
-            .font(.system(.caption, design: .monospaced))
+            .font(Theme.Font.mono)
             .foregroundStyle((state.resolvedLines ?? []).isEmpty ? .tertiary : .primary)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(6)
-            .background(Color.green.opacity(0.08), in: .rect(cornerRadius: 4))
+            .background(Theme.Colors.success.opacity(0.08), in: .rect(cornerRadius: 4))
         }
     }
 
     private var editor: some View {
         VStack(alignment: .leading, spacing: 6) {
             TextEditor(text: $draft)
-                .font(.system(.callout, design: .monospaced))
+                .font(Theme.Font.mono)
                 .frame(height: 120)
                 .scrollContentBackground(.hidden)
-                .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 4))
+                .background(Theme.Colors.contentBackground, in: .rect(cornerRadius: 4))
                 .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(.separator) }
 
             HStack {
@@ -329,12 +329,12 @@ private struct SuggestionCard: View {
                 Image(systemName: "sparkles")
                     .foregroundStyle(Theme.Colors.brand)
                 Text("AI 建议")
-                    .font(.caption.weight(.medium))
+                    .font(Theme.Font.secondary.weight(.medium))
 
                 // 置信度是色标不是开关：高置信度同样不会自动应用，
                 // 它只帮用户决定哪几处可以快速扫过、哪几处要停下来细看
                 Text(suggestion.confidence.displayName)
-                    .font(.caption2)
+                    .font(Theme.Font.caption)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(tint.opacity(0.18), in: .capsule)
@@ -344,13 +344,13 @@ private struct SuggestionCard: View {
 
                 Button("采用", action: onAccept)
                     .buttonStyle(.borderless)
-                    .font(.caption)
+                    .font(Theme.Font.secondary)
             }
 
             if !suggestion.reason.isEmpty {
                 Text(suggestion.reason)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                     .textSelection(.enabled)
             }
 
@@ -358,29 +358,27 @@ private struct SuggestionCard: View {
                 suggestion.resolvedLines.isEmpty
                     ? "（建议整块删掉）" : suggestion.resolvedLines.joined(separator: "\n")
             )
-            .font(.system(.caption, design: .monospaced))
+            .font(Theme.Font.mono)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(6)
-            .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 4))
+            .background(Theme.Colors.contentBackground, in: .rect(cornerRadius: 4))
 
             Label("AI 可能判断错，采用前请核对", systemImage: "info.circle")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Colors.tertiaryText)
         }
         .padding(8)
-        .background(Color.accentColor.opacity(0.06), in: .rect(cornerRadius: 6))
+        .background(Theme.Colors.accent.opacity(0.06), in: .rect(cornerRadius: 6))
     }
 
     private var tint: Color {
+        // 置信度是色标不是开关：三档共用状态色板，
+        // 和界面其他地方的「好 / 要注意 / 有问题」保持同一套语言
         switch suggestion.confidence {
-        case .high: .green
-        case .medium: .orange
-        case .low: .red
+        case .high: Theme.Colors.success
+        case .medium: Theme.Colors.warning
+        case .low: Theme.Colors.danger
         }
     }
-}
-
-extension Color {
-    fileprivate static var separator: Color { Color(nsColor: .separatorColor) }
 }

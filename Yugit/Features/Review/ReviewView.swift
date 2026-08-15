@@ -86,10 +86,10 @@ struct ReviewView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("提交前自查")
-                .font(.headline)
+                .font(Theme.Font.title)
             Text("只看这次暂存的改动。AI 看不到需求文档，给的是「你可能没注意到的地方」，不是结论。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -110,8 +110,8 @@ struct ReviewView: View {
                     if let redaction = review.redaction, let summary = redaction.summary {
                         // 评审看的内容不完整时，结论也是不完整的——必须说出来
                         Label("\(summary)。这些部分没有被评审。", systemImage: "eye.slash")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(Theme.Font.secondary)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                     }
 
                     if review.findings.isEmpty {
@@ -153,14 +153,14 @@ struct ReviewView: View {
     private func summaryCard(_ summary: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Label("这次改动做了什么", systemImage: "text.alignleft")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary.weight(.medium))
+                .foregroundStyle(Theme.Colors.secondaryText)
             Text(summary)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(10)
-        .background(Color(nsColor: .controlBackgroundColor), in: .rect(cornerRadius: 8))
+        .background(Theme.Colors.raisedBackground, in: .rect(cornerRadius: 8))
     }
 
     private func severitySection(
@@ -173,7 +173,7 @@ struct ReviewView: View {
                     .fill(tint(for: severity))
                     .frame(width: 8, height: 8)
                 Text("\(severity.displayName)（\(findings.count)）")
-                    .font(.subheadline.weight(.medium))
+                    .font(Theme.Font.secondary.weight(.medium))
             }
 
             ForEach(findings) { finding in
@@ -200,8 +200,8 @@ struct ReviewView: View {
         HStack {
             if let review = model.review, review.hasBlockingConcerns {
                 Label("有需要重点确认的地方，建议看过再提交", systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.warning)
             }
 
             Spacer()
@@ -236,8 +236,8 @@ private struct FindingRow: View {
             Button(action: onToggle) {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
                         .padding(.top, 3)
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -252,8 +252,8 @@ private struct FindingRow: View {
                                 Text("第 \(line) 行")
                             }
                         }
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                     }
 
                     Spacer(minLength: 0)
@@ -264,8 +264,8 @@ private struct FindingRow: View {
 
             if isExpanded && !finding.detail.isEmpty {
                 Text(finding.detail)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.callout)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading, 20)

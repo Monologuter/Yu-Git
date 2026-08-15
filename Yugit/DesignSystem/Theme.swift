@@ -69,6 +69,17 @@ enum Theme {
         /// （它是给单行标题用的），用 secondary 又读着费劲——11pt 适合角标，
         /// 不适合连续阅读的句子。
         static var callout: SwiftUI.Font { .system(size: 12) }
+        /// 脚注、免责句。比 secondary 再小一档，只放**读不读都不影响操作**的话。
+        ///
+        /// 有这一档是为了让 secondary 不被滥用：不给最小档的话，
+        /// 所有「不重要的字」都会挤到 11pt，而那一档还担着作者名、计数这些
+        /// 需要看清的东西。
+        static var caption: SwiftUI.Font { .system(size: 10) }
+        /// sheet 标题、命令面板输入框。
+        ///
+        /// 只用在 sheet 和命令面板，**不进主界面**——主界面的信息密度不允许
+        /// 20pt 的字占地方。
+        static var sheetTitle: SwiftUI.Font { .system(size: 20, weight: .semibold) }
         /// 等宽：hash、行号、diff 正文
         static var mono: SwiftUI.Font { .system(size: 11, design: .monospaced) }
     }
@@ -118,6 +129,7 @@ enum Theme {
         static var sunkenBackground: Color { palette.sunkenBackground }
         static var raisedBackground: Color { palette.raisedBackground }
         static var hoverBackground: Color { palette.hoverBackground }
+        static var fillQuaternary: Color { palette.fillQuaternary }
         static var primaryText: Color { palette.primaryText }
         static var secondaryText: Color { palette.secondaryText }
         static var tertiaryText: Color { palette.tertiaryText }

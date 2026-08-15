@@ -25,3 +25,20 @@ if [ -n "$failed" ]; then
     printf '如确需跳过：git commit --no-verify（跳过后须在下个提交前补齐）\n'
     exit 1
 fi
+
+# 界面代码必须走主题层。
+#
+# 只要有一处写死 `.secondary` 或 `Color.orange`，那一处就永远停在系统色上——
+# 换主题时它不动而周围全变了，看起来像渲染出了 bug。这类漏网之鱼不会
+# 编译失败也不会有测试变红，只能靠这道检查拦。
+#
+# 只在改了界面文件时跑，改文档和 GitKit 不必付这个时间。
+if echo "$staged_swift" | grep -q '^Yugit/'; then
+    root=$(git rev-parse --show-toplevel)
+    if [ -x "$root/scripts/check-theme-usage.py" ]; then
+        if ! "$root/scripts/check-theme-usage.py"; then
+            printf '\n如确需跳过：git commit --no-verify\n'
+            exit 1
+        fi
+    fi
+fi

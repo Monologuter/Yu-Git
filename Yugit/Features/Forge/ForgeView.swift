@@ -156,18 +156,18 @@ struct ForgeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(model.locator?.kind.displayName ?? "代码托管平台")
-                        .font(.headline)
+                        .font(Theme.Font.title)
                     if let locator = model.locator {
                         Text(locator.fullPath)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(Theme.Font.secondary)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                     }
                 }
                 if let locator = model.locator, locator.host != "github.com", locator.host != "gitee.com" {
                     // 自建实例的域名值得显示出来，方便用户确认连的是哪一台
                     Text(locator.host)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
                 }
             }
 
@@ -225,19 +225,19 @@ struct ForgeView: View {
     private var tokenSetup: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("需要一个访问令牌")
-                .font(.headline)
+                .font(Theme.Font.title)
 
             Text(tokenHint)
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.callout)
+                .foregroundStyle(Theme.Colors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
 
             SecureField("访问令牌", text: $tokenDraft)
                 .textFieldStyle(.roundedBorder)
 
             Label("令牌存放在系统钥匙串，按主机名保存，不会写进配置文件。", systemImage: "lock")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             HStack {
                 Spacer()
@@ -274,8 +274,8 @@ struct ForgeView: View {
         HStack {
             if let error = model.errorMessage, model.locator != nil {
                 Label(error, systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.warning)
                     .textSelection(.enabled)
                     .lineLimit(3)
             }
@@ -311,7 +311,7 @@ private struct RequestRow: View {
                 HStack(spacing: 6) {
                     if request.isDraft {
                         Text("草稿")
-                            .font(.caption2)
+                            .font(Theme.Font.caption)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
                             .background(Color.secondary.opacity(0.15), in: .capsule)
@@ -329,16 +329,16 @@ private struct RequestRow: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             Spacer(minLength: 4)
 
             if let createdAt = request.createdAt {
                 Text(createdAt, format: .relative(presentation: .named))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
             }
         }
         .padding(.vertical, 3)
@@ -382,12 +382,12 @@ private struct CreateRequestSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("新建 \(model.locator?.kind.requestNoun ?? "Pull Request")")
-                .font(.headline)
+                .font(Theme.Font.title)
 
             Form {
                 LabeledContent("来源分支") {
                     Text(model.currentBranchName ?? "（无）")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                 }
                 TextField("目标分支", text: $target)
                 TextField("标题", text: $title)
@@ -397,19 +397,19 @@ private struct CreateRequestSheet: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("说明（可选）")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                 TextEditor(text: $description)
-                    .font(.callout)
+                    .font(Theme.Font.callout)
                     .frame(height: 120)
                     .scrollContentBackground(.hidden)
-                    .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 4))
+                    .background(Theme.Colors.contentBackground, in: .rect(cornerRadius: 4))
                     .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(.separator) }
             }
 
             Label("创建后会在浏览器里打开", systemImage: "safari")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             HStack {
                 if isWorking { ProgressView().controlSize(.small) }

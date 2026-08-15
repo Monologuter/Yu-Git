@@ -104,8 +104,8 @@ struct WelcomeView: View {
     private var recentList: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("最近打开")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             ForEach(model.recentRepositories, id: \.path) { url in
                 Button {
@@ -113,12 +113,12 @@ struct WelcomeView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "folder")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.Colors.secondaryText)
                         VStack(alignment: .leading, spacing: 1) {
                             Text(url.lastPathComponent)
                             Text(abbreviate(url.deletingLastPathComponent().path))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .font(Theme.Font.secondary)
+                                .foregroundStyle(Theme.Colors.secondaryText)
                         }
                         Spacer(minLength: 0)
                     }

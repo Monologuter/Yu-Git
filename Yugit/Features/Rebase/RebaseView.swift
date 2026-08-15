@@ -51,10 +51,10 @@ struct RebaseView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("整理提交历史")
-                .font(.headline)
+                .font(Theme.Font.title)
             Text("拖动可以调整顺序，最上面的最旧。开始前会自动打一个备份 tag，随时能退回来。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -87,22 +87,22 @@ struct RebaseView: View {
             // 校验结果一直显示，而不是等用户点了「开始」才告诉他不行
             ForEach(problems, id: \.self) { problem in
                 Label(problem, systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.warning)
             }
 
             if let errorMessage {
                 Label(errorMessage, systemImage: "xmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.danger)
                     .textSelection(.enabled)
             }
 
             HStack {
                 if let plan, plan.hasChanges {
                     Text(summary(of: plan))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.secondaryText)
                 }
 
                 Spacer()
@@ -213,8 +213,8 @@ private struct RebaseItemRow: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
                 Image(systemName: "line.3.horizontal")
-                    .foregroundStyle(.tertiary)
-                    .font(.caption)
+                    .foregroundStyle(Theme.Colors.tertiaryText)
+                    .font(Theme.Font.secondary)
 
                 Picker("", selection: actionBinding) {
                     ForEach(availableActions, id: \.self) { action in
@@ -232,8 +232,8 @@ private struct RebaseItemRow: View {
                         .foregroundStyle(item.action == .drop ? .secondary : .primary)
 
                     Text(item.hash.prefix(7))
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(.tertiary)
+                        .font(Theme.Font.mono)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
                 }
 
                 Spacer(minLength: 4)
@@ -241,21 +241,21 @@ private struct RebaseItemRow: View {
                 if item.action.needsMessage {
                     Button(isEditingMessage ? "收起" : "写新信息", action: onToggleEditor)
                         .buttonStyle(.borderless)
-                        .font(.caption)
+                        .font(Theme.Font.secondary)
                 }
             }
 
             // 选中动作后就把「会发生什么」摆出来，不必先做一遍再体会
             Text(item.action.explanation)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             if isEditingMessage {
                 TextEditor(text: $draft)
-                    .font(.system(.callout, design: .monospaced))
+                    .font(Theme.Font.mono)
                     .frame(height: 80)
                     .scrollContentBackground(.hidden)
-                    .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 4))
+                    .background(Theme.Colors.contentBackground, in: .rect(cornerRadius: 4))
                     .overlay { RoundedRectangle(cornerRadius: 4).strokeBorder(.separator) }
                     .onChange(of: draft) { _, value in onChangeMessage(value) }
                     .onAppear {

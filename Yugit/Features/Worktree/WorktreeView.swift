@@ -150,10 +150,10 @@ struct WorktreeView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("并行工作区")
-                    .font(.headline)
+                    .font(Theme.Font.title)
                 Text("同一个仓库同时签出多个分支到不同目录，各干各的互不打扰。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
 
             Spacer()
@@ -201,13 +201,13 @@ struct WorktreeView: View {
         HStack {
             if let error = model.errorMessage {
                 Label(error, systemImage: "xmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.danger)
                     .textSelection(.enabled)
             } else if model.statuses.contains(where: { $0.worktree.isPrunable }) {
                 Label("有记录指向的目录已经不在了", systemImage: "exclamationmark.triangle")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.warning)
             }
 
             Spacer()
@@ -237,16 +237,16 @@ private struct WorktreeCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: status.worktree.isMain ? "house" : "square.split.2x1")
-                    .foregroundStyle(status.worktree.isMain ? .secondary : Color.accentColor)
+                    .foregroundStyle(status.worktree.isMain ? Theme.Colors.secondaryText : Theme.Colors.accent)
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(status.worktree.branch ?? "（detached）")
-                            .font(.callout.weight(.medium))
+                            .font(Theme.Font.callout.weight(.medium))
 
                         if status.worktree.isMain {
                             Text("主工作区")
-                                .font(.caption2)
+                                .font(Theme.Font.caption)
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
                                 .background(Color.secondary.opacity(0.15), in: .capsule)
@@ -254,14 +254,14 @@ private struct WorktreeCard: View {
 
                         if let reason = status.worktree.lockReason {
                             Label(reason.isEmpty ? "已锁定" : reason, systemImage: "lock")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .font(Theme.Font.caption)
+                                .foregroundStyle(Theme.Colors.secondaryText)
                         }
                     }
 
                     Text(status.worktree.path)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
                         .lineLimit(1)
                         .truncationMode(.head)
                 }
@@ -271,34 +271,34 @@ private struct WorktreeCard: View {
                 if status.isReadyToMerge {
                     // 「可以合了」是这个面板最想让人一眼看到的信号
                     Label("可以合了", systemImage: "checkmark.circle")
-                        .font(.caption)
-                        .foregroundStyle(.green)
+                        .font(Theme.Font.secondary)
+                        .foregroundStyle(Theme.Colors.success)
                 }
             }
 
             if status.worktree.isPrunable {
                 Label("目录已经不在了，可以清理掉这条记录", systemImage: "exclamationmark.triangle")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.warning)
             } else {
                 statsRow
             }
 
             if let subject = status.lastCommitSubject {
                 Text(subject)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
                     .lineLimit(1)
             }
 
             actionRow
         }
         .padding(10)
-        .background(Color(nsColor: .controlBackgroundColor), in: .rect(cornerRadius: 8))
+        .background(Theme.Colors.raisedBackground, in: .rect(cornerRadius: 8))
         .overlay {
             RoundedRectangle(cornerRadius: 8)
                 .strokeBorder(
-                    status.isReadyToMerge ? Color.green.opacity(0.4) : Color(nsColor: .separatorColor)
+                    status.isReadyToMerge ? Theme.Colors.success.opacity(0.4) : Theme.Colors.separator
                 )
         }
     }
@@ -307,23 +307,23 @@ private struct WorktreeCard: View {
         HStack(spacing: 12) {
             if status.ahead > 0 {
                 Label("领先 \(status.ahead)", systemImage: "arrow.up")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.Colors.success)
             }
             if status.behind > 0 {
                 Label("落后 \(status.behind)", systemImage: "arrow.down")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Theme.Colors.warning)
             }
             if status.dirtyFileCount > 0 {
                 Label("\(status.dirtyFileCount) 个文件未提交", systemImage: "pencil")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
             if status.ahead == 0 && status.behind == 0 && status.isClean {
                 Text("与 \(baseline) 一致")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Colors.secondaryText)
             }
             Spacer()
         }
-        .font(.caption2)
+        .font(Theme.Font.caption)
     }
 
     private var actionRow: some View {
@@ -362,7 +362,7 @@ private struct AddWorktreeSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("新建并行工作区")
-                .font(.headline)
+                .font(Theme.Font.title)
 
             Form {
                 TextField("分支名", text: $branch)
@@ -377,7 +377,7 @@ private struct AddWorktreeSheet: View {
                 LabeledContent("目录") {
                     HStack {
                         Text(path?.path(percentEncoded: false) ?? "填了分支名会自动生成")
-                            .font(.caption)
+                            .font(Theme.Font.secondary)
                             .foregroundStyle(path == nil ? .tertiary : .secondary)
                             .lineLimit(1)
                             .truncationMode(.head)
@@ -390,8 +390,8 @@ private struct AddWorktreeSheet: View {
 
             // 建在仓库里面会变成一个未跟踪的大目录，还可能被快照收进去
             Label("目录会建在仓库外面，和仓库同级", systemImage: "info.circle")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.secondary)
+                .foregroundStyle(Theme.Colors.secondaryText)
 
             HStack {
                 if isWorking { ProgressView().controlSize(.small) }
