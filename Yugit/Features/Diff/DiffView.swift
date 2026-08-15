@@ -478,7 +478,7 @@ struct DiffLineRow: View {
             return Theme.Colors.accent.opacity(0.22)
         }
         if isHovering && isSelectable {
-            return Color.primary.opacity(0.06)
+            return Theme.Colors.hoverBackground
         }
         switch line.kind {
         case .addition: return Theme.Colors.diffAddedLine

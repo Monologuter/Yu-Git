@@ -33,6 +33,8 @@ FORBIDDEN = [
     (r"Color\.purple\b", "Theme.Colors.mergeAccent"),
     (r"Color\.blue\b", "Theme.Colors.accent 或 brand"),
     (r"Color\.gray\b", "Theme.Colors.secondaryText"),
+    (r"Color\.secondary\b", "Theme.Colors.secondaryText 或 fillQuaternary"),
+    (r"Color\.primary\b", "Theme.Colors.primaryText 或 hoverBackground"),
     (r"nsColor:\s*\.underPageBackgroundColor", "Theme.Colors.sunkenBackground"),
     (r"nsColor:\s*\.textBackgroundColor", "Theme.Colors.contentBackground"),
     (r"nsColor:\s*\.controlBackgroundColor", "Theme.Colors.raisedBackground"),

@@ -16,12 +16,16 @@ final class WorktreeViewModel: Identifiable {
 
     private let repository: RepositoryViewModel
 
-    private(set) var statuses: [WorktreeStatus] = []
+    private(set) var overview: WorktreeOverview?
     private(set) var isLoading = false
     var errorMessage: String?
 
     /// 比较的基线，通常是主分支。
     var baseline: String = "main"
+
+    var statuses: [WorktreeStatus] { overview?.statuses ?? [] }
+    /// 被多个工作区同时改着的文件。空数组表示各干各的，互不相干。
+    var overlaps: [WorktreeOverlap] { overview?.overlaps ?? [] }
 
     init(repository: RepositoryViewModel) {
         self.repository = repository
@@ -34,10 +38,27 @@ final class WorktreeViewModel: Identifiable {
         defer { isLoading = false }
 
         do {
-            statuses = try await repository.worktreeStatuses(comparedTo: baseline)
+            overview = try await repository.worktreeOverview(comparedTo: baseline)
         } catch {
             errorMessage = "读取 worktree 失败：\(error)"
         }
+    }
+
+    /// 某个工作区碰过的文件数。
+    func touchedCount(of status: WorktreeStatus) -> Int {
+        overview?.touchedPaths[status.worktree.path]?.count ?? 0
+    }
+
+    /// 某个工作区和别人撞在一起的文件。
+    func conflicts(of status: WorktreeStatus) -> [WorktreeOverlap] {
+        overlaps.filter { $0.worktreePaths.contains(status.worktree.path) }
+    }
+
+    /// 一个工作区路径对应的显示名。
+    func displayName(ofWorktreeAt path: String) -> String {
+        statuses.first { $0.worktree.path == path }
+            .map { $0.worktree.branch ?? $0.worktree.displayName }
+            ?? (path as NSString).lastPathComponent
     }
 
     /// 新建一个 worktree。
@@ -103,6 +124,7 @@ struct WorktreeView: View {
 
     @State private var isAdding = false
     @State private var pendingRemoval: WorktreeStatus?
+    @State private var isSummaryExpanded = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -182,10 +204,16 @@ struct WorktreeView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 10) {
+                    conflictBanner
+                    changeSummary
+
                     ForEach(model.statuses) { status in
                         WorktreeCard(
                             status: status,
                             baseline: model.baseline,
+                            touchedCount: model.touchedCount(of: status),
+                            conflicts: model.conflicts(of: status),
+                            nameOfWorktree: model.displayName(ofWorktreeAt:),
                             onMerge: { Task { await model.merge(status) } },
                             onRemove: { pendingRemoval = status },
                             onReveal: { model.reveal(status) }
@@ -195,6 +223,111 @@ struct WorktreeView: View {
                 .padding(12)
             }
         }
+    }
+
+    /// 撞车预警。
+    ///
+    /// 两个 agent 各改各的、各自都很顺，合的时候才发现动的是同一个文件——
+    /// 这是并行跑 agent 最典型的翻车方式，而且发现得越晚越贵。放在最上面。
+    @ViewBuilder
+    private var conflictBanner: some View {
+        if !model.overlaps.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Label(
+                    "\(model.overlaps.count) 个文件被多个工作区同时改着",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .font(Theme.Font.secondary.weight(.medium))
+                .foregroundStyle(Theme.Colors.warning)
+
+                Text("现在各改各的都很顺，合并时才会撞上。趁改动还少的时候商量一下便宜得多。")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
+
+                ForEach(model.overlaps.prefix(8)) { overlap in
+                    HStack(spacing: 6) {
+                        Text(overlap.path)
+                            .font(Theme.Font.caption)
+                            .lineLimit(1)
+                            .truncationMode(.head)
+                        Text(
+                            overlap.worktreePaths
+                                .map(model.displayName(ofWorktreeAt:))
+                                .joined(separator: " · ")
+                        )
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.warning)
+                        Spacer(minLength: 0)
+                    }
+                }
+                if model.overlaps.count > 8 {
+                    Text("还有 \(model.overlaps.count - 8) 个")
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
+                }
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.Colors.warningWash, in: .rect(cornerRadius: 8))
+        }
+    }
+
+    /// 跨工作区的改动汇总，一屏看全。默认收起——真正要紧的是上面那条预警。
+    @ViewBuilder
+    private var changeSummary: some View {
+        let total = Set(model.overview?.touchedPaths.values.flatMap { $0 } ?? []).count
+        if total > 0 {
+            DisclosureGroup(isExpanded: $isSummaryExpanded) {
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(summaryRows, id: \.path) { row in
+                        HStack(spacing: 6) {
+                            Text(row.path)
+                                .font(Theme.Font.caption)
+                                .lineLimit(1)
+                                .truncationMode(.head)
+                            Spacer(minLength: 8)
+                            Text(row.worktrees.joined(separator: " · "))
+                                .font(Theme.Font.caption)
+                                .foregroundStyle(
+                                    row.worktrees.count > 1
+                                        ? Theme.Colors.warning : Theme.Colors.secondaryText)
+                        }
+                    }
+                    if total > summaryRows.count {
+                        Text("还有 \(total - summaryRows.count) 个文件")
+                            .font(Theme.Font.caption)
+                            .foregroundStyle(Theme.Colors.tertiaryText)
+                    }
+                }
+                .padding(.top, 6)
+            } label: {
+                Text("跨工作区改动汇总（\(total) 个文件）")
+                    .font(Theme.Font.secondary.weight(.medium))
+            }
+            .padding(10)
+            .background(Theme.Colors.raisedBackground, in: .rect(cornerRadius: 8))
+        }
+    }
+
+    /// 汇总里显示的行。撞车的排前面，其余按路径排。
+    private var summaryRows: [(path: String, worktrees: [String])] {
+        guard let overview = model.overview else { return [] }
+
+        var owners: [String: [String]] = [:]
+        for status in overview.statuses {
+            let path = status.worktree.path
+            for file in overview.touchedPaths[path] ?? [] {
+                owners[file, default: []].append(model.displayName(ofWorktreeAt: path))
+            }
+        }
+
+        // 上限是防守：一次大重构可能碰几千个文件，全渲染出来会把面板拖垮
+        return
+            owners
+            .map { (path: $0.key, worktrees: $0.value) }
+            .sorted { ($1.worktrees.count, $0.path) < ($0.worktrees.count, $1.path) }
+            .prefix(120)
+            .map { $0 }
     }
 
     private var footer: some View {
@@ -229,6 +362,9 @@ private struct WorktreeCard: View {
 
     let status: WorktreeStatus
     let baseline: String
+    let touchedCount: Int
+    let conflicts: [WorktreeOverlap]
+    let nameOfWorktree: (String) -> String
     let onMerge: () -> Void
     let onRemove: () -> Void
     let onReveal: () -> Void
@@ -249,7 +385,7 @@ private struct WorktreeCard: View {
                                 .font(Theme.Font.caption)
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
-                                .background(Color.secondary.opacity(0.15), in: .capsule)
+                                .background(Theme.Colors.fillQuaternary, in: .capsule)
                         }
 
                         if let reason = status.worktree.lockReason {
@@ -291,6 +427,8 @@ private struct WorktreeCard: View {
                     .lineLimit(1)
             }
 
+            sessionRow
+            conflictRow
             actionRow
         }
         .padding(10)
@@ -302,6 +440,60 @@ private struct WorktreeCard: View {
                 )
         }
     }
+
+    /// 这个工作区里是哪次对话在干活。
+    ///
+    /// 数据来自私有 notes（`refs/yugit/ai-sessions`），由 agent 通过 MCP 工具
+    /// `yugit_attribute` 自己写下来。**没记录就说没记录**——提交信息里本来
+    /// 就没有会话信息，从「作者是 Claude」倒推出一次对话只会让人当真。
+    @ViewBuilder
+    private var sessionRow: some View {
+        if let session = status.session {
+            HStack(alignment: .top, spacing: 6) {
+                Image(systemName: "bubble.left.and.text.bubble.right")
+                    .foregroundStyle(Theme.Colors.brand)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(session.summary)
+                        .lineLimit(2)
+                    Text(
+                        "\(session.tool) · \(Self.formatter.localizedString(for: session.timestamp, relativeTo: Date()))"
+                    )
+                    .foregroundStyle(Theme.Colors.tertiaryText)
+                }
+                Spacer(minLength: 0)
+            }
+            .font(Theme.Font.caption)
+        } else if !status.worktree.isMain && !status.worktree.isPrunable {
+            Text("没有 agent 会话记录")
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Colors.tertiaryText)
+        }
+    }
+
+    @ViewBuilder
+    private var conflictRow: some View {
+        if !conflicts.isEmpty {
+            let others = Set(
+                conflicts
+                    .flatMap(\.worktreePaths)
+                    .filter { $0 != status.worktree.path }
+                    .map(nameOfWorktree)
+            ).sorted()
+
+            Label(
+                "\(conflicts.count) 个文件和 \(others.joined(separator: "、")) 撞在一起",
+                systemImage: "exclamationmark.triangle"
+            )
+            .font(Theme.Font.caption)
+            .foregroundStyle(Theme.Colors.warning)
+        }
+    }
+
+    private static let formatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter
+    }()
 
     private var statsRow: some View {
         HStack(spacing: 12) {
@@ -316,6 +508,11 @@ private struct WorktreeCard: View {
             if status.dirtyFileCount > 0 {
                 Label("\(status.dirtyFileCount) 个文件未提交", systemImage: "pencil")
                     .foregroundStyle(Theme.Colors.secondaryText)
+            }
+            if touchedCount > 0 {
+                Label("共碰过 \(touchedCount) 个文件", systemImage: "doc.on.doc")
+                    .foregroundStyle(Theme.Colors.secondaryText)
+                    .help("相对 \(baseline)，已提交的加上还没提交的")
             }
             if status.ahead == 0 && status.behind == 0 && status.isClean {
                 Text("与 \(baseline) 一致")

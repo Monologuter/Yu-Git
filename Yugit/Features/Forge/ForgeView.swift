@@ -314,7 +314,7 @@ private struct RequestRow: View {
                             .font(Theme.Font.caption)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
-                            .background(Color.secondary.opacity(0.15), in: .capsule)
+                            .background(Theme.Colors.fillQuaternary, in: .capsule)
                     }
                     Text(request.title)
                         .lineLimit(1)

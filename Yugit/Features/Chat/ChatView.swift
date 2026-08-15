@@ -196,7 +196,7 @@ private struct StepCard: View {
                 .font(Theme.Font.caption.monospacedDigit())
                 .foregroundStyle(Theme.Colors.secondaryText)
                 .frame(width: 18, height: 18)
-                .background(Color.secondary.opacity(0.15), in: .circle)
+                .background(Theme.Colors.fillQuaternary, in: .circle)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {

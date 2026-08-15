@@ -166,8 +166,9 @@ extension RepositoryViewModel {
 
     var rootURL: URL { repository.root }
 
-    func worktreeStatuses(comparedTo baseline: String) async throws -> [WorktreeStatus] {
-        try await repository.client.worktreeStatuses(in: repository.root, comparedTo: baseline)
+    /// 全部 worktree 的状态、各自碰过的文件，以及撞在一起的那些。
+    func worktreeOverview(comparedTo baseline: String) async throws -> WorktreeOverview {
+        try await repository.client.worktreeOverview(in: repository.root, comparedTo: baseline)
     }
 
     func addWorktree(at path: URL, branch: String, createBranch: Bool) async throws {

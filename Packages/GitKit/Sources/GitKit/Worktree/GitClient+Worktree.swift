@@ -17,6 +17,12 @@ public struct WorktreeStatus: Sendable, Equatable, Identifiable {
     public let behind: Int
     /// 最近一条提交的标题。
     public let lastCommitSubject: String?
+    /// 这个 worktree 上最近一次被记下来的 AI 会话。
+    ///
+    /// 来源是私有 notes `refs/yugit/ai-sessions`，写入口是 MCP 工具 `yugit_attribute`。
+    /// 没有记录时就是 nil——**不猜**。提交信息里本来就没有会话信息，
+    /// 从「作者是 Claude」推断出一个会话来只会让人当真。
+    public let session: AISession?
 
     public var isClean: Bool { dirtyFileCount == 0 }
 
@@ -28,13 +34,15 @@ public struct WorktreeStatus: Sendable, Equatable, Identifiable {
         dirtyFileCount: Int,
         ahead: Int,
         behind: Int,
-        lastCommitSubject: String?
+        lastCommitSubject: String?,
+        session: AISession? = nil
     ) {
         self.worktree = worktree
         self.dirtyFileCount = dirtyFileCount
         self.ahead = ahead
         self.behind = behind
         self.lastCommitSubject = lastCommitSubject
+        self.session = session
     }
 }
 
@@ -53,45 +61,126 @@ extension GitClient {
     }
 
     /// 列出 worktree 并带上各自的工作状态。
-    ///
-    /// 每个 worktree 都要单独跑几条 git，所以并发发出去——串行的话
-    /// 五个 worktree 就要等五轮，面板打开会有明显停顿。
     public func worktreeStatuses(
         in repository: URL,
         comparedTo baseline: String
     ) async throws -> [WorktreeStatus] {
-        let list = try await worktrees(in: repository)
+        try await worktreeOverview(in: repository, comparedTo: baseline).statuses
+    }
 
-        return await withTaskGroup(of: (Int, WorktreeStatus).self) { group in
+    /// 列出 worktree、各自的状态，以及它们碰过的文件。
+    ///
+    /// 每个 worktree 都要单独跑几条 git，所以并发发出去——串行的话
+    /// 五个 worktree 就要等五轮，面板打开会有明显停顿。
+    public func worktreeOverview(
+        in repository: URL,
+        comparedTo baseline: String
+    ) async throws -> WorktreeOverview {
+        let list = try await worktrees(in: repository)
+        // 会话记在私有 notes 里，而所有 worktree 共用同一个对象库，
+        // 所以整个仓库读一次就够了，不必每个 worktree 各读一遍
+        let sessions = await sessions(in: repository)
+
+        let collected = await withTaskGroup(of: (Int, WorktreeStatus, Set<String>).self) { group in
             for (index, worktree) in list.enumerated() {
                 group.addTask {
-                    (index, await self.status(of: worktree, comparedTo: baseline))
+                    let (status, touched) = await self.inspect(
+                        worktree, comparedTo: baseline, sessions: sessions)
+                    return (index, status, touched)
                 }
             }
 
-            var collected: [(Int, WorktreeStatus)] = []
-            for await item in group { collected.append(item) }
+            var results: [(Int, WorktreeStatus, Set<String>)] = []
+            for await item in group { results.append(item) }
             // 并发收回来的顺序是乱的，按原顺序排回去——主 worktree 得在第一个
-            return collected.sorted { $0.0 < $1.0 }.map(\.1)
+            return results.sorted { $0.0 < $1.0 }
         }
+
+        return WorktreeOverview(
+            statuses: collected.map(\.1),
+            touchedPaths: Dictionary(
+                uniqueKeysWithValues: collected.map { ($0.1.worktree.path, $0.2) })
+        )
     }
 
-    private func status(of worktree: Worktree, comparedTo baseline: String) async -> WorktreeStatus {
+    private func inspect(
+        _ worktree: Worktree,
+        comparedTo baseline: String,
+        sessions: [String: AISession]
+    ) async -> (WorktreeStatus, Set<String>) {
         let url = URL(fileURLWithPath: worktree.path, isDirectory: true)
 
         // 目录可能已经被人删了（prunable），此时所有查询都会失败，
         // 但这条 worktree 仍然要出现在列表里——不然用户不知道该去清理它
-        async let dirty = (try? self.status(of: url))?.entries.count ?? 0
+        async let status = try? self.status(of: url)
         async let counts = self.aheadBehind(of: url, versus: baseline)
         async let subject = (try? self.recentSubjects(in: url, limit: 1))?.first
+        async let committed = self.pathsChanged(in: url, since: baseline)
+        async let session = self.latestSession(in: url, since: baseline, among: sessions)
 
-        return WorktreeStatus(
-            worktree: worktree,
-            dirtyFileCount: await dirty,
-            ahead: await counts.ahead,
-            behind: await counts.behind,
-            lastCommitSubject: await subject
+        let entries = await status?.entries ?? []
+        // 改名的两个名字都要算：A 把 f 改名成 g、B 还在改 f，合的时候一样会撞，
+        // 而只记新名字的话这一对根本对不上
+        var touched = Set(entries.flatMap { [$0.path, $0.originalPath].compactMap { $0 } })
+        touched.formUnion(await committed)
+
+        return (
+            WorktreeStatus(
+                worktree: worktree,
+                dirtyFileCount: entries.count,
+                ahead: await counts.ahead,
+                behind: await counts.behind,
+                lastCommitSubject: await subject,
+                session: await session
+            ),
+            touched
         )
+    }
+
+    /// 这个 worktree 相对基线**已经提交**的改动碰了哪些文件。
+    private func pathsChanged(in repository: URL, since baseline: String) async -> Set<String> {
+        // 三点：从共同祖先算起我这边改了什么。两点会把基线那边的改动也算进来，
+        // 那些不是这个 worktree 干的。
+        guard
+            let result = try? await runReturningResult(
+                ["diff", "--name-status", "-z", "-M", "\(baseline)...HEAD"],
+                in: repository,
+                allowsOptionalLocks: false
+            ),
+            // 基线不存在、或者两边根本没有共同祖先时 git 直接报错退出
+            // （实测 `fatal: no merge base`），此时给不出结论，就别硬给
+            result.isSuccess
+        else { return [] }
+
+        return Set(
+            NameStatusParser.parse(result.standardOutput)
+                .flatMap { [$0.path, $0.sourcePath].compactMap { $0 } })
+    }
+
+    /// 这个 worktree 自己那几条提交里，最近一条带会话记录的。
+    private func latestSession(
+        in repository: URL,
+        since baseline: String,
+        among sessions: [String: AISession]
+    ) async -> AISession? {
+        guard !sessions.isEmpty else { return nil }
+
+        // 两点而不是三点：这里要的是「我这边的提交」这个列表本身。
+        // 两点在两边毫无共同祖先时也照样能用（三点会 fatal）。
+        guard
+            let result = try? await runReturningResult(
+                ["rev-list", "--max-count=100", "\(baseline)..HEAD"],
+                in: repository,
+                allowsOptionalLocks: false
+            ),
+            result.isSuccess
+        else { return nil }
+
+        // rev-list 默认从新到旧，第一个命中的就是最近的那次
+        for line in result.standardOutputText.split(separator: "\n") {
+            if let session = sessions[String(line)] { return session }
+        }
+        return nil
     }
 
     /// 相对某个基线领先/落后多少条。
