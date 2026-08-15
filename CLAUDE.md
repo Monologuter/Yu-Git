@@ -17,6 +17,8 @@ AI 原生 + 中文界面的 macOS 原生 Git 客户端。Slogan：「AI 帮你�
   提交信息生成、中文解释、Commit Composer、解冲突建议、diff 评审、
   对话式操作计划、云服务客户端
 - `Packages/ForgeKit` — GitHub / GitLab（含自建）/ Gitee 的 PR/MR 列表与创建
+- `Packages/MCPKit` — MCP Server，把打快照/查时间线/退回/危险预警暴露给 Claude Code。
+  含可执行文件 `yugit-mcp`，走 stdio
 - `Yugit` — 三栏窗口、⌘K 命令面板、时间线侧栏、AI 设置页、可视化 rebase、
   拆分提交、三方合并编辑器、评审面板、并行工作区、归因 blame、平台面板、
   对话式操作、新手引导
