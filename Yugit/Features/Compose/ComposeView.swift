@@ -53,6 +53,18 @@ struct ComposeView: View {
             Spacer()
 
             if aiSettings.isAvailable {
+                // 评审放在分组之后：一组只做一件事，模型才说得出这件事本身的问题
+                Button {
+                    Task { await model.reviewEach(using: aiSettings) }
+                } label: {
+                    if model.isReviewing {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Label("逐组评审", systemImage: "checklist")
+                    }
+                }
+                .disabled(model.isReviewing || model.commits.allSatisfy { $0.hunkIDs.isEmpty })
+
                 Button {
                     Task { await model.propose(using: aiSettings) }
                 } label: {
@@ -124,6 +136,15 @@ struct ComposeView: View {
             }
             .padding(10)
 
+            // 顺序不是随便排的：每个中间状态都要能编译过，否则 bisect 停在那儿也没用
+            if let note = model.orderingNote {
+                Label(note, systemImage: "arrow.up.arrow.down")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 6)
+            }
+
             Divider()
 
             if model.commits.isEmpty {
@@ -136,14 +157,20 @@ struct ComposeView: View {
                 )
             } else {
                 List {
-                    ForEach($model.commits) { $commit in
+                    ForEach(Array($model.commits.enumerated()), id: \.element.id) { index, $commit in
                         GroupCard(
+                            order: index + 1,
                             commit: $commit,
                             blocksByID: model.blocksByID,
+                            dependencies: model.dependencyTitles(of: commit),
+                            review: model.reviews[commit.id],
+                            reviewError: model.reviewErrors[commit.id],
+                            isReviewing: model.isReviewing,
                             onRemoveBlock: { id in model.move(blockID: id, to: nil) },
                             onRemoveGroup: { model.remove(commitID: commit.id) }
                         )
                     }
+                    .onMove(perform: model.moveCommits)
                 }
                 .listStyle(.inset)
             }
@@ -205,23 +232,32 @@ struct ComposeView: View {
 
     private var commitButtonTitle: String {
         let count = model.commits.count { !$0.hunkIDs.isEmpty }
-        return count <= 1 ? "提交" : "提交这 \(count) 组"
+        return count <= 1 ? "提交" : "按顺序提交这 \(count) 组"
     }
 
     @ViewBuilder
     private func resultLabel(_ result: BatchCommitResult) -> some View {
-        if result.isComplete {
-            Label("已提交 \(result.committed) 组", systemImage: "checkmark.circle")
+        VStack(alignment: .leading, spacing: 4) {
+            if result.isComplete {
+                Label("已提交 \(result.committed) 组", systemImage: "checkmark.circle")
+                    .font(Theme.Font.secondary)
+                    .foregroundStyle(Theme.Colors.success)
+            } else {
+                Label(
+                    result.errorMessage ?? "提交中断",
+                    systemImage: "exclamationmark.triangle"
+                )
                 .font(Theme.Font.secondary)
-                .foregroundStyle(Theme.Colors.success)
-        } else {
-            Label(
-                result.errorMessage ?? "提交中断",
-                systemImage: "exclamationmark.triangle"
-            )
-            .font(Theme.Font.secondary)
-            .foregroundStyle(Theme.Colors.warning)
-            .textSelection(.enabled)
+                .foregroundStyle(Theme.Colors.warning)
+                .textSelection(.enabled)
+            }
+
+            // 分了三组只提交了两组，得说清是为什么
+            ForEach(result.notes, id: \.self) { note in
+                Label(note, systemImage: "info.circle")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
+            }
         }
     }
 }
@@ -306,14 +342,26 @@ private struct BlockRow: View {
 
 private struct GroupCard: View {
 
+    let order: Int
     @Binding var commit: ComposedCommit
     let blocksByID: [String: ComposeViewModel.Block]
+    let dependencies: [String]
+    let review: DiffReview?
+    let reviewError: String?
+    let isReviewing: Bool
     let onRemoveBlock: (String) -> Void
     let onRemoveGroup: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
+                // 顺序有意义，标出来：第 1 组会先提交
+                Text("\(order)")
+                    .font(Theme.Font.caption.weight(.medium))
+                    .foregroundStyle(Theme.Colors.onBrand)
+                    .frame(width: 18, height: 18)
+                    .background(Theme.Colors.brand, in: .circle)
+
                 TextField("提交标题，例如 feat(auth): 登录失败时自动重试", text: $commit.title)
                     .textFieldStyle(.roundedBorder)
 
@@ -332,6 +380,12 @@ private struct GroupCard: View {
                     .foregroundStyle(Theme.Colors.secondaryText)
             }
 
+            if !dependencies.isEmpty {
+                Label("要排在「\(dependencies.joined(separator: "」「"))」之后", systemImage: "arrow.turn.up.right")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
+            }
+
             TextField("正文（可选）", text: $commit.body, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(2...5)
@@ -343,33 +397,106 @@ private struct GroupCard: View {
             } else {
                 ForEach(commit.hunkIDs, id: \.self) { id in
                     if let block = blocksByID[id] {
-                        HStack(spacing: 6) {
-                            Image(systemName: "text.alignleft")
-                                .font(Theme.Font.caption)
-                                .foregroundStyle(Theme.Colors.tertiaryText)
-                            Text(block.path)
-                                .font(Theme.Font.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.head)
-                            if !block.hunk.heading.isEmpty {
-                                Text(block.hunk.heading)
-                                    .font(Theme.Font.caption)
-                                    .foregroundStyle(Theme.Colors.secondaryText)
-                                    .lineLimit(1)
-                            }
-                            Spacer(minLength: 4)
-                            Button {
-                                onRemoveBlock(id)
-                            } label: {
-                                Image(systemName: "minus.circle")
-                            }
-                            .buttonStyle(.borderless)
-                            .help("移回待分配")
-                        }
+                        blockRow(id: id, block: block)
                     }
                 }
             }
+
+            reviewSection
         }
         .padding(.vertical, 6)
+    }
+
+    private func blockRow(id: String, block: ComposeViewModel.Block) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "text.alignleft")
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Colors.tertiaryText)
+            Text(block.path)
+                .font(Theme.Font.secondary)
+                .lineLimit(1)
+                .truncationMode(.head)
+            if !block.hunk.heading.isEmpty {
+                Text(block.hunk.heading)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            Button {
+                onRemoveBlock(id)
+            } label: {
+                Image(systemName: "minus.circle")
+            }
+            .buttonStyle(.borderless)
+            .help("移回待分配")
+        }
+    }
+
+    // MARK: - 这一组的评审
+
+    @ViewBuilder
+    private var reviewSection: some View {
+        if let reviewError {
+            Label(reviewError, systemImage: "xmark.circle")
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Colors.danger)
+        } else if let review {
+            VStack(alignment: .leading, spacing: 4) {
+                if !review.summary.isEmpty {
+                    Text(review.summary)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.secondaryText)
+                }
+
+                // 小事折叠成一行数字。一条鉴权问题不该和三十条空格改动并排
+                ForEach(review.findings.filter { $0.severity != .nitpick }) { finding in
+                    findingRow(finding)
+                }
+                let nitpicks = review.findings(of: .nitpick).count
+                if nitpicks > 0 {
+                    Text("另有 \(nitpicks) 条小事")
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.tertiaryText)
+                }
+                if review.findings.isEmpty {
+                    Label("没有发现问题", systemImage: "checkmark.circle")
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.success)
+                }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.Colors.sunkenBackground, in: .rect(cornerRadius: 6))
+        } else if isReviewing && !commit.hunkIDs.isEmpty {
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("评审中…")
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Colors.secondaryText)
+            }
+        }
+    }
+
+    private func findingRow(_ finding: ReviewFinding) -> some View {
+        HStack(alignment: .top, spacing: 6) {
+            Circle()
+                .fill(finding.severity.tint)
+                .frame(width: 6, height: 6)
+                .padding(.top, 4)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(finding.title)
+                    .font(Theme.Font.caption)
+                    .multilineTextAlignment(.leading)
+                if !finding.detail.isEmpty && finding.severity == .critical {
+                    Text(finding.detail)
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Colors.secondaryText)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
     }
 }

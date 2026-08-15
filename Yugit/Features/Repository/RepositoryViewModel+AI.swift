@@ -108,9 +108,22 @@ extension RepositoryViewModel {
             .filter { seen.insert($0).inserted }
     }
 
+    /// 还没被 git 跟踪的文件。
+    ///
+    /// `git diff HEAD` 看不见它们（实测输出为空），凡是靠 diff 取内容的地方
+    /// 都得先把它们挑出来单独处理，否则新加的文件会整个消失。
+    var untrackedPaths: Set<String> {
+        Set(status?.entries.filter { $0.kind == .untracked }.map(\.path) ?? [])
+    }
+
     /// 某个文件相对 HEAD 的全部改动。
     func diffAgainstHead(for path: String) async throws -> FileDiff {
         try await repository.client.diffAgainstHead(of: path, in: repository.root)
+    }
+
+    /// 未跟踪文件的内容，拿它跟 /dev/null 比出来。
+    func diffForUntrackedFile(at path: String) async throws -> FileDiff {
+        try await repository.client.diffForUntrackedFile(at: path, in: repository.root)
     }
 
     /// 按分组逐批提交。
