@@ -238,4 +238,13 @@ extension RepositoryViewModel {
             await refresh()
         }
     }
+
+    // MARK: - AI 归因
+
+    /// 整个仓库记过的 AI 会话，按 commit 索引。
+    ///
+    /// 一次读完而不是逐条问：一屏 blame 可能涉及几十个 commit。
+    func aiSessions() async -> [String: AISession] {
+        await repository.client.sessions(in: repository.root)
+    }
 }

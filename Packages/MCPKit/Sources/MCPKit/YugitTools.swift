@@ -24,7 +24,68 @@ public enum YugitTools {
             listTimeline(repository),
             restoreSnapshot(repository),
             explainCommand(repository),
+            attribute(repository),
         ]
+    }
+
+    // MARK: - 归因
+
+    static func attribute(_ repository: RepoActor) -> MCPTool {
+        MCPTool(
+            name: "yugit_attribute",
+            description: """
+                记下某条提交是哪次对话、哪条指令的产物。
+
+                **提交完成之后调用它。** 驭Git 的归因 blame 靠提交信息里的
+                `Co-Authored-By` 只能说到「这行是 Claude 写的」——那不够。
+                人真正想知道的是「当初为什么这么写」，而那个答案在对话里。
+                记下来之后，用户在 blame 上点到这一行就能看到当时的指令。
+
+                只传**这一轮的指令**，不要传整段对话：内容会存进 git，
+                跟着仓库跑到任何人手上，而对话里往往有用户的私密信息。
+                """,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "commit": .object([
+                        "type": .string("string"),
+                        "description": .string("提交的 hash，传 HEAD 也可以"),
+                    ]),
+                    "prompt": .object([
+                        "type": .string("string"),
+                        "description": .string("用户这一轮说了什么"),
+                    ]),
+                    "session_id": .object([
+                        "type": .string("string"),
+                        "description": .string("你的会话标识，用于把同一次对话里的多条提交串起来"),
+                    ]),
+                    "tool": .object([
+                        "type": .string("string"),
+                        "description": .string("工具名，例如 Claude Code"),
+                    ]),
+                ]),
+                "required": .array([.string("commit"), .string("prompt")]),
+            ])
+        ) { arguments in
+            guard let commit = arguments["commit"]?.stringValue, !commit.isEmpty else {
+                throw ToolError.missingArgument("commit")
+            }
+            guard let prompt = arguments["prompt"]?.stringValue, !prompt.isEmpty else {
+                throw ToolError.missingArgument("prompt")
+            }
+
+            let session = AISession(
+                tool: arguments["tool"]?.stringValue ?? "未具名的 AI 工具",
+                sessionID: arguments["session_id"]?.stringValue ?? "",
+                prompt: prompt,
+                timestamp: Date()
+            )
+            let resolved = try await repository.resolve(revision: commit)
+            try await repository.client.recordSession(
+                session, for: resolved, in: repository.root)
+
+            return "已记下 \(String(resolved.prefix(7))) 的来历。用户在 blame 上点到这些行时会看到它。"
+        }
     }
 
     // MARK: - 打快照

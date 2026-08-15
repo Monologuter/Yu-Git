@@ -11,6 +11,22 @@ if ! command -v swift >/dev/null 2>&1; then
     exit 0
 fi
 
+# 跑在本机架构上，而不是 git 自己那一个。
+#
+# 这台机器上的 git 来自 Intel 版 Homebrew（/usr/local），于是它在 Rosetta 下运行，
+# 派生的 hook 也是；不加干预的话这里的 swift test 编的是 x86_64 那一份，
+# 和平时开发用的 arm64 是两套独立的 .build。后果有两个，都很难受：
+#   1. 每次新增源文件都要在这边从头编一次，五分钟起步，期间没有任何输出
+#   2. 那份 x86_64 的测试进程反复挂死（0% CPU 卡住不动，没有超时）
+# 显式切回本机架构之后，直接复用平时那份热缓存，全量测试三十秒跑完。
+run_swift() {
+    if [ "$(uname -m)" = "arm64" ] && [ "$(arch)" != "arm64" ]; then
+        arch -arm64 swift "$@"
+    else
+        swift "$@"
+    fi
+}
+
 for package in "$root"/Packages/*/; do
     [ -f "$package/Package.swift" ] || continue
     name=$(basename "$package")
@@ -21,12 +37,7 @@ for package in "$root"/Packages/*/; do
     # stdin，但不切断的话它会一路传给 swift test、再传给测试里成百上千个 git
     # 子进程——任何一个去读 stdin 都会永远等下去。目前没有观察到这种情况，
     # 加上只是不给它发生的机会。
-    #
-    # **推送慢通常不是卡住。** 这台机器上 git 是 Intel 版（/usr/local/opt/git），
-    # 跑在 Rosetta 下，于是这里的 swift test 编的是 x86_64 那一份，
-    # 和平时开发用的 arm64 是两套独立的 .build。只要新增了源文件，
-    # 推送时就要在这边从头编一次，五分钟起步，期间没有任何输出。
-    if ! swift test --package-path "$package" < /dev/null; then
+    if ! run_swift test --package-path "$package" < /dev/null; then
         printf '\n❌ %s 测试未通过，推送已取消\n' "$name"
         printf '如确需跳过：git push --no-verify\n'
         exit 1

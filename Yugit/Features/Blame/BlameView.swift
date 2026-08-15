@@ -13,6 +13,10 @@ final class BlameViewModel: Identifiable {
 
     let path: String
     private(set) var result: BlameResult?
+    /// commit hash → 这条提交是哪次对话的产物。没记录过的不在里面。
+    ///
+    /// 一次读完整个仓库的记录而不是逐条问：一屏 blame 可能涉及几十个 commit。
+    private(set) var sessions: [String: AISession] = [:]
     private(set) var isLoading = false
     var errorMessage: String?
 
@@ -30,6 +34,7 @@ final class BlameViewModel: Identifiable {
 
         do {
             result = try await repository.blame(path: path)
+            sessions = await repository.aiSessions()
         } catch {
             errorMessage = "blame 失败：\(error)"
         }
@@ -156,7 +161,8 @@ struct BlameView: View {
                             BlameRow(
                                 line: line,
                                 commit: result.commits[line.commit],
-                                authorship: result.authorship(ofLine: line)
+                                authorship: result.authorship(ofLine: line),
+                                session: model.sessions[line.commit]
                             )
                         }
                     }
@@ -202,6 +208,9 @@ private struct BlameRow: View {
     let line: BlameLine
     let commit: BlameCommit?
     let authorship: Authorship
+    /// 这条提交是哪次对话的产物。没记录过时为 nil——
+    /// 那是常态，不假装知道自己不知道的事。
+    let session: AISession?
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -234,6 +243,17 @@ private struct BlameRow: View {
                     }
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
+
+                    // 记过来历的才显示。「这行是 Claude 写的」只答了一半，
+                    // 人真正想知道的是「当初为什么这么写」——那个答案在对话里。
+                    if let session {
+                        Label(session.summary, systemImage: "text.bubble")
+                            .labelStyle(.compact)
+                            .font(.caption2)
+                            .foregroundStyle(Theme.Colors.brand)
+                            .lineLimit(1)
+                            .help(session.prompt)
+                    }
                 }
                 .frame(width: 260, alignment: .leading)
 

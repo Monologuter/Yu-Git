@@ -251,6 +251,15 @@ public actor RepoActor {
         await timeline.labelledCommits()
     }
 
+    /// 把 `HEAD`、`main~2` 这类写法解析成完整 hash。
+    ///
+    /// 只读，不排队。给 MCP 用：agent 传进来的往往是 `HEAD`，
+    /// 而记归因要按具体 commit 存，否则下一次提交之后那条记录就指错了。
+    public func resolve(revision: String) async throws -> String {
+        let result = try await client.run(["rev-parse", revision], in: root)
+        return result.standardOutputText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     /// 执行一条 git 写操作并记入时间线，**不重新排队**。
     ///
     /// 给已经在队列里跑的复合操作用（分批提交要连着做好几次 commit）。
