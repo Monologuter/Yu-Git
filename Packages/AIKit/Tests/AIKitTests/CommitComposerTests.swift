@@ -168,6 +168,83 @@ struct CommitComposerTests {
         }
     }
 
+    // MARK: - 顺序
+
+    @Test("被依赖的组排到前面")
+    func ordersDependenciesFirst() throws {
+        // bisect 要有意义，每个中间状态都得能编译过——调用方不能排在定义之前
+        let json = """
+            {"commits":[
+              {"key":"caller","title":"feat: 调用新函数","dependsOn":["def"],"hunks":["src/auth.swift#0"]},
+              {"key":"def","title":"feat: 加上新函数","dependsOn":[],"hunks":["src/auth.swift#1"]}
+            ]}
+            """
+        let proposal = try CommitComposer.parse(json, hunks: hunks)
+
+        #expect(proposal.commits.map(\.title) == ["feat: 加上新函数", "feat: 调用新函数"])
+        #expect(proposal.orderingNote?.contains("已按依赖调整顺序") == true)
+        #expect(proposal.commits[1].dependsOn == [proposal.commits[0].id])
+    }
+
+    @Test("没有依赖时不无谓重排")
+    func keepsOriginalOrderWithoutDependencies() throws {
+        let json = """
+            {"commits":[
+              {"key":"a","title":"fix: 第一组","hunks":["src/auth.swift#0"]},
+              {"key":"b","title":"docs: 第二组","hunks":["README.md#0"]}
+            ]}
+            """
+        let proposal = try CommitComposer.parse(json, hunks: hunks)
+
+        #expect(proposal.commits.map(\.title) == ["fix: 第一组", "docs: 第二组"])
+        #expect(proposal.orderingNote == nil, "没动过顺序就不该冒出提示")
+    }
+
+    @Test("依赖成环时保留原顺序并说明")
+    func reportsDependencyCycle() throws {
+        // 硬排一个顺序出来只是把问题藏起来
+        let json = """
+            {"commits":[
+              {"key":"a","title":"feat: 甲","dependsOn":["b"],"hunks":["src/auth.swift#0"]},
+              {"key":"b","title":"feat: 乙","dependsOn":["a"],"hunks":["README.md#0"]}
+            ]}
+            """
+        let proposal = try CommitComposer.parse(json, hunks: hunks)
+
+        #expect(proposal.commits.map(\.title) == ["feat: 甲", "feat: 乙"])
+        #expect(proposal.orderingNote?.contains("互相依赖") == true)
+        #expect(proposal.orderingNote?.contains("feat: 甲") == true)
+    }
+
+    @Test("指向不存在的 key 与指向自己的依赖都被丢掉")
+    func dropsBogusDependencies() throws {
+        let json = """
+            {"commits":[
+              {"key":"a","title":"feat: 甲","dependsOn":["a","查无此组"],"hunks":["src/auth.swift#0"]}
+            ]}
+            """
+        let proposal = try CommitComposer.parse(json, hunks: hunks)
+
+        #expect(proposal.commits[0].dependsOn.isEmpty)
+        #expect(proposal.orderingNote == nil)
+    }
+
+    @Test("依赖指向了被剔除的空组时不会卡住")
+    func survivesDependenciesOnDroppedGroups() throws {
+        // 空组会被剔掉，指着它的依赖如果还算数，整个排序就永远排不完
+        let json = """
+            {"commits":[
+              {"key":"empty","title":"chore: 空的","hunks":[]},
+              {"key":"real","title":"feat: 有内容","dependsOn":["empty"],"hunks":["src/auth.swift#0"]}
+            ]}
+            """
+        let proposal = try CommitComposer.parse(json, hunks: hunks)
+
+        #expect(proposal.commits.count == 1)
+        #expect(proposal.commits[0].title == "feat: 有内容")
+        #expect(proposal.orderingNote == nil)
+    }
+
     // MARK: - 提示词
 
     @Test("提示词带上清单和每块的内容")
@@ -189,6 +266,9 @@ struct CommitComposerTests {
         #expect(prompt.contains("Conventional Commits"))
         #expect(prompt.contains("代码围栏"))
         #expect(prompt.contains("恰好出现一次"))
+        // 顺序和分组一样重要：编不过的中间状态让 bisect 失去意义
+        #expect(prompt.contains("bisect"))
+        #expect(prompt.contains("dependsOn"))
     }
 
     // MARK: - 端到端

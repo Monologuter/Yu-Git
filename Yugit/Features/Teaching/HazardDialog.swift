@@ -25,7 +25,7 @@ struct HazardDialog: View {
             section(
                 "能不能退回来",
                 text: warning.recovery,
-                tint: warning.isDestructive ? .orange : .green
+                tint: warning.isDestructive ? Theme.Colors.warning : Theme.Colors.success
             )
 
             // 越是危险的一步，越该让人看清它到底等价于哪条命令

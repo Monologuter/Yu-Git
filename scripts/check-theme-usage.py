@@ -40,6 +40,12 @@ FORBIDDEN = [
     (r"nsColor:\s*\.secondaryLabelColor", "Theme.Colors.secondaryText"),
     (r"nsColor:\s*\.tertiaryLabelColor", "Theme.Colors.tertiaryText"),
     (r"nsColor:\s*\.separatorColor", "Theme.Colors.separator"),
+    # 返回值位置上的裸具名色。`case .critical: .red` 这种写法躲过了上面所有规则，
+    # 却和 `Color.red` 一样是写死的——ReviewView 里就真藏了一处。
+    (
+        r":\s*\.(red|orange|blue|green|purple|gray|yellow|pink|teal|indigo|mint|brown|secondary)\s*$",
+        "Theme.Colors 里对应的语义色",
+    ),
     # 字号同理。设计稿只有九档，而 SwiftUI 的动态字号在 macOS 上
     # 未必是设计稿想要的那个值——`.title3` 在 iOS 是 20pt，在 macOS 是 15pt。
     (r"\.font\(\.caption2?\b", "Theme.Font.secondary 或 caption"),

@@ -191,12 +191,12 @@ struct BlameView: View {
     /// 工具 → 颜色。人工用中性色，各家 AI 各一个色。
     static func tint(for tool: String) -> Color {
         switch tool {
-        case "人工": .secondary
-        case "Claude": .orange
-        case "Copilot": .green
-        case "Cursor": .blue
-        case "Aider": .purple
-        default: .pink
+        case "人工": Theme.Colors.secondaryText
+        case "Claude": Theme.Colors.warning
+        case "Copilot": Theme.Colors.success
+        case "Cursor": Theme.Colors.accent
+        case "Aider": Theme.Colors.mergeAccent
+        default: Theme.Colors.brand
         }
     }
 }

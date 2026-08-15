@@ -357,9 +357,9 @@ private struct RequestRow: View {
 
     private var tint: Color {
         switch request.state {
-        case .open: request.isDraft ? .secondary : .green
-        case .merged: .purple
-        case .closed: .red
+        case .open: request.isDraft ? Theme.Colors.secondaryText : Theme.Colors.success
+        case .merged: Theme.Colors.mergeAccent
+        case .closed: Theme.Colors.danger
         }
     }
 }

@@ -492,10 +492,10 @@ private struct CommitFileRow: View {
             return Color(nsColor: .alternateSelectedControlTextColor)
         }
         return switch change.kind {
-        case .added: .green
-        case .deleted: .red
-        case .renamed, .copied: .blue
-        default: .secondary
+        case .added: Theme.Colors.diffAddedText
+        case .deleted: Theme.Colors.diffDeletedText
+        case .renamed, .copied: Theme.Colors.accent
+        default: Theme.Colors.secondaryText
         }
     }
 

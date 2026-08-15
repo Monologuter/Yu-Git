@@ -170,7 +170,7 @@ struct ReviewView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Circle()
-                    .fill(tint(for: severity))
+                    .fill(severity.tint)
                     .frame(width: 8, height: 8)
                 Text("\(severity.displayName)（\(findings.count)）")
                     .font(Theme.Font.secondary.weight(.medium))
@@ -179,20 +179,11 @@ struct ReviewView: View {
             ForEach(findings) { finding in
                 FindingRow(
                     finding: finding,
-                    tint: tint(for: severity),
+                    tint: severity.tint,
                     isExpanded: model.expanded.contains(finding.id),
                     onToggle: { model.toggle(finding) }
                 )
             }
-        }
-    }
-
-    private func tint(for severity: ReviewFinding.Severity) -> Color {
-        switch severity {
-        case .critical: .red
-        case .warning: .orange
-        case .info: .blue
-        case .nitpick: .secondary
         }
     }
 
