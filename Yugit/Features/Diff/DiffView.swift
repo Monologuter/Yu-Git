@@ -64,6 +64,26 @@ struct DiffView: View {
         return CGFloat(digits) * 7 + 10
     }
 
+    /// 这个 diff 是不是一对 LFS 指针的替换。
+    ///
+    /// **必须单独认出来。** LFS 把大文件换成三行纯文本存进仓库，
+    /// 照常按行 diff 的话，用户看到的是「改了三行字」——而实际发生的是
+    /// 一个上百 MB 的二进制文件被整个换掉了。这是这个功能存在的全部理由。
+    private var lfsChange: LFSPointerChange? {
+        // 指针只有三行，超出的一定不是
+        guard diff.hunks.count == 1, diff.hunks[0].lines.count <= 8 else { return nil }
+
+        let removed = diff.hunks[0].lines.filter { $0.kind == .deletion }
+            .map(\.text).joined(separator: "\n")
+        let added = diff.hunks[0].lines.filter { $0.kind == .addition }
+            .map(\.text).joined(separator: "\n")
+
+        let before = LFSPointer.parse(removed)
+        let after = LFSPointer.parse(added)
+        guard before != nil || after != nil else { return nil }
+        return LFSPointerChange(before: before, after: after)
+    }
+
     var body: some View {
         if diff.isBinary {
             EmptyStateView(
@@ -72,6 +92,8 @@ struct DiffView: View {
                 description: "二进制内容无法按行比较，只能整个文件暂存",
                 compact: true
             )
+        } else if let change = lfsChange {
+            LFSPointerDiff(change: change)
         } else if diff.hunks.isEmpty {
             EmptyStateView(
                 "没有内容变化",
