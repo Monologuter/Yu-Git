@@ -120,6 +120,29 @@ public actor Timeline {
     public func previewRestore(_ snapshot: Snapshot) async throws -> SnapshotPreview {
         try await snapshots.preview(snapshot)
     }
+
+    /// 只恢复点名的那几个文件。
+    ///
+    /// 和全量恢复一样先给当前状态拍一张——这一步本身也得可撤销。
+    public func restore(_ snapshot: Snapshot, paths: [String]) async throws {
+        guard !paths.isEmpty else { return }
+        _ = await captureExternalChange(
+            summary: "恢复「\(snapshot.summary)」的 \(paths.count) 个文件之前")
+        try await snapshots.restore(snapshot, paths: paths)
+    }
+
+    /// 给快照起个人话名字。标注过的快照不会被自动清理掉。
+    public func setLabel(_ label: String, for snapshot: Snapshot) async throws {
+        try await snapshots.setLabel(label, for: snapshot)
+    }
+
+    public func label(for snapshot: Snapshot) async -> String? {
+        await snapshots.label(for: snapshot)
+    }
+
+    public func labelledCommits() async -> Set<String> {
+        await snapshots.labelledCommits()
+    }
 }
 
 public enum TimelineError: Error, Sendable, Equatable {

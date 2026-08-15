@@ -227,6 +227,30 @@ public actor RepoActor {
         try await timeline.previewRestore(snapshot)
     }
 
+    /// 只恢复点名的那几个文件。排进写队列——它改工作区。
+    public func restore(_ snapshot: Snapshot, paths: [String]) async throws {
+        let previous = queueTail
+        let work = Task { [self] in
+            await previous?.value
+            try await timeline.restore(snapshot, paths: paths)
+        }
+        queueTail = Task { _ = try? await work.value }
+        try await work.value
+    }
+
+    /// 给快照起名字。只写 notes，不动工作区，因此不排队。
+    public func setSnapshotLabel(_ label: String, for snapshot: Snapshot) async throws {
+        try await timeline.setLabel(label, for: snapshot)
+    }
+
+    public func snapshotLabel(for snapshot: Snapshot) async -> String? {
+        await timeline.label(for: snapshot)
+    }
+
+    public func labelledSnapshots() async -> Set<String> {
+        await timeline.labelledCommits()
+    }
+
     /// 执行一条 git 写操作并记入时间线，**不重新排队**。
     ///
     /// 给已经在队列里跑的复合操作用（分批提交要连着做好几次 commit）。

@@ -68,6 +68,50 @@ extension SnapshotStore {
         return SnapshotPreview(restored: restored, removed: removed, overwritten: overwritten)
     }
 
+    /// 只把指定的几个文件恢复到快照那一刻，其余一概不动。
+    ///
+    /// 存在的理由：整个工作区退回去往往下手太重。真实场景是「agent 把这一个文件
+    /// 改坏了，但另外三个改得挺好」——全量恢复会把好的那三个也一起退掉，
+    /// 于是用户宁可手工去改，时间线就白做了。
+    ///
+    /// 和全量恢复的两处关键差别：
+    /// - **不动 index。** 全量恢复会把 index 退回 HEAD；这里是外科手术，
+    ///   动了 index 会让用户已经暂存好的其他文件莫名其妙地掉出暂存区。
+    /// - 只处理点名的路径。没点到的文件，无论快照里有没有，都保持原样。
+    ///
+    /// - Parameter paths: 要恢复的路径。快照里没有的路径表示「把它删掉」——
+    ///   那是预览里「会被删掉」那一栏对应的操作。
+    public func restore(_ snapshot: Snapshot, paths: [String]) async throws {
+        guard !paths.isEmpty else { return }
+
+        let inSnapshot = try await blobHashes(inTree: snapshot.commit)
+        let selected = Set(paths)
+
+        // 快照里没有的：这些是快照之后新建的，恢复即删除
+        for path in selected.subtracting(inSnapshot.keys) {
+            try? FileManager.default.removeItem(at: root.appendingPathComponent(path))
+        }
+
+        let toWrite = selected.intersection(inSnapshot.keys).sorted()
+        guard !toWrite.isEmpty else { return }
+
+        // 独立 index，免得污染真正的暂存区
+        let indexPath = directory.appendingPathComponent("partial-restore.idx")
+        let environment = ["GIT_INDEX_FILE": indexPath.path]
+        defer {
+            try? FileManager.default.removeItem(at: indexPath)
+            try? FileManager.default.removeItem(at: indexPath.appendingPathExtension("lock"))
+        }
+
+        try await client.run(
+            ["read-tree", snapshot.commit], in: root, additionalEnvironment: environment)
+        try await client.run(
+            ["checkout-index", "--force", "--"] + toWrite,
+            in: root,
+            additionalEnvironment: environment
+        )
+    }
+
     /// 一棵树里所有文件的 blob hash。
     private func blobHashes(inTree commit: String) async throws -> [String: String] {
         // `-z` 之后每条记录形如 `<mode> <type> <hash>\t<path>`

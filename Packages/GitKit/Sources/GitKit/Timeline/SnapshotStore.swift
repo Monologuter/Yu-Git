@@ -47,7 +47,7 @@ public actor SnapshotStore {
     // 而 private 只在同一个文件内可见。仍然不对模块外暴露。
     let root: URL
     let client: GitClient
-    private let directory: URL
+    let directory: URL
 
     /// 快照 commit 的作者署名。用固定署名而非用户身份，
     /// 免得这些内部对象混进「我的提交」之类的统计里。
@@ -233,14 +233,25 @@ public actor SnapshotStore {
             }
     }
 
-    /// 只保留最近的若干张快照。
+    /// 只保留最近的若干张快照，**标注过的一律留着**。
     ///
     /// 快照 ref 会让对象免于 gc，不清理的话仓库体积会一直涨。
+    ///
+    /// 标注是用户明确说过「这张重要」的信号——一个纯按数量的策略会把它删掉，
+    /// 而那恰恰是最不该删的那张。所以标注过的不计入配额也不参与淘汰：
+    /// 用户嫌多的话，取消标注即可。
     public func prune(keeping limit: Int) async throws {
         let snapshots = try await list()
-        guard snapshots.count > limit else { return }
+        let labelled = await labelledCommits()
 
-        for snapshot in snapshots.dropFirst(limit) {
+        // 配额只管没标注过的那些
+        var remaining = limit
+        for snapshot in snapshots {
+            if labelled.contains(snapshot.commit) { continue }
+            if remaining > 0 {
+                remaining -= 1
+                continue
+            }
             // 删不掉某一条不该拖累其余的清理
             _ = try? await client.run(["update-ref", "-d", snapshot.reference], in: root)
         }

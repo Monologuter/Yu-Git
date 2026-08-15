@@ -59,4 +59,27 @@ extension RepositoryViewModel {
     func previewRestore(_ snapshot: Snapshot) async -> SnapshotPreview? {
         try? await repository.previewRestore(snapshot)
     }
+
+    /// 只恢复点名的那几个文件。
+    func restore(_ snapshot: Snapshot, paths: [String]) async {
+        await mutate {
+            try await self.repository.restore(snapshot, paths: paths)
+        }
+        await reloadTimeline()
+    }
+
+    /// 给快照起个人话名字。起过名字的不会被自动清理。
+    func setSnapshotLabel(_ label: String, for snapshot: Snapshot) async {
+        try? await repository.setSnapshotLabel(label, for: snapshot)
+        await reloadTimeline()
+    }
+
+    func snapshotLabel(for snapshot: Snapshot) async -> String? {
+        await repository.snapshotLabel(for: snapshot)
+    }
+
+    /// 哪些快照被标注过。一次问完，时间线列表拿它标记。
+    func labelledSnapshots() async -> Set<String> {
+        await repository.labelledSnapshots()
+    }
 }
