@@ -375,4 +375,38 @@ struct PatchRoundTripTests {
         #expect(PatchBuilder.patch(for: diff, selecting: .hunks([])) == nil)
         #expect(PatchBuilder.patch(for: diff, selecting: .lines([:])) == nil)
     }
+
+    @Test("已应用的新增行写成上下文，已应用的删除行不写")
+    func rendersAlreadyAppliedLinesAgainstTheCurrentFile() async throws {
+        let repository = try await TemporaryRepository()
+        try repository.write("a\nb\nc\n", to: "f.txt")
+        try await repository.commitAll("base")
+        try repository.write("A\nb\nC\n", to: "f.txt")
+
+        let diff = try await repository.client.diff(of: "f.txt", in: repository.url)
+        let lines = diff.hunks[0].lines
+        func index(of kind: DiffLine.Kind, text: String) throws -> Int {
+            try #require(lines.firstIndex { $0.kind == kind && $0.text == text })
+        }
+
+        // 第一处（a → A）当作已经提交过，这一次只提交第二处（c → C）
+        let applied = try [index(of: .deletion, text: "a"), index(of: .addition, text: "A")]
+        let selected = try [index(of: .deletion, text: "c"), index(of: .addition, text: "C")]
+
+        let patch = try #require(
+            PatchBuilder.patch(
+                for: diff,
+                selecting: .lines([0: Set(selected)]),
+                alreadyApplied: [0: Set(applied)]
+            ))
+
+        #expect(patch.contains("\n A\n"), "已经加进文件的行必须作为上下文出现")
+        #expect(!patch.contains("\n-a\n"), "已经删掉的行不该再出现在 patch 里")
+        #expect(!patch.contains("\n a\n"))
+        #expect(patch.contains("\n-c\n"))
+        #expect(patch.contains("\n+C\n"))
+
+        // 行数也要跟着算对，否则 git apply 直接拒
+        #expect(patch.contains("@@ -1,3 +1,3 @@"))
+    }
 }

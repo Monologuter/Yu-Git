@@ -198,7 +198,7 @@ final class ComposeViewModel: Identifiable {
             }
             guard !selection.isEmpty else { return nil }
 
-            return CommitBatch(message: commit.message, selection: selection)
+            return CommitBatch(message: commit.message, hunks: selection)
         }
 
         result = await repository.commitInBatches(batches)

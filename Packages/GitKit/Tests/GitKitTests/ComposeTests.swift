@@ -41,8 +41,8 @@ struct ComposeTests {
         #expect(diff.hunks.count == 2, "前提不成立：应当切成两个 hunk")
 
         let result = await actor.commitInBatches([
-            CommitBatch(message: "feat: 登录相关", selection: ["app.swift": [0]]),
-            CommitBatch(message: "docs: 文档相关", selection: ["app.swift": [1]]),
+            CommitBatch(message: "feat: 登录相关", hunks: ["app.swift": [0]]),
+            CommitBatch(message: "docs: 文档相关", hunks: ["app.swift": [1]]),
         ])
 
         #expect(result.isComplete)
@@ -69,8 +69,8 @@ struct ComposeTests {
         let actor = try await makeActor(repo)
 
         _ = await actor.commitInBatches([
-            CommitBatch(message: "feat: 第一块", selection: ["app.swift": [0]]),
-            CommitBatch(message: "docs: 第二块", selection: ["app.swift": [1]]),
+            CommitBatch(message: "feat: 第一块", hunks: ["app.swift": [0]]),
+            CommitBatch(message: "docs: 第二块", hunks: ["app.swift": [1]]),
         ])
 
         let status = try await repo.client.status(of: repo.url)
@@ -83,7 +83,7 @@ struct ComposeTests {
         let actor = try await makeActor(repo)
 
         let result = await actor.commitInBatches([
-            CommitBatch(message: "feat: 只提交第一块", selection: ["app.swift": [0]])
+            CommitBatch(message: "feat: 只提交第一块", hunks: ["app.swift": [0]])
         ])
         #expect(result.isComplete)
 
@@ -105,7 +105,7 @@ struct ComposeTests {
         _ = try await repo.client.run(["add", "app.swift"], in: repo.url)
 
         let result = await actor.commitInBatches([
-            CommitBatch(message: "feat: 只要第一块", selection: ["app.swift": [0]])
+            CommitBatch(message: "feat: 只要第一块", hunks: ["app.swift": [0]])
         ])
         #expect(result.isComplete)
 
@@ -131,8 +131,8 @@ struct ComposeTests {
 
         let actor = try await makeActor(repo)
         let result = await actor.commitInBatches([
-            CommitBatch(message: "feat: 代码改动", selection: ["a.swift": [0], "b.swift": [0]]),
-            CommitBatch(message: "docs: 文档改动", selection: ["c.md": [0]]),
+            CommitBatch(message: "feat: 代码改动", hunks: ["a.swift": [0], "b.swift": [0]]),
+            CommitBatch(message: "docs: 文档改动", hunks: ["c.md": [0]]),
         ])
 
         #expect(result.committed == 2)
@@ -151,8 +151,8 @@ struct ComposeTests {
         let actor = try await makeActor(repo)
 
         let result = await actor.commitInBatches([
-            CommitBatch(message: "chore: 什么都没有", selection: [:]),
-            CommitBatch(message: "feat: 有内容", selection: ["app.swift": [0]]),
+            CommitBatch(message: "chore: 什么都没有", hunks: [:]),
+            CommitBatch(message: "feat: 有内容", hunks: ["app.swift": [0]]),
         ])
 
         #expect(result.committed == 1)
@@ -165,9 +165,9 @@ struct ComposeTests {
         let actor = try await makeActor(repo)
 
         let result = await actor.commitInBatches([
-            CommitBatch(message: "feat: 这批没问题", selection: ["app.swift": [0]]),
+            CommitBatch(message: "feat: 这批没问题", hunks: ["app.swift": [0]]),
             // 指向一个不存在的文件，必然失败
-            CommitBatch(message: "fix: 这批会失败", selection: ["不存在.swift": [0]]),
+            CommitBatch(message: "fix: 这批会失败", hunks: ["不存在.swift": [0]]),
         ])
 
         #expect(!result.isComplete)
@@ -185,8 +185,8 @@ struct ComposeTests {
         let actor = try await makeActor(repo)
 
         _ = await actor.commitInBatches([
-            CommitBatch(message: "feat: 第一批", selection: ["app.swift": [0]]),
-            CommitBatch(message: "docs: 第二批", selection: ["app.swift": [1]]),
+            CommitBatch(message: "feat: 第一批", hunks: ["app.swift": [0]]),
+            CommitBatch(message: "docs: 第二批", hunks: ["app.swift": [1]]),
         ])
 
         let entries = try await actor.timelineEntries()
@@ -204,8 +204,8 @@ struct ComposeTests {
 
         let actor = try await makeActor(repo)
         let result = await actor.commitInBatches([
-            CommitBatch(message: "feat: 第一块", selection: ["app.swift": [0]]),
-            CommitBatch(message: "docs: 第二块", selection: ["app.swift": [1]]),
+            CommitBatch(message: "feat: 第一块", hunks: ["app.swift": [0]]),
+            CommitBatch(message: "docs: 第二块", hunks: ["app.swift": [1]]),
         ])
 
         #expect(result.isComplete)
@@ -224,12 +224,111 @@ struct ComposeTests {
         try await repo.commitAll("加个没动过的文件")
 
         let result = await actor.commitInBatches([
-            CommitBatch(message: "fix: 指向没有改动的文件", selection: ["untouched.txt": [0]])
+            CommitBatch(message: "fix: 指向没有改动的文件", hunks: ["untouched.txt": [0]])
         ])
 
         #expect(!result.isComplete)
         #expect(result.committed == 0)
         #expect(result.errorMessage?.contains("已经不在工作区") == true)
+    }
+
+    // MARK: - 同一个 hunk 拆进两个提交
+
+    /// 两处改动只隔一行上下文——git 会把它们并进同一个 hunk，
+    /// 而它们完全可能属于两件事。
+    private func makeRepositoryWithOneSharedHunk() async throws -> TemporaryRepository {
+        let repo = try await TemporaryRepository()
+        var lines = (1...10).map { "line\($0)" }
+        try repo.write(lines.joined(separator: "\n") + "\n", to: "a.txt")
+        try await repo.commitAll("初始")
+
+        lines[2] = "LINE3"
+        lines[4] = "LINE5"
+        try repo.write(lines.joined(separator: "\n") + "\n", to: "a.txt")
+        return repo
+    }
+
+    @Test("一个 hunk 里的两段改动能分别进两个提交")
+    func splitsOneHunkAcrossTwoCommits() async throws {
+        let repo = try await makeRepositoryWithOneSharedHunk()
+        let diff = try await repo.client.diff(of: "a.txt", in: repo.url)
+        #expect(diff.hunks.count == 1, "前提不成立：两处改动应当挤在同一个 hunk 里")
+
+        let slices = HunkSplitter.slices(of: diff)
+        #expect(slices.count == 2)
+
+        let actor = try await makeActor(repo)
+        let result = await actor.commitInBatches(
+            slices.enumerated().map { index, slice in
+                CommitBatch(
+                    message: "feat: 第 \(index + 1) 段",
+                    selection: ["a.txt": .lines([slice.hunkIndex: slice.changedLineIndices])]
+                )
+            })
+
+        #expect(result.isComplete)
+        #expect(result.committed == 2)
+
+        let first = try await repo.client.runReturningResult(
+            ["show", "--format=", "HEAD~1"], in: repo.url
+        ).standardOutputText
+        #expect(first.contains("+LINE3"))
+        #expect(!first.contains("+LINE5"), "第二段不该被第一条提交顺手带走")
+
+        let second = try await repo.client.runReturningResult(
+            ["show", "--format=", "HEAD"], in: repo.url
+        ).standardOutputText
+        #expect(second.contains("+LINE5"))
+
+        #expect(try await repo.client.status(of: repo.url).isClean)
+    }
+
+    /// 这条盯着一个具体的坑：所有 patch 都是照最初的 HEAD 算的，而第一批提交之后
+    /// 文件已经变了。第二批的 patch 若仍把第一批改过的行写成旧内容，
+    /// `git apply` 会直接拒绝（实测报 `patch does not apply`）。
+    @Test("第二批的上下文按第一批提交后的文件算")
+    func rebasesLaterBatchesOnEarlierOnes() async throws {
+        let repo = try await makeRepositoryWithOneSharedHunk()
+        let diff = try await repo.client.diff(of: "a.txt", in: repo.url)
+        let slices = HunkSplitter.slices(of: diff)
+
+        let actor = try await makeActor(repo)
+        let result = await actor.commitInBatches([
+            CommitBatch(
+                message: "feat: 先提交前一段",
+                selection: ["a.txt": .lines([slices[0].hunkIndex: slices[0].changedLineIndices])]),
+            CommitBatch(
+                message: "feat: 再提交后一段",
+                selection: ["a.txt": .lines([slices[1].hunkIndex: slices[1].changedLineIndices])]),
+        ])
+
+        #expect(result.isComplete, "第二批失败的话说明上下文还是旧的：\(result.errorMessage ?? "")")
+
+        let content = try String(
+            contentsOf: repo.url.appendingPathComponent("a.txt"), encoding: .utf8)
+        #expect(content.contains("LINE3"))
+        #expect(content.contains("LINE5"))
+        #expect(!content.contains("\nline3\n"))
+    }
+
+    @Test("未跟踪文件只归第一批，不会让后面那批提空")
+    func claimsUntrackedFileOnce() async throws {
+        let repo = try await TemporaryRepository()
+        try repo.write("占位\n", to: "keep.txt")
+        try await repo.commitAll("初始")
+        try repo.write("甲\n乙\n", to: "new.txt")
+
+        let actor = try await makeActor(repo)
+        let result = await actor.commitInBatches([
+            CommitBatch(message: "feat: 新文件", hunks: ["new.txt": [0]]),
+            // 未跟踪文件只能整份加，第二批再要它就什么都暂存不到，
+            // 提交会以「没有可提交的内容」失败——那是个查起来很费劲的错
+            CommitBatch(message: "docs: 又要一次", hunks: ["new.txt": [1]]),
+        ])
+
+        #expect(result.isComplete)
+        #expect(result.committed == 1, "第二批没有内容，应当被跳过而不是失败")
+        #expect(try await repo.client.status(of: repo.url).isClean)
     }
 
     @Test("二进制文件整份进，不尝试部分暂存")
@@ -244,7 +343,7 @@ struct ComposeTests {
 
         let actor = try await makeActor(repo)
         let result = await actor.commitInBatches([
-            CommitBatch(message: "chore: 换图标", selection: ["icon.bin": [0]])
+            CommitBatch(message: "chore: 换图标", hunks: ["icon.bin": [0]])
         ])
 
         #expect(result.isComplete)

@@ -14,6 +14,15 @@ public enum PatchBuilder {
         case hunks(Set<Int>)
         /// 精确到行：键是 hunk 下标，值是该 hunk 内选中的行下标。
         case lines([Int: Set<Int>])
+
+        /// 明确什么都没选。`.whole` 永远不算空——文件本身有没有改动是另一回事。
+        public var isEmpty: Bool {
+            switch self {
+            case .whole: false
+            case let .hunks(indices): indices.isEmpty
+            case let .lines(map): map.values.allSatisfy(\.isEmpty)
+            }
+        }
     }
 
     /// patch 的应用方向。
@@ -26,11 +35,16 @@ public enum PatchBuilder {
 
     /// 生成 patch 文本。返回 nil 表示没有任何改动被选中。
     ///
+    /// - Parameter alreadyApplied: 已经落进文件里的改动行（键是 hunk 下标）。
+    ///   分批提交时，同一个 hunk 里前几批选走的行**此刻已经在文件里了**，
+    ///   而这份 patch 是照着最初的 HEAD 算的——不告诉它，patch 里的上下文
+    ///   还是旧内容，`git apply` 直接拒绝（实测报 `patch does not apply`）。
     /// - Note: 二进制文件无法做部分暂存，调用方应改用整文件 `git add`。
     public static func patch(
         for diff: FileDiff,
         selecting selection: Selection = .whole,
-        direction: Direction = .stage
+        direction: Direction = .stage,
+        alreadyApplied: [Int: Set<Int>] = [:]
     ) -> String? {
         guard !diff.isBinary else { return nil }
 
@@ -47,6 +61,7 @@ public enum PatchBuilder {
                 let rendered = renderHunk(
                     hunk,
                     selectedLines: selectedLines,
+                    appliedLines: alreadyApplied[hunkIndex] ?? [],
                     lineOffset: lineOffset,
                     direction: direction
                 )
@@ -63,6 +78,22 @@ public enum PatchBuilder {
     }
 
     // MARK: - 选择
+
+    /// 这份选择实际会动到哪些行，按 hunk 下标归类。
+    ///
+    /// 分批提交靠它记账：把 `.whole` / `.hunks` 这类粗粒度的选择摊平成具体行号，
+    /// 后面几批才能算出「基准文件已经被改成什么样」。
+    public static func selectedLines(
+        of diff: FileDiff,
+        selecting selection: Selection
+    ) -> [Int: Set<Int>] {
+        var map: [Int: Set<Int>] = [:]
+        for (hunkIndex, hunk) in diff.hunks.enumerated() {
+            let lines = selectedLineIndices(in: hunk, at: hunkIndex, selection: selection)
+            if !lines.isEmpty { map[hunkIndex] = lines }
+        }
+        return map
+    }
 
     private static func selectedLineIndices(
         in hunk: DiffHunk,
@@ -84,9 +115,20 @@ public enum PatchBuilder {
 
     // MARK: - 渲染
 
+    /// 一行相对这次 patch 的处境。
+    private enum LineState {
+        /// 这次要应用它。
+        case selected
+        /// 前几批已经应用过，基准文件里已是改动后的样子。
+        case applied
+        /// 谁都没动过。
+        case untouched
+    }
+
     private static func renderHunk(
         _ hunk: DiffHunk,
         selectedLines: Set<Int>,
+        appliedLines: Set<Int>,
         lineOffset: Int,
         direction: Direction
     ) -> (text: String, netLineChange: Int)? {
@@ -94,31 +136,46 @@ public enum PatchBuilder {
         var oldCount = 0
         var newCount = 0
 
+        // 三种状态，一条判断链：选中的照原样写；已经应用过的按「文件里现在是什么样」
+        // 写；剩下的按「文件里原来是什么样」写。中间那一档正是分批提交时前几批
+        // 留下的痕迹——它们已经不在待应用的改动里，却实实在在改变了基准文件。
         for (lineIndex, line) in hunk.lines.enumerated() {
-            let isSelected = selectedLines.contains(lineIndex)
+            let state: LineState =
+                selectedLines.contains(lineIndex)
+                ? .selected : (appliedLines.contains(lineIndex) ? .applied : .untouched)
 
-            switch (line.kind, isSelected) {
+            switch (line.kind, state) {
             case (.context, _):
                 body.append(render(line, as: .context))
                 oldCount += 1
                 newCount += 1
 
-            case (.addition, true):
+            case (.addition, .selected):
                 body.append(render(line, as: .addition))
                 newCount += 1
 
-            case (.addition, false):
-                // 没选中的新增行：它在旧文件里不存在，也不打算加进去，
-                // 因此完全不进 patch。
+            case (.addition, .applied):
+                // 前几批已经把它加进去了，现在是文件里实打实的一行，
+                // 必须作为上下文出现，否则后面的行对不上位置。
+                body.append(render(line, as: .context))
+                oldCount += 1
+                newCount += 1
+
+            case (.addition, .untouched):
+                // 它在旧文件里不存在，这次也不打算加进去，完全不进 patch。
                 break
 
-            case (.deletion, true):
+            case (.deletion, .selected):
                 body.append(render(line, as: .deletion))
                 oldCount += 1
 
-            case (.deletion, false):
-                // 没选中的删除行：这一行在旧文件里存在且要保留，
-                // 于是降级成上下文行——漏掉这一步，git apply 会把它一并删掉。
+            case (.deletion, .applied):
+                // 前几批已经删掉了，文件里根本没有这一行，写进去反而对不上。
+                break
+
+            case (.deletion, .untouched):
+                // 这一行在旧文件里存在且要保留，于是降级成上下文行——
+                // 漏掉这一步，git apply 会把它一并删掉。
                 body.append(render(line, as: .context))
                 oldCount += 1
                 newCount += 1
