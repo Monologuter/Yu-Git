@@ -44,21 +44,17 @@ struct TimelineView: View {
             // 撤销本身也会先拍一张，所以这一步同样是可逆的
             Text("工作区会退回那一刻的状态。当前状态会先被存下来，撤销之后仍可再退回来。")
         }
-        .confirmationDialog(
-            "恢复到这个时间点？",
-            isPresented: Binding(
-                get: { pendingRestore != nil },
-                set: { if !$0 { pendingRestore = nil } }
-            ),
-            presenting: pendingRestore
+        // 用 sheet 而不是 confirmationDialog：后者装不下文件列表，
+        // 而「会改动哪些文件」正是这一步要回答的问题
+        .sheet(
+            item: Binding(
+                get: { pendingRestore },
+                set: { if $0 == nil { pendingRestore = nil } }
+            )
         ) { snapshot in
-            Button("恢复", role: .destructive) {
-                Task { await repository.restore(snapshot) }
+            RestorePreviewSheet(snapshot: snapshot, repository: repository) {
                 pendingRestore = nil
             }
-            Button("取消", role: .cancel) { pendingRestore = nil }
-        } message: { _ in
-            Text("工作区会退回那一刻的状态。当前状态会先被存下来。")
         }
         .task {
             await repository.reloadTimeline()

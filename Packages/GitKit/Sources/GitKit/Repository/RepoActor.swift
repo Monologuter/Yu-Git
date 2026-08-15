@@ -219,6 +219,14 @@ public actor RepoActor {
         return try await work.value
     }
 
+    /// 恢复到某张快照会改动哪些文件。
+    ///
+    /// 只读，**不排进写队列**——它要在对话框弹出那一刻就显示，
+    /// 排在写队列后面等于每次都先卡一下。
+    public func previewRestore(_ snapshot: Snapshot) async throws -> SnapshotPreview {
+        try await timeline.previewRestore(snapshot)
+    }
+
     /// 执行一条 git 写操作并记入时间线，**不重新排队**。
     ///
     /// 给已经在队列里跑的复合操作用（分批提交要连着做好几次 commit）。

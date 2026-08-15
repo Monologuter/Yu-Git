@@ -4,6 +4,11 @@ import Foundation
 
 /// 在临时目录里搭一个真实 git 仓库，实例释放时自动清理。
 ///
+/// - Important: **实例一释放，目录就没了。** 所以凡是把它和别的东西一起返回的
+///   辅助函数，调用方必须把它绑到一个变量上；用 `_` 接住等于当场删掉仓库，
+///   后续每条 git 命令都会报「工作目录不存在」。这个坑已经咬过两次
+///   （子模块测试、快照预览测试），两次的报错都指向别处。
+///
 /// 用 `GIT_CONFIG_GLOBAL=/dev/null` 隔离用户的 `~/.gitconfig`——否则用户配置的
 /// `init.defaultBranch`、`commit.gpgsign`、hooks 都会渗进测试，让结果时灵时不灵。
 final class TemporaryRepository {

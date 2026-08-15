@@ -51,4 +51,12 @@ extension RepositoryViewModel {
         _ = await repository.captureExternalChange(
             summary: "外部改动 · \(now.formatted(date: .omitted, time: .standard))")
     }
+
+    /// 算出恢复到某张快照会改动哪些文件。
+    ///
+    /// 只读，不走写队列——它是要在对话框弹出那一刻就显示的，
+    /// 排在写队列后面等于每次都先卡一下。
+    func previewRestore(_ snapshot: Snapshot) async -> SnapshotPreview? {
+        try? await repository.previewRestore(snapshot)
+    }
 }

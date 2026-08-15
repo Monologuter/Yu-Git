@@ -43,8 +43,10 @@ public struct Snapshot: Sendable, Equatable, Identifiable {
 /// 那两处是用户自己的工作区，被工具塞满会让人无法使用。
 public actor SnapshotStore {
 
-    private let root: URL
-    private let client: GitClient
+    // internal 而不是 private：`SnapshotPreview.swift` 里的扩展要用到它们，
+    // 而 private 只在同一个文件内可见。仍然不对模块外暴露。
+    let root: URL
+    let client: GitClient
     private let directory: URL
 
     /// 快照 commit 的作者署名。用固定署名而非用户身份，

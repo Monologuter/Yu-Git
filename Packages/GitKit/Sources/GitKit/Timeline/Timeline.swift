@@ -115,6 +115,11 @@ public actor Timeline {
     public func allSnapshots() async throws -> [Snapshot] {
         try await snapshots.list()
     }
+
+    /// 恢复到某张快照会改动哪些文件。只读，不动仓库。
+    public func previewRestore(_ snapshot: Snapshot) async throws -> SnapshotPreview {
+        try await snapshots.preview(snapshot)
+    }
 }
 
 public enum TimelineError: Error, Sendable, Equatable {
