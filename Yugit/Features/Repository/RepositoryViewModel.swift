@@ -24,6 +24,7 @@ final class RepositoryViewModel {
     private(set) var branches: [Branch] = []
     private(set) var tags: [Tag] = []
     private(set) var commits: [Commit] = []
+    private(set) var remotes: [Remote] = []
 
     /// 提交历史的分支图布局。
     private(set) var graph = CommitGraph(commits: [])
@@ -168,6 +169,9 @@ final class RepositoryViewModel {
             async let statusResult = repository.status()
             async let branchResult = repository.client.branches(in: repository.root)
             async let tagResult = repository.client.tags(in: repository.root)
+            // remote 列表用来拼提交信息里的 issue 链接。跟着 refresh 一起取，
+            // 这样在远程管理面板里改完之后立刻生效（`mutate` 结束会调 refresh）
+            async let remoteResult = repository.client.remotes(in: repository.root)
             // 带上过滤条件：外部改动触发的自动刷新如果不带，
             // 用户正在看的筛选结果会被无声地冲回全量列表
             async let commitResult = repository.client.log(
@@ -182,6 +186,7 @@ final class RepositoryViewModel {
             status = try await statusResult
             branches = try await branchResult
             tags = try await tagResult
+            remotes = (try? await remoteResult) ?? []
             commits = try await commitResult
             graph = CommitGraph(commits: commits)
             hasMoreCommits = commits.count >= initialCommitCount

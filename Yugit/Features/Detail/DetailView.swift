@@ -136,6 +136,15 @@ struct CommitDetailView: View {
 
     @State private var commitSignature = CommitSignature.unsigned
 
+    /// 拼 issue 链接用的 remote 地址。
+    ///
+    /// 取 origin；没有 origin 就取第一个。都没有（纯本地仓库）时为 nil，
+    /// 那时 `#123` 只显示成文本——给一个点开是 404 的链接比不给链接更糟。
+    private var issueRemoteURL: String? {
+        let remotes = repository.remotes
+        return (remotes.first { $0.name == "origin" } ?? remotes.first)?.fetchURL
+    }
+
     var body: some View {
         Group {
             // 点开某个文件后，用 VSplitView 把面板一分为二，让人自己拖分配空间。
@@ -181,17 +190,15 @@ struct CommitDetailView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                     // 不用 .title3（20pt）。这是侧栏面板不是页面标题，
                     // 字号过大会让它抢走主列表的视线，而主列表才是干活的地方。
-                    Text(commit.subject)
+                    // 提交信息里的 #123 变成可点链接。读历史时看到 #412
+                    // 想知道那是什么，此前得手工去网页上翻。
+                    CommitMessageText(text: commit.subject, remoteURL: issueRemoteURL)
                         .font(Theme.Font.title)
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
 
                     if !commit.body.isEmpty {
-                        Text(commit.body)
+                        CommitMessageText(text: commit.body, remoteURL: issueRemoteURL)
                             .font(Theme.Font.body)
                             .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
