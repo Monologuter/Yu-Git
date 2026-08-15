@@ -134,6 +134,8 @@ struct CommitDetailView: View {
     let commit: Commit
     let repository: RepositoryViewModel
 
+    @State private var commitSignature = CommitSignature.unsigned
+
     var body: some View {
         Group {
             // 点开某个文件后，用 VSplitView 把面板一分为二，让人自己拖分配空间。
@@ -196,6 +198,14 @@ struct CommitDetailView: View {
                 if !commit.refs.isEmpty {
                     RefBadges(refs: commit.refs)
                 }
+
+                // 签名单独查，不放进历史列表的格式串：`%G?` 会让 git 对每一条
+                // 提交实际跑一次验签，5 万条的首屏会直接崩掉。选中这一条时问一次，
+                // 代价可以忽略。
+                SignatureBadge(signature: commitSignature)
+                    .task(id: commit.hash) {
+                        commitSignature = await repository.signature(of: commit.hash)
+                    }
 
                 // 放在提交信息下面而不是页面底部：想读懂一次提交的人，
                 // 正是刚看完标题却没看明白的人

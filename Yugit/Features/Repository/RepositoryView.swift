@@ -20,6 +20,7 @@ struct RepositoryView: View {
     @State private var worktreeModel: WorktreeViewModel?
     @State private var stashModel: StashViewModel?
     @State private var remoteModel: RemoteViewModel?
+    @State private var signingModel: SigningViewModel?
     @State private var fileHistoryModel: FileHistoryViewModel?
     @State private var compareModel: BranchCompareViewModel?
     @State private var forgeModel: ForgeViewModel?
@@ -166,6 +167,7 @@ struct RepositoryView: View {
                     showWorktrees: { worktreeModel = WorktreeViewModel(repository: repository) },
                     showStashes: { stashModel = StashViewModel(repository: repository) },
                     showRemotes: { remoteModel = RemoteViewModel(repository: repository) },
+                    showSigning: { signingModel = SigningViewModel(repository: repository) },
                     showForge: { forgeModel = ForgeViewModel(repository: repository) },
                     showOnboarding: { showsOnboarding = true },
                     showChat: { chatModel = ChatViewModel(repository: repository) },
@@ -199,6 +201,9 @@ struct RepositoryView: View {
         }
         .sheet(item: $remoteModel) { model in
             RemoteView(model: model) { remoteModel = nil }
+        }
+        .sheet(item: $signingModel) { model in
+            SigningSettingsView(model: model) { signingModel = nil }
         }
         .sheet(item: $fileHistoryModel) { model in
             FileHistoryView(model: model) { fileHistoryModel = nil }

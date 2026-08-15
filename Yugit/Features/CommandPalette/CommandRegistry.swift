@@ -21,6 +21,7 @@ enum CommandRegistry {
         showWorktrees: @escaping () -> Void,
         showStashes: @escaping () -> Void,
         showRemotes: @escaping () -> Void,
+        showSigning: @escaping () -> Void,
         showForge: @escaping () -> Void,
         showOnboarding: @escaping () -> Void,
         showChat: @escaping () -> Void,
@@ -260,6 +261,18 @@ enum CommandRegistry {
                 subtitle: "查看和新建，支持 GitHub、GitLab（含自建）、Gitee",
                 systemImage: "arrow.triangle.pull",
                 run: showForge
+            ))
+
+        // MARK: 签名
+
+        commands.append(
+            PaletteCommand(
+                id: "signing.panel",
+                title: "提交签名",
+                subtitle: "配置 GPG 或 SSH 签名，并检查它能不能跑起来",
+                equivalentCommand: "git config commit.gpgsign",
+                systemImage: "signature",
+                run: showSigning
             ))
 
         // MARK: 远程

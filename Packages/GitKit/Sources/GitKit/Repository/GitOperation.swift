@@ -35,6 +35,7 @@ public struct GitOperation: Sendable, Equatable, Codable {
         case merge
         case setUpstream
         case initRepository
+        case setConfiguration
         case addRemote
         case setRemoteURL
         case renameRemote

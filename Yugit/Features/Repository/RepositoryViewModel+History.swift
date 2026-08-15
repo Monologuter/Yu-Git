@@ -172,4 +172,28 @@ extension RepositoryViewModel {
         try await repository.client.compareBranches(
             base: base, target: target, in: repository.root)
     }
+
+    // MARK: - 签名
+
+    func signingSettings() async -> SigningSettings {
+        await repository.client.signingSettings(in: repository.root)
+    }
+
+    func isGPGAvailable() async -> Bool {
+        await repository.client.isGPGAvailable()
+    }
+
+    func setConfiguration(key: String, value: String) async {
+        await mutate {
+            try await self.repository.perform(.setConfiguration(key: key, value: value))
+        }
+    }
+
+    /// 读一条提交的签名。
+    ///
+    /// 只在选中某条提交时调用。放进历史列表的格式串会让 git 对每一条都验一次签，
+    /// 5 万条的首屏直接崩掉。
+    func signature(of hash: String) async -> CommitSignature {
+        (try? await repository.client.signature(of: hash, in: repository.root)) ?? .unsigned
+    }
 }
