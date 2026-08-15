@@ -13,6 +13,14 @@ struct RootView: View {
                 WelcomeView(model: model)
             }
         }
+        .sheet(
+            item: Binding(
+                get: { model.pendingInit },
+                set: { if $0 == nil { model.pendingInit = nil } }
+            )
+        ) { pending in
+            InitRepositorySheet(pending: pending, model: model) { model.pendingInit = nil }
+        }
         .alert(
             "无法打开仓库",
             isPresented: Binding(
@@ -47,14 +55,23 @@ struct WelcomeView: View {
                     .foregroundStyle(Theme.Colors.secondaryText)
             }
 
-            Button {
-                model.presentOpenPanel()
-            } label: {
-                Label("打开仓库…", systemImage: "folder")
-                    .frame(minWidth: 140)
+            HStack(spacing: Theme.Spacing.loose) {
+                Button {
+                    model.presentOpenPanel()
+                } label: {
+                    Label("打开仓库…", systemImage: "folder")
+                        .frame(minWidth: 120)
+                }
+                .keyboardShortcut("o", modifiers: .command)
+
+                Button {
+                    model.presentInitPanel()
+                } label: {
+                    Label("新建仓库…", systemImage: "folder.badge.plus")
+                        .frame(minWidth: 120)
+                }
             }
             .controlSize(.large)
-            .keyboardShortcut("o", modifiers: .command)
 
             if !model.recentRepositories.isEmpty {
                 recentList

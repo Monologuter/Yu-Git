@@ -16,12 +16,16 @@ for package in "$root"/Packages/*/; do
     name=$(basename "$package")
 
     printf '▶︎ 测试 %s\n' "$name"
-    # `< /dev/null` 不能省。git 调用 pre-push 时会把待推送的引用列表写进 hook 的
-    # stdin，并且**在 hook 退出前一直保持那个管道打开**。这个 hook 自己不读 stdin，
-    # 但它派生的 swift test 会把 stdin 原样传给测试进程，测试里成百上千个 git
-    # 子进程又各自继承一份——只要其中任何一个去读 stdin，它就会永远等在那里，
-    # 而 git 也在等 hook 退出。整个 push 就此挂死，没有超时也没有任何输出
-    # （hook 的输出这时还堵在管道里）。
+    # `< /dev/null` 是防御性的：git 调用 pre-push 时会把待推送的引用列表写进
+    # hook 的 stdin，并在 hook 退出前一直保持那个管道打开。这个 hook 自己不读
+    # stdin，但不切断的话它会一路传给 swift test、再传给测试里成百上千个 git
+    # 子进程——任何一个去读 stdin 都会永远等下去。目前没有观察到这种情况，
+    # 加上只是不给它发生的机会。
+    #
+    # **推送慢通常不是卡住。** 这台机器上 git 是 Intel 版（/usr/local/opt/git），
+    # 跑在 Rosetta 下，于是这里的 swift test 编的是 x86_64 那一份，
+    # 和平时开发用的 arm64 是两套独立的 .build。只要新增了源文件，
+    # 推送时就要在这边从头编一次，五分钟起步，期间没有任何输出。
     if ! swift test --package-path "$package" < /dev/null; then
         printf '\n❌ %s 测试未通过，推送已取消\n' "$name"
         printf '如确需跳过：git push --no-verify\n'
